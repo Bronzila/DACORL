@@ -1,0 +1,195 @@
+# For TOML reference
+# https://learnxinyminutes.com/docs/toml/
+[project]
+name = "MTORL-DAC"
+version = "0.0.1"
+dependencies = [
+  "torch==2.1.1",
+  "numpy==1.23.1",
+  "tqdm==4.64.0",
+  "wandb==0.12.21"
+]
+classifiers = [
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Natural Language :: English",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Education",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+readme = "README.md"
+authors = [
+  { name = "Janis Fix", email = "fixj@cs.uni-freiburg.de" },
+]
+requires-python = ">=3.8"
+[project.optional-dependencies]
+dev = [
+  # Others
+  "ruff",
+  "black",
+  "pre-commit",
+]
+
+[tool.black]
+target-version = ['py38']
+line-length = 80
+
+# https://github.com/charliermarsh/ruff
+[tool.ruff]
+target-version = "py38"
+line-length = 80
+show-source = true
+src = ["src"]
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+select = [
+  "A",
+  # "ANN", # Handled by mypy
+  "ARG",
+  "B",
+  "BLE",
+  "COM",
+  "C4",
+  "D",
+  # "DTZ",  # One day I should know how to utilize timezones and dates...
+  "E",
+  # "EXE", Meh
+  "ERA",
+  "F",
+  "FBT",
+  "I",
+  # "ISC",  # Favours implicit string concatenation
+  "INP",
+  # "INT", # I don't understand this one
+  "N",
+  "NPY",
+  "PD",
+  "PLC",
+  "PLE",
+  "PLR",
+  "PLW",
+  "PIE",
+  "PT",
+  "PTH",
+  # "PYI", # Specific to .pyi files for type stubs
+  "Q",
+  "PGH004",
+  "RET",
+  "RUF",
+  "C90",
+  "S",
+  # "SLF",    # Private member accessed (sure, it's python)
+  "SIM",
+  # "TRY", # Good in principle, would take a lot of work to statisfy
+  "T10",
+  "T20",
+  "TID",
+  "TCH",
+  "UP",
+  "N",
+  "W",
+  "YTT",
+]
+
+ignore = [
+  "D104",    # Missing docstring in public package
+  "D105",    # Missing docstring in magic mthod
+  "D203",    # 1 blank line required before class docstring
+  "D205",    # 1 blank line between summary and description
+  "D401",    # First line of docstring should be in imperative mood
+  "N806",    # Variable X in function should be lowercase
+  "E731",    # Do not assign a lambda expression, use a def
+  "A003",    # Shadowing a builtin
+  "S101",    # Use of assert detected.
+  "W292",    # No newline at end of file
+  "PLC1901", # "" can be simplified to be falsey
+  "TCH003",  # Move stdlib import into TYPE_CHECKING
+  # These tend to be lighweight and confuse pyright
+]
+
+exclude = [
+  ".bzr",
+  ".direnv",
+  ".eggs",
+  ".git",
+  ".hg",
+  ".mypy_cache",
+  ".nox",
+  ".pants.d",
+  ".ruff_cache",
+  ".svn",
+  ".tox",
+  ".venv",
+  "__pypackages__",
+  "_build",
+  "buck-out",
+  "build",
+  "dist",
+  "node_modules",
+  "venv",
+  "docs",
+]
+
+# Exclude a variety of commonly ignored directories.
+[tool.ruff.per-file-ignores]
+"tests/*.py" = [
+  "S101",
+  "D103",
+  "ANN001",
+  "ANN201",
+  "FBT001",
+  "D100",
+  "PLR2004",
+  "PD901",   #  X is a bad variable name. (pandas)
+  "TCH",
+]
+"__init__.py" = ["I002"]
+"examples/*" = ["INP001", "I002", "E741", "D101", "D103", "T20", "D415"]
+"docs/*" = ["INP001"]
+
+
+[tool.ruff.isort]
+known-first-party = ["dehb"]
+no-lines-before = ["future"]
+required-imports = ["from __future__ import annotations"]
+combine-as-imports = true
+extra-standard-library = ["typing_extensions"]
+force-wrap-aliases = true
+
+[tool.ruff.pydocstyle]
+convention = "google"
+
+[tool.ruff.pylint]
+max-args = 10 # Changed from default of 5
+
+[tool.mypy]
+python_version = "3.8"
+packages = ["dehb", "tests"]
+
+show_error_codes = true
+
+warn_unused_configs = true # warn about unused [tool.mypy] lines
+
+follow_imports = "normal"      # Type check top level api code we use from imports
+ignore_missing_imports = false # prefer explicit ignores
+
+disallow_untyped_defs = true       # All functions must have types
+disallow_untyped_decorators = true # ... even decorators
+disallow_incomplete_defs = true    # ...all types
+
+no_implicit_optional = true
+check_untyped_defs = true
+
+warn_return_any = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false       # Sometimes we just want to ignore verbose types
+disallow_untyped_decorators = false # Test decorators are not properly typed
+disallow_incomplete_defs = false    # Sometimes we just want to ignore verbose types
