@@ -51,7 +51,7 @@ class ReplayBuffer:
         self._dones[self._pointer] = self._to_tensor(done)
 
         self._pointer = (self._pointer + 1) % self._buffer_size
-        self._size = min(self.size + 1, self._buffer_size)
+        self._size = min(self._size + 1, self._buffer_size)
 
         if self._size + 1 > self._buffer_size:
             print("Buffer full. Transitions will now start to be overwritten.")

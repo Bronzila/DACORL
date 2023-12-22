@@ -8,8 +8,8 @@ import pandas as pd
 import torch
 from dacbench.benchmarks import ToySGDBenchmark
 
-from agents.step_decay import StepDecayAgent
-from utils.replay_buffer import ReplayBuffer
+from src.agents.step_decay import StepDecayAgent
+from src.utils.replay_buffer import ReplayBuffer
 
 
 # Time out related class and function
@@ -105,7 +105,7 @@ def generate_dataset(agent_type, agent_config, environment_type, num_runs,
                 batch_indeces = []
                 run_indeces = []
             # TODO properly reset to different starting point
-            state = env.reset()
+            state = env.reset()[0]
             agent.reset()
             if save_run_data:
                 actions.append(-1)
@@ -120,7 +120,8 @@ def generate_dataset(agent_type, agent_config, environment_type, num_runs,
                     Total {batch + run * num_batches}/{num_runs * num_batches}")
 
                 action = agent.act(state)
-                next_state, reward, done, mutation_rate = env.step(action)
+                next_state, reward, done, truncated, info = env.step(action)
+                replay_buffer.add_transition(state, action, next_state, reward, truncated)
                 state = next_state
                 if save_run_data:
                     actions.append(action)
