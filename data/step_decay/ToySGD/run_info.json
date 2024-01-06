@@ -1,7 +1,0 @@
-{
-    "agent_type": "step_decay",
-    "environment": "ToySGD",
-    "seed": 0,
-    "num_runs": 1,
-    "num_batches": 20
-}
