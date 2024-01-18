@@ -5,16 +5,17 @@ from src.utils.generate_data import generate_dataset
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Run any agent on the ToySGD benchmark")
+        description="Run any agent on the ToySGD benchmark"
+    )
     parser.add_argument("--num_runs", type=int, default=1)
     parser.add_argument("--num_batches", type=int, default=20)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--agent_type", type=str, default="step_decay")
     parser.add_argument("--environment_type", type=str, default="ToySGD")
-    parser.add_argument("--results_dir", type=str, default="")
     parser.add_argument(
-        "--data_dir",
+        "--results_dir",
         type=str,
+        default="",
         help="path to the directory where replay_buffer and info about the replay_buffer are stored",
     )
     parser.add_argument(

@@ -3,8 +3,8 @@ from typing import Any, Dict, List
 
 import numpy as np
 import torch
+import torch.nn as nn
 import torch.nn.functional as F  # noqa: N812
-from torch import nn
 
 
 def soft_update(target: nn.Module, source: nn.Module, tau: float):
