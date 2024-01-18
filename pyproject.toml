@@ -7,13 +7,13 @@ dependencies = [
   "torch==1.13.1",
   "numpy==1.24.2",
   "tqdm==4.64.0",
-  "wandb==0.12.21"
+  "wandb==0.12.21",
+  "pandas",
+  "dacbench@git+https://github.com/Bronzila/DACBench.git#egg=ToySGD_MTDAC",
+  "gym",
 ]
 classifiers = [
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
   "Natural Language :: English",
   "Intended Audience :: Developers",
   "Intended Audience :: Education",
@@ -98,8 +98,13 @@ select = [
 ]
 
 ignore = [
+  "D100",    # Missing docstring in public module
+  "D101",    # Missing docstring in public class
+  "D102",    # Missing docstring in public method
+  "D103",    # Missing docstring in public function
   "D104",    # Missing docstring in public package
-  "D105",    # Missing docstring in magic mthod
+  "D105",    # Missing docstring in magic method
+  "D107",    # Missing docstring in public `__init__`
   "D203",    # 1 blank line required before class docstring
   "D205",    # 1 blank line between summary and description
   "D401",    # First line of docstring should be in imperative mood
@@ -107,8 +112,10 @@ ignore = [
   "E731",    # Do not assign a lambda expression, use a def
   "A003",    # Shadowing a builtin
   "S101",    # Use of assert detected.
+  "S301",    # `pickle` and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue
   "W292",    # No newline at end of file
   "PLC1901", # "" can be simplified to be falsey
+  "PLR0913", # Too many arguments to function call (15 > 10)
   "TCH003",  # Move stdlib import into TYPE_CHECKING
   # These tend to be lighweight and confuse pyright
 ]
@@ -155,7 +162,7 @@ exclude = [
 
 
 [tool.ruff.isort]
-known-first-party = ["dehb"]
+known-first-party = ["src"]
 no-lines-before = ["future"]
 required-imports = ["from __future__ import annotations"]
 combine-as-imports = true
@@ -169,8 +176,9 @@ convention = "google"
 max-args = 10 # Changed from default of 5
 
 [tool.mypy]
-python_version = "3.8"
-packages = ["dehb", "tests"]
+python_version = "3.10"
+packages = ["src"]
+
 
 show_error_codes = true
 
