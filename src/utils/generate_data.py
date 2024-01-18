@@ -6,7 +6,7 @@ import signal
 import numpy as np
 import pandas as pd
 import torch
-from dacbench.benchmarks import ToySGDBenchmark
+from dacbench.benchmarks import ToySGD2DBenchmark
 
 from src.agents.step_decay import StepDecayAgent
 from src.utils.replay_buffer import ReplayBuffer
@@ -32,7 +32,9 @@ def save_data(
     replay_buffer,
     results_dir,
     run_info,
+    starting_points,
 ):
+    run_info["starting_points"] = starting_points
     save_path = os.path.join(results_dir, f"rep_buffer")
     if save_rep_buffer:
         replay_buffer.save(save_path)
@@ -47,7 +49,7 @@ def save_data(
 def get_environment(environment_type):
     if environment_type == "ToySGD":
         # setup benchmark
-        bench = ToySGDBenchmark()
+        bench = ToySGD2DBenchmark()
         return bench.get_environment()
     else:
         print(f"No environment of type {environment_type} found.")
@@ -93,6 +95,9 @@ def generate_dataset(agent_type, agent_config, environment_type, num_runs,
         "seed": seed,
         "num_runs": num_runs,
         "num_batches": num_batches,
+        "function": env.instance["function"],
+        "lower_bound": env.lower_bound,
+        "upper_bound": env.upper_bound,
     }
 
     try:
@@ -100,18 +105,21 @@ def generate_dataset(agent_type, agent_config, environment_type, num_runs,
             if save_run_data:
                 actions = []
                 rewards = []
-                f_currs= []
+                f_curs = []
+                x_curs = []
                 states = []
                 batch_indeces = []
                 run_indeces = []
-            # TODO properly reset to different starting point
-            state = env.reset()[0]
+                starting_points = []
+            state, meta_info = env.reset()
+            starting_points.append(meta_info["start"])
             agent.reset()
             if save_run_data:
-                actions.append(-1)
-                rewards.append(-1337)
-                f_currs.append(env.objective_function(env.x_cur))
-                states.append(state)
+                actions.append(np.NaN)
+                rewards.append(np.NaN)
+                x_curs.append(env.x_cur.tolist())
+                f_curs.append(env.objective_function(env.x_cur).numpy())
+                states.append(state.numpy())
                 batch_indeces.append(0)
                 run_indeces.append(run)
 
@@ -124,10 +132,11 @@ def generate_dataset(agent_type, agent_config, environment_type, num_runs,
                 replay_buffer.add_transition(state, action, next_state, reward, truncated)
                 state = next_state
                 if save_run_data:
-                    actions.append(action)
-                    rewards.append(reward)
-                    f_currs.append(env.objective_function(env.x_cur))
-                    states.append(state)
+                    actions.append(action.numpy())
+                    rewards.append(reward.numpy())
+                    x_curs.append(env.x_cur.tolist())
+                    f_curs.append(env.objective_function(env.x_cur).numpy())
+                    states.append(state.numpy())
                     batch_indeces.append(batch)
                     run_indeces.append(run)
 
@@ -135,7 +144,8 @@ def generate_dataset(agent_type, agent_config, environment_type, num_runs,
                 run_data = pd.DataFrame({
                     "action": actions,
                     "reward": rewards,
-                    "f_curr": f_currs,
+                    "f_cur": f_curs,
+                    "x_cur": x_curs,
                     "state": states,
                     "batch": batch_indeces,
                     "run": run_indeces,
@@ -154,6 +164,7 @@ def generate_dataset(agent_type, agent_config, environment_type, num_runs,
             replay_buffer,
             results_dir,
             run_info,
+            starting_points,
         )
         print("Saved checkpoint, because run was about to end")
 
@@ -164,6 +175,7 @@ def generate_dataset(agent_type, agent_config, environment_type, num_runs,
         replay_buffer,
         results_dir,
         run_info,
+        starting_points,
     )
 
     if save_rep_buffer or save_run_data:

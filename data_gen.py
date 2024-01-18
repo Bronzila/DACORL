@@ -40,8 +40,8 @@ if __name__ == "__main__":
     start = time.time()
 
     agent_config = {
-        "gamma": 0.2,
-        "step_size": 2,
+        "gamma": 0.9,
+        "step_size": 3,
     }
 
     generate_dataset(
