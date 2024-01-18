@@ -1,13 +1,18 @@
+from __future__ import annotations
+
 import json
-import os
-import signal
+from pathlib import Path
 
 import pandas as pd
-from dacbench.benchmarks import ToySGDBenchmark
 
-from src.agents.step_decay import StepDecayAgent
+from src.utils.general import (
+    OutOfTimeError,
+    get_agent,
+    get_environment,
+    set_seeds,
+    set_timeout,
+)
 from src.utils.replay_buffer import ReplayBuffer
-from src.utils.general import OutOfTimeException, timeouthandler, set_seeds
 
 
 def save_data(
@@ -18,70 +23,54 @@ def save_data(
     results_dir,
     run_info,
 ):
-    save_path = os.path.join(results_dir, f"rep_buffer")
+    save_path = Path(results_dir, "rep_buffer")
     if save_rep_buffer:
         replay_buffer.save(save_path)
-        with open(os.path.join(results_dir, f"run_info.json"), "w") as f:
+        with Path(results_dir, "run_info.json").open(mode="w") as f:
             json.dump(run_info, f, indent=4)
 
-    if not os.path.exists(results_dir):
-        os.makedirs(results_dir)
+    if not results_dir.exists():
+        results_dir.mkdir(parents=True)
     if save_run_data:
         aggregated_run_data.to_csv(
-            os.path.join(results_dir, "aggregated_run_data.csv")
+            Path(results_dir, "aggregated_run_data.csv"),
         )
 
 
-def get_environment(environment_type):
-    if environment_type == "ToySGD":
-        # setup benchmark
-        bench = ToySGDBenchmark()
-        return bench.get_environment()
-    else:
-        print(f"No environment of type {environment_type} found.")
-
-
 def generate_dataset(
-    agent_type,
-    agent_config,
-    environment_type,
-    num_runs,
-    num_batches,
-    seed,
-    results_dir,
-    save_run_data,
-    save_rep_buffer,
-    timeout,
+    agent_type: str,
+    agent_config: dict,
+    environment_type: str,
+    num_runs: int,
+    num_batches: int,
+    seed: int,
+    results_dir: str,
+    timeout: int,
+    save_run_data: bool,
+    save_rep_buffer: bool,
 ):
-    if timeout > 0:
-        # conversion from hours to seconds
-        timeout = timeout * 60 * 60
-        signal.signal(signal.SIGALRM, timeouthandler)
-        signal.alarm(timeout)
-
+    set_timeout(timeout)
     set_seeds(seed)
 
     if not (save_run_data or save_rep_buffer):
         input("You are not saving any results. Enter a key to continue anyway.")
 
     if results_dir == "":
-        results_dir = os.path.join("data", agent_type, environment_type)
+        results_dir = Path("data", agent_type, environment_type)
     else:
-        results_dir = os.path.join(results_dir, agent_type, environment_type)
+        results_dir = Path(results_dir, agent_type, environment_type)
 
     env = get_environment(environment_type)
     state = env.reset()[0]
     state_dim = state.shape[0]
     buffer_size = num_runs * num_batches
     replay_buffer = ReplayBuffer(
-        state_dim=state_dim, action_dim=1, buffer_size=buffer_size
+        state_dim=state_dim,
+        action_dim=1,
+        buffer_size=buffer_size,
     )
 
-    agent = None
-    if agent_type == "step_decay":
-        agent = StepDecayAgent(**agent_config)
-    else:
-        print(f"No agent with type {agent_type} implemented.")
+    agent = get_agent(agent_type, agent_config, "cpu")
 
     aggregated_run_data = None
     run_info = {
@@ -115,13 +104,17 @@ def generate_dataset(
             for batch in range(1, num_batches):
                 print(
                     f"Starting batch {batch}/{num_batches} of run {run}. \
-                    Total {batch + run * num_batches}/{num_runs * num_batches}"
+                    Total {batch + run * num_batches}/{num_runs * num_batches}",
                 )
 
                 action = agent.act(state)
                 next_state, reward, done, truncated, info = env.step(action)
                 replay_buffer.add_transition(
-                    state, action, next_state, reward, truncated
+                    state,
+                    action,
+                    next_state,
+                    reward,
+                    truncated,
                 )
                 state = next_state
                 if save_run_data:
@@ -141,15 +134,16 @@ def generate_dataset(
                         "state": states,
                         "batch": batch_indeces,
                         "run": run_indeces,
-                    }
+                    },
                 )
                 if aggregated_run_data is None:
                     aggregated_run_data = run_data
                 else:
                     aggregated_run_data = aggregated_run_data.append(
-                        run_data, ignore_index=True
+                        run_data,
+                        ignore_index=True,
                     )
-    except OutOfTimeException:
+    except OutOfTimeError:
         save_data(
             save_run_data,
             aggregated_run_data,

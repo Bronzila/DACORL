@@ -1,20 +1,29 @@
+from __future__ import annotations
+
 import copy
-from typing import Any, Dict, List
+from typing import TYPE_CHECKING, Any
 
-import numpy as np
 import torch
-import torch.nn as nn
 import torch.nn.functional as F  # noqa: N812
+from torch import nn
+
+if TYPE_CHECKING:
+    import numpy as np
 
 
-def soft_update(target: nn.Module, source: nn.Module, tau: float):
-    for target_param, source_param in zip(target.parameters(), source.parameters()):
-        target_param.data.copy_((1 - tau) * target_param.data
-                                + tau * source_param.data)
+def soft_update(target: nn.Module, source: nn.Module, tau: float) -> None:
+    for target_param, source_param in zip(
+        target.parameters(),
+        source.parameters(),
+    ):
+        target_param.data.copy_(
+            (1 - tau) * target_param.data + tau * source_param.data,
+        )
+
 
 class Actor(nn.Module):
     def __init__(self, state_dim: int, action_dim: int, max_action: float):
-        super(Actor, self).__init__()
+        super().__init__()
 
         self.net = nn.Sequential(
             nn.Linear(state_dim, 256),
@@ -31,13 +40,17 @@ class Actor(nn.Module):
 
     @torch.no_grad()
     def act(self, state: np.ndarray, device: str = "cpu") -> np.ndarray:
-        state = torch.tensor(state.reshape(1, -1), device=device, dtype=torch.float32)
+        state = torch.tensor(
+            state.reshape(1, -1),
+            device=device,
+            dtype=torch.float32,
+        )
         return self(state).cpu().data.numpy().flatten()
 
 
 class Critic(nn.Module):
     def __init__(self, state_dim: int, action_dim: int):
-        super(Critic, self).__init__()
+        super().__init__()
 
         self.net = nn.Sequential(
             nn.Linear(state_dim + action_dim, 256),
@@ -47,9 +60,14 @@ class Critic(nn.Module):
             nn.Linear(256, 1),
         )
 
-    def forward(self, state: torch.Tensor, action: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self,
+        state: torch.Tensor,
+        action: torch.Tensor,
+    ) -> torch.Tensor:
         sa = torch.cat([state, action], 1)
         return self.net(sa)
+
 
 class TD3_BC:
     def __init__(
@@ -90,7 +108,7 @@ class TD3_BC:
         self.total_it = 0
         self.device = device
 
-    def train(self, batch: List[torch.Tensor]) -> Dict[str, float]:
+    def train(self, batch: list[torch.Tensor]) -> dict[str, float]:
         log_dict = {}
         self.total_it += 1
 
@@ -100,11 +118,13 @@ class TD3_BC:
         with torch.no_grad():
             # Select action according to actor and add clipped noise
             noise = (torch.randn_like(action) * self.policy_noise).clamp(
-                -self.noise_clip, self.noise_clip
+                -self.noise_clip,
+                self.noise_clip,
             )
 
             next_action = (self.actor_target(next_state) + noise).clamp(
-                -self.max_action, self.max_action
+                -self.max_action,
+                self.max_action,
             )
 
             # Compute the target Q value
@@ -118,7 +138,10 @@ class TD3_BC:
         current_q2 = self.critic_2(state, action)
 
         # Compute critic loss
-        critic_loss = F.mse_loss(current_q1, target_q) + F.mse_loss(current_q2, target_q)
+        critic_loss = F.mse_loss(current_q1, target_q) + F.mse_loss(
+            current_q2,
+            target_q,
+        )
         log_dict["critic_loss"] = critic_loss.item()
         # Optimize the critic
         self.critic_1_optimizer.zero_grad()
@@ -148,7 +171,7 @@ class TD3_BC:
 
         return log_dict
 
-    def state_dict(self) -> Dict[str, Any]:
+    def state_dict(self) -> dict[str, Any]:
         return {
             "critic_1": self.critic_1.state_dict(),
             "critic_1_optimizer": self.critic_1_optimizer.state_dict(),
@@ -159,13 +182,17 @@ class TD3_BC:
             "total_it": self.total_it,
         }
 
-    def load_state_dict(self, state_dict: Dict[str, Any]):
+    def load_state_dict(self, state_dict: dict[str, Any]) -> None:
         self.critic_1.load_state_dict(state_dict["critic_1"])
-        self.critic_1_optimizer.load_state_dict(state_dict["critic_1_optimizer"])
+        self.critic_1_optimizer.load_state_dict(
+            state_dict["critic_1_optimizer"],
+        )
         self.critic_1_target = copy.deepcopy(self.critic_1)
 
         self.critic_2.load_state_dict(state_dict["critic_2"])
-        self.critic_2_optimizer.load_state_dict(state_dict["critic_2_optimizer"])
+        self.critic_2_optimizer.load_state_dict(
+            state_dict["critic_2_optimizer"],
+        )
         self.critic_2_target = copy.deepcopy(self.critic_2)
 
         self.actor.load_state_dict(state_dict["actor"])
