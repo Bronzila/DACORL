@@ -1,4 +1,5 @@
 import argparse
+import json
 import time
 
 from src.utils.generate_data import generate_dataset
@@ -10,6 +11,9 @@ if __name__ == "__main__":
     parser.add_argument("--num_batches", type=int, default=20)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--agent_type", type=str, default="step_decay")
+    parser.add_argument("--agent_config", type=str,
+                        help="Path to the agent configuration",
+                        default="src/agents/configs/step_decay/default.json")
     parser.add_argument("--environment_type", type=str, default="ToySGD")
     parser.add_argument("--results_dir", type=str, default="")
     parser.add_argument(
@@ -39,10 +43,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
     start = time.time()
 
-    agent_config = {
-        "gamma": 0.9,
-        "step_size": 3,
-    }
+    # Read agent_config from file
+    with open(args.agent_config, "r") as file:
+        agent_config = json.load(file)
 
     generate_dataset(
         agent_type=args.agent_type,

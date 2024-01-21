@@ -36,5 +36,5 @@ if __name__ == "__main__":
 
     if args.optim_trace:
         plot_optimization_trace(args.dir_path, args.show)
-    elif args.action:
+    if args.action:
         plot_actions(args.dir_path, args.show)

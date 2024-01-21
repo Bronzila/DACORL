@@ -8,7 +8,7 @@ import pandas as pd
 import torch
 from dacbench.benchmarks import ToySGD2DBenchmark
 
-from src.agents.step_decay import StepDecayAgent
+from src.agents import StepDecayAgent, ExponentialDecayAgent
 from src.utils.replay_buffer import ReplayBuffer
 
 
@@ -85,6 +85,8 @@ def generate_dataset(agent_type, agent_config, environment_type, num_runs,
     agent = None
     if agent_type == "step_decay":
         agent = StepDecayAgent(**agent_config)
+    elif agent_type == "exponential_decay":
+        agent = ExponentialDecayAgent(**agent_config)
     else:
         print(f"No agent with type {agent_type} implemented.")
 
@@ -132,7 +134,7 @@ def generate_dataset(agent_type, agent_config, environment_type, num_runs,
                 replay_buffer.add_transition(state, action, next_state, reward, truncated)
                 state = next_state
                 if save_run_data:
-                    actions.append(action.numpy())
+                    actions.append(action)
                     rewards.append(reward.numpy())
                     x_curs.append(env.x_cur.tolist())
                     f_curs.append(env.objective_function(env.x_cur).numpy())

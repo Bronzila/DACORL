@@ -95,6 +95,9 @@ def plot_actions(dir_path, show=False):
     with open(run_info_path, "r") as file:
         run_info = json.load(file)
         function_name = run_info["function"]
+        drawstyle = "default"
+        if run_info["agent_type"] == "step_decay":
+            drawstyle = "steps-post"
 
     # Remove initial row
     df = df.drop(df[df.batch == 0].index)
@@ -102,7 +105,7 @@ def plot_actions(dir_path, show=False):
     # Adjust action value from the DataFrame
     df["action"] = 10 ** df["action"]
 
-    sns.lineplot(data=df, x="batch", y="action", drawstyle="steps-post")
+    sns.lineplot(data=df, x="batch", y="action", drawstyle=drawstyle)
 
     # Show or save the plot
     if show:

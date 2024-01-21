@@ -1,4 +1,4 @@
-import numpy as np
+import torch
 
 class StepDecayAgent():
     def __init__(self, step_size: int=20, gamma: float=0.2) -> None:
@@ -14,7 +14,7 @@ class StepDecayAgent():
             learning_rate = learning_rate * self._gamma
 
         # return log of learning rate
-        return np.log10(learning_rate)
+        return torch.log10(learning_rate).item()
 
     def reset(self):
         self._step = 0
