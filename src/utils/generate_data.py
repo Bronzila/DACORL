@@ -3,7 +3,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
+from dacbench.benchmarks import ToySGD2DBenchmark
 
 from src.utils.general import (
     OutOfTimeError,
@@ -22,7 +24,9 @@ def save_data(
     replay_buffer,
     results_dir,
     run_info,
+    starting_points,
 ):
+    run_info["starting_points"] = starting_points
     save_path = Path(results_dir, "rep_buffer")
     if save_rep_buffer:
         replay_buffer.save(save_path)
@@ -37,12 +41,24 @@ def save_data(
         )
 
 
+def get_environment(env_config: dict):
+    if env_config["type"] == "ToySGD":
+        # setup benchmark
+        bench = ToySGD2DBenchmark()
+        bench.config.cutoff = env_config["num_batches"]
+        bench.config.low = env_config["low"]
+        bench.config.high = env_config["high"]
+        bench.config.function = env_config["function"]
+        return bench.get_environment()
+    else:
+        print(f"No environment of type {env_config['type']} found.")
+        return None
+
+
 def generate_dataset(
-    agent_type: str,
     agent_config: dict,
-    environment_type: str,
+    env_config: dict,
     num_runs: int,
-    num_batches: int,
     seed: int,
     results_dir: str,
     timeout: int,
@@ -55,12 +71,17 @@ def generate_dataset(
     if not (save_run_data or save_rep_buffer):
         input("You are not saving any results. Enter a key to continue anyway.")
 
+    # Get types
+    environment_type = env_config["type"]
+    agent_type = agent_config["type"]
+
     if results_dir == "":
         results_dir = Path("data", agent_type, environment_type)
     else:
         results_dir = Path(results_dir, agent_type, environment_type)
 
-    env = get_environment(environment_type)
+    num_batches = env_config["num_batches"]
+    env = get_environment(env_config)
     state = env.reset()[0]
     state_dim = state.shape[0]
     buffer_size = num_runs * num_batches
@@ -79,6 +100,9 @@ def generate_dataset(
         "seed": seed,
         "num_runs": num_runs,
         "num_batches": num_batches,
+        "function": env.function,
+        "lower_bound": env.lower_bound,
+        "upper_bound": env.upper_bound,
     }
 
     try:
@@ -86,18 +110,21 @@ def generate_dataset(
             if save_run_data:
                 actions = []
                 rewards = []
-                f_currs = []
+                f_curs = []
+                x_curs = []
                 states = []
                 batch_indeces = []
                 run_indeces = []
-            # TODO properly reset to different starting point
-            state = env.reset()[0]
+                starting_points = []
+            state, meta_info = env.reset()
+            starting_points.append(meta_info["start"])
             agent.reset()
             if save_run_data:
-                actions.append(-1)
-                rewards.append(-1337)
-                f_currs.append(env.objective_function(env.x_cur))
-                states.append(state)
+                actions.append(np.NaN)
+                rewards.append(np.NaN)
+                x_curs.append(env.x_cur.tolist())
+                f_curs.append(env.objective_function(env.x_cur).numpy())
+                states.append(state.numpy())
                 batch_indeces.append(0)
                 run_indeces.append(run)
 
@@ -119,9 +146,10 @@ def generate_dataset(
                 state = next_state
                 if save_run_data:
                     actions.append(action)
-                    rewards.append(reward)
-                    f_currs.append(env.objective_function(env.x_cur))
-                    states.append(state)
+                    rewards.append(reward.numpy())
+                    x_curs.append(env.x_cur.tolist())
+                    f_curs.append(env.objective_function(env.x_cur).numpy())
+                    states.append(state.numpy())
                     batch_indeces.append(batch)
                     run_indeces.append(run)
 
@@ -130,7 +158,8 @@ def generate_dataset(
                     {
                         "action": actions,
                         "reward": rewards,
-                        "f_curr": f_currs,
+                        "f_cur": f_curs,
+                        "x_cur": x_curs,
                         "state": states,
                         "batch": batch_indeces,
                         "run": run_indeces,
@@ -151,6 +180,7 @@ def generate_dataset(
             replay_buffer,
             results_dir,
             run_info,
+            starting_points,
         )
         print("Saved checkpoint, because run was about to end")
 
@@ -161,6 +191,7 @@ def generate_dataset(
         replay_buffer,
         results_dir,
         run_info,
+        starting_points,
     )
 
     if save_rep_buffer or save_run_data:

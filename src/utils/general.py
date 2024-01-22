@@ -9,7 +9,7 @@ import torch
 from CORL.algorithms.offline import td3_bc
 from dacbench.benchmarks import ToySGDBenchmark
 
-from src.agents.step_decay import StepDecayAgent
+from src.agents import ExponentialDecayAgent, StepDecayAgent
 
 if TYPE_CHECKING:
     from dacbench import AbstractBenchmark
@@ -44,7 +44,9 @@ def get_agent(
     device: str,
 ) -> Any:
     if agent_type == "step_decay":
-        return StepDecayAgent(**agent_config)
+        return StepDecayAgent(**agent_config["params"])
+    elif agent_type == "exponential_decay":
+        ExponentialDecayAgent(**agent_config["params"])
     if agent_type == "td3_bc":
         config = td3_bc.TrainConfig
 

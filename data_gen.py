@@ -1,4 +1,5 @@
 import argparse
+import json
 import time
 
 from src.utils.generate_data import generate_dataset
@@ -8,10 +9,13 @@ if __name__ == "__main__":
         description="Run any agent on the ToySGD benchmark"
     )
     parser.add_argument("--num_runs", type=int, default=1)
-    parser.add_argument("--num_batches", type=int, default=20)
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--agent_type", type=str, default="step_decay")
-    parser.add_argument("--environment_type", type=str, default="ToySGD")
+    parser.add_argument("--agent_config", type=str,
+                        help="Path to the agent configuration",
+                        default="configs/agents/step_decay/default.json")
+    parser.add_argument("--env_config", type=str,
+                        help="Path to the environment configuration",
+                        default="configs/environment/Rosenbrock_default.json")
     parser.add_argument(
         "--results_dir",
         type=str,
@@ -40,17 +44,18 @@ if __name__ == "__main__":
     args = parser.parse_args()
     start = time.time()
 
-    agent_config = {
-        "gamma": 0.2,
-        "step_size": 2,
-    }
+    # Read agent config from file
+    with open(args.agent_config, "r") as file:
+        agent_config = json.load(file)
+
+    # Read environment config from file
+    with open(args.env_config, "r") as file:
+        env_config = json.load(file)
 
     generate_dataset(
-        agent_type=args.agent_type,
         agent_config=agent_config,
-        environment_type=args.environment_type,
+        env_config=env_config,
         num_runs=args.num_runs,
-        num_batches=args.num_batches,
         seed=args.seed,
         timeout=args.timeout,
         results_dir=args.results_dir,

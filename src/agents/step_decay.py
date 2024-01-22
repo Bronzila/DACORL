@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import numpy as np
+import torch
 
 
 class StepDecayAgent:
@@ -11,13 +11,13 @@ class StepDecayAgent:
 
     def act(self, state):
         self._step += 1
-        learning_rate = state[3]
+        learning_rate = state[1]
 
         if self._step % self._step_size == 0:
             learning_rate = learning_rate * self._gamma
 
         # return log of learning rate
-        return np.log10(learning_rate)
+        return torch.log10(learning_rate).item()
 
     def reset(self) -> None:
         self._step = 0
