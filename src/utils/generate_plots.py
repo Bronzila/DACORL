@@ -17,6 +17,7 @@ def get_problem_from_name(function_name):
     return problem
 
 def plot_optimization_trace(dir_path, show=False):
+    plt.clf()
     # Get paths
     run_data_path = os.path.join(dir_path, "aggregated_run_data.csv")
     run_info_path = os.path.join(dir_path, "run_info.json")
@@ -84,6 +85,7 @@ def plot_optimization_trace(dir_path, show=False):
         plt.savefig(os.path.join(save_path, "point_traj.svg"))
 
 def plot_actions(dir_path, show=False):
+    plt.clf()
     # Get paths
     run_data_path = os.path.join(dir_path, "aggregated_run_data.csv")
     run_info_path = os.path.join(dir_path, "run_info.json")

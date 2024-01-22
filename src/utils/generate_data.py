@@ -8,7 +8,7 @@ import pandas as pd
 import torch
 from dacbench.benchmarks import ToySGD2DBenchmark
 
-from src.agents import StepDecayAgent, ExponentialDecayAgent
+from src.agents import ExponentialDecayAgent, StepDecayAgent
 from src.utils.replay_buffer import ReplayBuffer
 
 
@@ -46,17 +46,25 @@ def save_data(
     if save_run_data:
         aggregated_run_data.to_csv(os.path.join(results_dir, "aggregated_run_data.csv"))
 
-def get_environment(environment_type):
-    if environment_type == "ToySGD":
+def get_environment(env_config):
+    if env_config["type"] == "ToySGD":
         # setup benchmark
         bench = ToySGD2DBenchmark()
+        bench.config.cutoff = env_config["num_batches"]
+        bench.config.low = env_config["low"]
+        bench.config.high = env_config["high"]
+        bench.config.function = env_config["function"]
         return bench.get_environment()
     else:
-        print(f"No environment of type {environment_type} found.")
+        print(f"No environment of type {env_config['type']} found.")
+        return None
 
-def generate_dataset(agent_type, agent_config, environment_type, num_runs,
-                     num_batches, seed, results_dir, save_run_data,
+def generate_dataset(agent_config, env_config,
+                     num_runs, seed, results_dir, save_run_data,
                      save_rep_buffer, timeout):
+
+    if not (save_run_data or save_rep_buffer):
+        input("You are not saving any results. Enter a key to continue anyway.")
 
     if timeout > 0:
         # conversion from hours to seconds
@@ -66,15 +74,17 @@ def generate_dataset(agent_type, agent_config, environment_type, num_runs,
 
     set_seeds(seed)
 
-    if not (save_run_data or save_rep_buffer):
-        input("You are not saving any results. Enter a key to continue anyway.")
+    # Get types
+    environment_type = env_config["type"]
+    agent_type = agent_config["type"]
 
     if results_dir == "":
         results_dir = os.path.join("data", agent_type, environment_type)
     else:
         results_dir = os.path.join(results_dir, agent_type, environment_type)
 
-    env = get_environment(environment_type)
+    num_batches = env_config["num_batches"]
+    env = get_environment(env_config)
     state = env.reset()[0]
     state_dim = state.shape[0]
     buffer_size = num_runs * num_batches
@@ -84,9 +94,9 @@ def generate_dataset(agent_type, agent_config, environment_type, num_runs,
 
     agent = None
     if agent_type == "step_decay":
-        agent = StepDecayAgent(**agent_config)
+        agent = StepDecayAgent(**agent_config["params"])
     elif agent_type == "exponential_decay":
-        agent = ExponentialDecayAgent(**agent_config)
+        agent = ExponentialDecayAgent(**agent_config["params"])
     else:
         print(f"No agent with type {agent_type} implemented.")
 
@@ -97,7 +107,7 @@ def generate_dataset(agent_type, agent_config, environment_type, num_runs,
         "seed": seed,
         "num_runs": num_runs,
         "num_batches": num_batches,
-        "function": env.instance["function"],
+        "function": env.function,
         "lower_bound": env.lower_bound,
         "upper_bound": env.upper_bound,
     }

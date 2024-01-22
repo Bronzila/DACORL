@@ -1,0 +1,7 @@
+{
+    "type": "step_decay",
+    "params": {
+        "gamma": 0.9,
+        "step_size": 3
+    }
+}

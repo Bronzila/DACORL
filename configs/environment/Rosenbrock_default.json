@@ -1,0 +1,7 @@
+{
+    "type": "ToySGD",
+    "function": "Rosenbrock",
+    "num_batches": 100,
+    "high": 5,
+    "low": -5
+}
