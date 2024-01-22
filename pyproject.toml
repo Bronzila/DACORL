@@ -9,7 +9,7 @@ dependencies = [
   "tqdm==4.64.0",
   "wandb==0.12.21",
   "pandas",
-  "dacbench@git+https://github.com/Bronzila/DACBench.git#egg=ToySGD_MTDAC",
+#  "dacbench@git+https://github.com/Bronzila/DACBench.git@ToySGD_MTDAC",
   "gym",
 ]
 classifiers = [
