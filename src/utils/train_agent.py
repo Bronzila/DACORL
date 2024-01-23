@@ -21,6 +21,7 @@ def train_agent(
     agent_type: str,
     agent_config: dict,
     num_train_iter: int,
+    num_eval_iter: int,
     batch_size: int,
     val_freq: int,
     seed: int,
@@ -74,13 +75,13 @@ def train_agent(
             eval_data = test_agent(
                 actor=agent.actor,
                 env=env,
-                n_episodes=50,
+                n_episodes=num_eval_iter,
                 seed=run_info["seed"],
             )
-            eval_data.to_csv(results_dir / "eval_data.csv")
 
             # Save agent early to enable continuation of pipeline
             save_agent(agent.state_dict(), results_dir, t)
+            eval_data.to_csv(results_dir / f"{t + 1}" / "eval_data.csv")
 
     if not debug:
         wandb.finish()  # type: ignore
