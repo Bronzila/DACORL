@@ -8,7 +8,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--data_dir",
         type=str,
-        default="",
+        default="data",
         help="path to the directory where replay_buffer and info about the replay_buffer are stored",
     )
     parser.add_argument(
@@ -16,7 +16,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--agent_config",
-        default=None,
+        default={},
         help="Not functional yet. Change configuration of the respective agent.",
     )
     parser.add_argument("--num_train_iter", type=int, default=5e6)
@@ -40,6 +40,11 @@ if __name__ == "__main__":
         default=0,
         help="Timeout in sec. 0 -> no timeout",
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Run for max. 5 iterations and don't log in wanbd."
+    )
 
     args = parser.parse_args()
     start = time.time()
@@ -54,6 +59,7 @@ if __name__ == "__main__":
         seed=args.seed,
         wandb_group=args.wandb_group,
         timeout=args.timeout,
+        debug=args.debug,
     )
 
     end = time.time()
