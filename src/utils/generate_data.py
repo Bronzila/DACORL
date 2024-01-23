@@ -5,7 +5,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from dacbench.benchmarks import ToySGD2DBenchmark
 
 from src.utils.general import (
     OutOfTimeError,
@@ -25,7 +24,7 @@ def save_data(
     results_dir,
     run_info,
     starting_points,
-):
+) -> None:
     run_info["starting_points"] = starting_points
     save_path = Path(results_dir, "rep_buffer")
     if save_rep_buffer:
@@ -41,20 +40,6 @@ def save_data(
         )
 
 
-def get_environment(env_config: dict):
-    if env_config["type"] == "ToySGD":
-        # setup benchmark
-        bench = ToySGD2DBenchmark()
-        bench.config.cutoff = env_config["num_batches"]
-        bench.config.low = env_config["low"]
-        bench.config.high = env_config["high"]
-        bench.config.function = env_config["function"]
-        return bench.get_environment()
-    else:
-        print(f"No environment of type {env_config['type']} found.")
-        return None
-
-
 def generate_dataset(
     agent_config: dict,
     env_config: dict,
@@ -64,7 +49,7 @@ def generate_dataset(
     timeout: int,
     save_run_data: bool,
     save_rep_buffer: bool,
-):
+) -> None:
     set_timeout(timeout)
     set_seeds(seed)
 
@@ -95,14 +80,11 @@ def generate_dataset(
 
     aggregated_run_data = None
     run_info = {
-        "agent_type": agent_type,
-        "environment": environment_type,
+        "agent": agent_config,
+        "environment": env_config,
         "seed": seed,
         "num_runs": num_runs,
         "num_batches": num_batches,
-        "function": env.function,
-        "lower_bound": env.lower_bound,
-        "upper_bound": env.upper_bound,
     }
 
     try:
