@@ -2,17 +2,15 @@ from __future__ import annotations
 
 import random
 import signal
-from typing import TYPE_CHECKING, Any
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 import torch
 from CORL.algorithms.offline import td3_bc
-from dacbench.benchmarks import ToySGDBenchmark
+from dacbench.benchmarks import ToySGD2DBenchmark
 
 from src.agents import ExponentialDecayAgent, StepDecayAgent
-
-if TYPE_CHECKING:
-    from dacbench import AbstractBenchmark
 
 
 # Time out related class and function
@@ -20,7 +18,7 @@ class OutOfTimeError(Exception):
     pass
 
 
-def timeouthandler(signum, frame) -> None:
+def timeouthandler(signum: Any, frame: Any) -> None:
     raise OutOfTimeError
 
 
@@ -41,12 +39,12 @@ def set_seeds(seed: int) -> None:
 def get_agent(
     agent_type: str,
     agent_config: dict[str, Any],
-    device: str,
+    device: str = "cpu",
 ) -> Any:
     if agent_type == "step_decay":
         return StepDecayAgent(**agent_config["params"])
-    elif agent_type == "exponential_decay":
-        ExponentialDecayAgent(**agent_config["params"])
+    if agent_type == "exponential_decay":
+        return ExponentialDecayAgent(**agent_config["params"])
     if agent_type == "td3_bc":
         config = td3_bc.TrainConfig
 
@@ -88,12 +86,25 @@ def get_agent(
     )
 
 
-def get_environment(environment_type: str) -> AbstractBenchmark:
-    if environment_type == "ToySGD":
+def get_environment(env_config: dict) -> Any:
+    if env_config["type"] == "ToySGD":
         # setup benchmark
-        bench = ToySGDBenchmark()
+        bench = ToySGD2DBenchmark()
+        bench.config.cutoff = env_config["num_batches"]
+        bench.config.low = env_config["low"]
+        bench.config.high = env_config["high"]
+        bench.config.function = env_config["function"]
         return bench.get_environment()
+    else:
+        raise NotImplementedError(
+            f"No environment of type {env_config['type']} found.",
+        )
 
-    raise NotImplementedError(
-        f"No environment of type {environment_type} found.",
-    )
+
+def save_agent(state_dicts: dict, results_dir: Path, iteration: int) -> None:
+    filename = results_dir / f"{iteration + 1}"
+    if not filename.exists():
+        filename.mkdir(parents=True)
+
+    for key, s in state_dicts.items():
+        torch.save(s, filename / f"agent_{key}")
