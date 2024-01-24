@@ -6,7 +6,8 @@ from src.utils.generate_data import generate_dataset
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Run any agent on the ToySGD benchmark")
+        description="Run any agent on the ToySGD benchmark"
+    )
     parser.add_argument("--num_runs", type=int, default=1)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--agent_config", type=str,
@@ -15,10 +16,10 @@ if __name__ == "__main__":
     parser.add_argument("--env_config", type=str,
                         help="Path to the environment configuration",
                         default="configs/environment/Rosenbrock_default.json")
-    parser.add_argument("--results_dir", type=str, default="")
     parser.add_argument(
-        "--data_dir",
+        "--results_dir",
         type=str,
+        default="",
         help="path to the directory where replay_buffer and info about the replay_buffer are stored",
     )
     parser.add_argument(

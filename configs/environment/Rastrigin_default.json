@@ -2,6 +2,7 @@
     "type": "ToySGD",
     "function": "Rastrigin",
     "num_batches": 100,
+    "initial_learning_rate": 0.01,
     "high": 5,
     "low": -5
 }

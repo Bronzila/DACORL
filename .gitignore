@@ -1,5 +1,6 @@
 # Ours
 data/*
+wandb/
 .vscode/
 
 # Byte-compiled / optimized / DLL files

@@ -1,29 +1,20 @@
+from __future__ import annotations
+
 import json
-import os
-import random
-import signal
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import torch
-from dacbench.benchmarks import ToySGD2DBenchmark
 
-from src.agents import ExponentialDecayAgent, StepDecayAgent
+from src.utils.general import (
+    OutOfTimeError,
+    get_agent,
+    get_environment,
+    set_seeds,
+    set_timeout,
+)
 from src.utils.replay_buffer import ReplayBuffer
 
-
-# Time out related class and function
-class OutOfTimeException(Exception):
-    pass
-
-
-def timeouthandler(signum, frame):
-    raise OutOfTimeException
-
-def set_seeds(seed):
-    torch.manual_seed(seed)
-    np.random.seed(seed)
-    random.seed(seed)
 
 def save_data(
     save_run_data,
@@ -33,83 +24,67 @@ def save_data(
     results_dir,
     run_info,
     starting_points,
-):
+) -> None:
     run_info["starting_points"] = starting_points
-    save_path = os.path.join(results_dir, f"rep_buffer")
+    save_path = Path(results_dir, "rep_buffer")
     if save_rep_buffer:
         replay_buffer.save(save_path)
-        with open(os.path.join(results_dir, f"run_info.json"), "w") as f:
+        with Path(results_dir, "run_info.json").open(mode="w") as f:
             json.dump(run_info, f, indent=4)
 
-    if not os.path.exists(results_dir):
-        os.makedirs(results_dir)
+    if not results_dir.exists():
+        results_dir.mkdir(parents=True)
     if save_run_data:
-        aggregated_run_data.to_csv(os.path.join(results_dir, "aggregated_run_data.csv"))
+        aggregated_run_data.to_csv(
+            Path(results_dir, "aggregated_run_data.csv"),
+        )
 
-def get_environment(env_config):
-    if env_config["type"] == "ToySGD":
-        # setup benchmark
-        bench = ToySGD2DBenchmark()
-        bench.config.cutoff = env_config["num_batches"]
-        bench.config.low = env_config["low"]
-        bench.config.high = env_config["high"]
-        bench.config.function = env_config["function"]
-        return bench.get_environment()
-    else:
-        print(f"No environment of type {env_config['type']} found.")
-        return None
 
-def generate_dataset(agent_config, env_config,
-                     num_runs, seed, results_dir, save_run_data,
-                     save_rep_buffer, timeout):
+def generate_dataset(
+    agent_config: dict,
+    env_config: dict,
+    num_runs: int,
+    seed: int,
+    results_dir: str,
+    timeout: int,
+    save_run_data: bool,
+    save_rep_buffer: bool,
+) -> None:
+    set_timeout(timeout)
+    set_seeds(seed)
 
     if not (save_run_data or save_rep_buffer):
         input("You are not saving any results. Enter a key to continue anyway.")
-
-    if timeout > 0:
-        # conversion from hours to seconds
-        timeout = timeout * 60 * 60
-        signal.signal(signal.SIGALRM, timeouthandler)
-        signal.alarm(timeout)
-
-    set_seeds(seed)
 
     # Get types
     environment_type = env_config["type"]
     agent_type = agent_config["type"]
 
     if results_dir == "":
-        results_dir = os.path.join("data", agent_type, environment_type)
+        results_dir = Path("data", agent_type, environment_type)
     else:
-        results_dir = os.path.join(results_dir, agent_type, environment_type)
+        results_dir = Path(results_dir, agent_type, environment_type)
 
     num_batches = env_config["num_batches"]
     env = get_environment(env_config)
     state = env.reset()[0]
     state_dim = state.shape[0]
     buffer_size = num_runs * num_batches
-    replay_buffer = ReplayBuffer(state_dim=state_dim,
-                                 action_dim=1,
-                                 buffer_size=buffer_size)
+    replay_buffer = ReplayBuffer(
+        state_dim=state_dim,
+        action_dim=1,
+        buffer_size=buffer_size,
+    )
 
-    agent = None
-    if agent_type == "step_decay":
-        agent = StepDecayAgent(**agent_config["params"])
-    elif agent_type == "exponential_decay":
-        agent = ExponentialDecayAgent(**agent_config["params"])
-    else:
-        print(f"No agent with type {agent_type} implemented.")
+    agent = get_agent(agent_type, agent_config, "cpu")
 
     aggregated_run_data = None
     run_info = {
-        "agent_type": agent_type,
-        "environment": environment_type,
+        "agent": agent_config,
+        "environment": env_config,
         "seed": seed,
         "num_runs": num_runs,
         "num_batches": num_batches,
-        "function": env.function,
-        "lower_bound": env.lower_bound,
-        "upper_bound": env.upper_bound,
     }
 
     try:
@@ -136,12 +111,20 @@ def generate_dataset(agent_config, env_config,
                 run_indeces.append(run)
 
             for batch in range(1, num_batches):
-                print(f"Starting batch {batch}/{num_batches} of run {run}. \
-                    Total {batch + run * num_batches}/{num_runs * num_batches}")
+                print(
+                    f"Starting batch {batch}/{num_batches} of run {run}. \
+                    Total {batch + run * num_batches}/{num_runs * num_batches}",
+                )
 
                 action = agent.act(state)
                 next_state, reward, done, truncated, info = env.step(action)
-                replay_buffer.add_transition(state, action, next_state, reward, truncated)
+                replay_buffer.add_transition(
+                    state,
+                    action,
+                    next_state,
+                    reward,
+                    truncated,
+                )
                 state = next_state
                 if save_run_data:
                     actions.append(action)
@@ -153,22 +136,25 @@ def generate_dataset(agent_config, env_config,
                     run_indeces.append(run)
 
             if save_run_data:
-                run_data = pd.DataFrame({
-                    "action": actions,
-                    "reward": rewards,
-                    "f_cur": f_curs,
-                    "x_cur": x_curs,
-                    "state": states,
-                    "batch": batch_indeces,
-                    "run": run_indeces,
-                })
+                run_data = pd.DataFrame(
+                    {
+                        "action": actions,
+                        "reward": rewards,
+                        "f_cur": f_curs,
+                        "x_cur": x_curs,
+                        "state": states,
+                        "batch": batch_indeces,
+                        "run": run_indeces,
+                    },
+                )
                 if aggregated_run_data is None:
                     aggregated_run_data = run_data
                 else:
                     aggregated_run_data = aggregated_run_data.append(
-                        run_data, ignore_index=True
+                        run_data,
+                        ignore_index=True,
                     )
-    except OutOfTimeException:
+    except OutOfTimeError:
         save_data(
             save_run_data,
             aggregated_run_data,

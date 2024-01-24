@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import os
 
@@ -16,6 +18,7 @@ def get_problem_from_name(function_name):
         problem = Rastrigin()
     return problem
 
+
 def plot_optimization_trace(dir_path, show=False):
     plt.clf()
     # Get paths
@@ -23,11 +26,12 @@ def plot_optimization_trace(dir_path, show=False):
     run_info_path = os.path.join(dir_path, "run_info.json")
 
     # Get run info from file
-    with open(run_info_path, "r") as file:
+    with open(run_info_path) as file:
         run_info = json.load(file)
-    function_name = run_info["function"]
-    lower_bound = run_info["lower_bound"]
-    upper_bound = run_info["upper_bound"]
+        env_info = run_info["environment"]
+    function_name = env_info["function"]
+    lower_bound = env_info["low"]
+    upper_bound = env_info["high"]
 
     # Define problem
     problem = get_problem_from_name(function_name)
@@ -47,16 +51,40 @@ def plot_optimization_trace(dir_path, show=False):
     Z = objective_function([torch.Tensor(X), torch.Tensor(Y)]).numpy()
 
     # Use logarithmically spaced contour levels for varying detail
-    contour_levels = np.logspace(0, 5, 10)
+    if function_name == "Rosenbrock":
+        contour_levels = np.logspace(-3, 3.6, 30)
+    else:
+        contour_levels = 10
 
     # Plot the function
-    contour_plot = plt.contour(X, Y, Z, levels=contour_levels, cmap="viridis", zorder=5)
+    contour_plot = plt.contourf(
+        X,
+        Y,
+        Z,
+        levels=contour_levels,
+        cmap="viridis",
+        zorder=5,
+    )
     # Plot the points from the DataFrame
-    sns.scatterplot(x=x_values, y=y_values, color="red", label="Trace", zorder=10)
+    sns.scatterplot(
+        x=x_values,
+        y=y_values,
+        color="red",
+        label="Trace",
+        zorder=10,
+    )
 
     # Add minimum
     min_point = problem.x_min.tolist()
-    sns.scatterplot(x=[min_point[0]], y=[min_point[1]], color="green", s=100, marker='*', label=f"Minimum Point {min_point}", zorder=10)
+    sns.scatterplot(
+        x=[min_point[0]],
+        y=[min_point[1]],
+        color="green",
+        s=100,
+        marker="*",
+        label=f"Minimum Point {min_point}",
+        zorder=10,
+    )
 
     # Add labels and a legend
     plt.xlabel("X")
@@ -84,6 +112,7 @@ def plot_optimization_trace(dir_path, show=False):
 
         plt.savefig(os.path.join(save_path, "point_traj.svg"))
 
+
 def plot_actions(dir_path, show=False):
     plt.clf()
     # Get paths
@@ -94,7 +123,7 @@ def plot_actions(dir_path, show=False):
     df = pd.read_csv(run_data_path)
 
     # Get run info from file
-    with open(run_info_path, "r") as file:
+    with open(run_info_path) as file:
         run_info = json.load(file)
         function_name = run_info["function"]
         drawstyle = "default"
