@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import torch
-from dacbench.envs.env_utils.function_definitions import Rastrigin, Rosenbrock
+from dacbench.envs.env_utils.function_definitions import Rastrigin, Rosenbrock, Ackley, Sphere
 
 
 def get_problem_from_name(function_name):
@@ -16,6 +16,10 @@ def get_problem_from_name(function_name):
         problem = Rosenbrock()
     elif function_name == "Rastrigin":
         problem = Rastrigin()
+    elif function_name == "Ackley":
+        problem = Ackley()
+    elif function_name == "Sphere":
+        problem = Sphere()
     return problem
 
 
