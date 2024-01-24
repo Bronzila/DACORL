@@ -32,9 +32,15 @@ if __name__ == "__main__":
         help="Either show or save the selected plots. Default is save.",
         action=argparse.BooleanOptionalAction,
     )
+    parser.add_argument(
+        "--num_runs",
+        help="Path to the directory including the run information and run data",
+        type=int,
+        default=1,
+    )
     args = parser.parse_args()
 
     if args.optim_trace:
-        plot_optimization_trace(args.dir_path, args.show)
+        plot_optimization_trace(args.dir_path, args.show, args.num_runs)
     if args.action:
         plot_actions(args.dir_path, args.show)
