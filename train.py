@@ -1,7 +1,7 @@
 import argparse
 import time
 
-from utils.train_agent import train_agent
+from src.utils.train_agent import train_agent
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train any offline agent ")

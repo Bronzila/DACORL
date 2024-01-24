@@ -5,15 +5,15 @@ from pathlib import Path
 
 import wandb
 
-from src.utils.replay_buffer import ReplayBuffer
-from utils.general import (
+from src.utils.general import (
     get_agent,
     get_environment,
     save_agent,
     set_seeds,
     set_timeout,
 )
-from utils.test_agent import test_agent
+from src.utils.replay_buffer import ReplayBuffer
+from src.utils.test_agent import test_agent
 
 
 def train_agent(
