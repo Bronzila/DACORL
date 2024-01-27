@@ -109,3 +109,9 @@ def save_agent(state_dicts: dict, results_dir: Path, iteration: int) -> None:
 
     for key, s in state_dicts.items():
         torch.save(s, filename / f"agent_{key}")
+
+
+agent_to_save_path = {
+    "step_decay": "step_decay_1",
+    "exponential_decay": "exponential_decay_2",
+}
