@@ -61,9 +61,19 @@ def generate_dataset(
     agent_type = agent_config["type"]
 
     if results_dir == "":
-        results_dir = Path("data", agent_type, environment_type)
+        results_dir = Path(
+            "data",
+            agent_type,
+            environment_type,
+            env_config["function"],
+        )
     else:
-        results_dir = Path(results_dir, agent_type, environment_type)
+        results_dir = Path(
+            results_dir,
+            agent_type,
+            environment_type,
+            env_config["function"],
+        )
 
     num_batches = env_config["num_batches"]
     env = get_environment(env_config)

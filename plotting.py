@@ -3,9 +3,11 @@ import argparse
 from src.utils.generate_plots import plot_optimization_trace, plot_actions
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Generate plots based on run data")
+    parser = argparse.ArgumentParser(
+        description="Generate plots based on run data"
+    )
     parser.add_argument(
-        "--dir_path",
+        "--data_dir",
         help="Path to the directory including the run information and run data",
     )
     parser.add_argument(
@@ -41,6 +43,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.optim_trace:
-        plot_optimization_trace(args.dir_path, args.show, args.num_runs)
+        plot_optimization_trace(args.data_dir, args.show, args.num_runs)
     if args.action:
-        plot_actions(args.dir_path, args.show)
+        plot_actions(args.data_dir, args.show)

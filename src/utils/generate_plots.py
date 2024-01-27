@@ -1,14 +1,19 @@
 from __future__ import annotations
 
 import json
-import os
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import torch
-from dacbench.envs.env_utils.function_definitions import Rastrigin, Rosenbrock, Ackley, Sphere
+from dacbench.envs.env_utils.function_definitions import (
+    Ackley,
+    Rastrigin,
+    Rosenbrock,
+    Sphere,
+)
 
 
 def get_problem_from_name(function_name):
@@ -25,11 +30,11 @@ def get_problem_from_name(function_name):
 
 def plot_optimization_trace(dir_path, show=False, num_runs=1):
     # Get paths
-    run_data_path = os.path.join(dir_path, "aggregated_run_data.csv")
-    run_info_path = os.path.join(dir_path, "run_info.json")
+    run_data_path = Path(dir_path, "aggregated_run_data.csv")
+    run_info_path = Path(dir_path, "run_info.json")
 
     # Get run info from file
-    with open(run_info_path) as file:
+    with Path.open(run_info_path) as file:
         run_info = json.load(file)
         env_info = run_info["environment"]
     function_name = env_info["function"]
@@ -109,32 +114,31 @@ def plot_optimization_trace(dir_path, show=False, num_runs=1):
         if show:
             plt.show()
         else:
-            save_path = os.path.join(
+            save_path = Path(
                 dir_path,
                 "figures",
                 "point_traj",
-                function_name,
             )
 
-        if not os.path.isdir(save_path):
-            os.makedirs(save_path)
+        if not save_path.exists():
+            save_path.mkdir(parents=True)
 
-        plt.savefig(os.path.join(save_path, f"point_traj_{idx}.svg"))
+        plt.savefig(save_path / f"point_traj_{idx}.svg")
 
 
 def plot_actions(dir_path, show=False):
     plt.clf()
     # Get paths
-    run_data_path = os.path.join(dir_path, "aggregated_run_data.csv")
-    run_info_path = os.path.join(dir_path, "run_info.json")
+    run_data_path = Path(dir_path, "aggregated_run_data.csv")
+    run_info_path = Path(dir_path, "run_info.json")
 
     # Read run data
     df = pd.read_csv(run_data_path)
 
     # Get run info from file
-    with open(run_info_path) as file:
+    with Path.open(run_info_path) as file:
         run_info = json.load(file)
-        function_name = run_info["function"]
+        run_info["function"]
         drawstyle = "default"
         if run_info["agent_type"] == "step_decay":
             drawstyle = "steps-post"
@@ -151,14 +155,13 @@ def plot_actions(dir_path, show=False):
     if show:
         plt.show()
     else:
-        save_path = os.path.join(
+        save_path = Path(
             dir_path,
             "figures",
             "action",
-            function_name,
         )
 
-        if not os.path.isdir(save_path):
-            os.makedirs(save_path)
+        if not save_path.exists():
+            save_path.mkdir(parents=True)
 
-        plt.savefig(os.path.join(save_path, "action.svg"))
+        plt.savefig(save_path / "action.svg")

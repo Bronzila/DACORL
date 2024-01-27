@@ -1,5 +1,6 @@
 import argparse
 import json
+from pathlib import Path
 import time
 
 from src.utils.generate_data import generate_dataset
@@ -10,12 +11,18 @@ if __name__ == "__main__":
     )
     parser.add_argument("--num_runs", type=int, default=1)
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--agent_config", type=str,
-                        help="Path to the agent configuration",
-                        default="configs/agents/step_decay/default.json")
-    parser.add_argument("--env_config", type=str,
-                        help="Path to the environment configuration",
-                        default="configs/environment/Rosenbrock_default.json")
+    parser.add_argument(
+        "--agent",
+        type=str,
+        help="Agent for data generation",
+        default="step_decay",
+    )
+    parser.add_argument(
+        "--env",
+        type=str,
+        help="Environment function for data generation",
+        default="Rosenbrock_default",
+    )
     parser.add_argument(
         "--results_dir",
         type=str,
@@ -45,11 +52,13 @@ if __name__ == "__main__":
     start = time.time()
 
     # Read agent config from file
-    with open(args.agent_config, "r") as file:
+    agent_config_path = Path("configs", "agents", args.agent, "default.json")
+    with open(agent_config_path, "r") as file:
         agent_config = json.load(file)
 
     # Read environment config from file
-    with open(args.env_config, "r") as file:
+    env_config_path = Path("configs", "environment", f"{args.env}.json")
+    with open(env_config_path, "r") as file:
         env_config = json.load(file)
 
     generate_dataset(
