@@ -10,11 +10,11 @@ from tqdm import tqdm
 def test_agent(
     actor: Any,
     env: Any,
-    n_episodes: int,
+    n_runs: int,
+    n_batches: int,
     seed: int,
 ) -> pd.DataFrame:
     env.seed(seed)
-    state, _ = env.reset()
     actor.eval()
 
     actions = []
@@ -22,23 +22,30 @@ def test_agent(
     x_curs = []
     f_curs = []
     states = []
+    runs = []
+    batches = []
 
-    actions.append(np.NaN)
-    rewards.append(np.NaN)
-    x_curs.append(env.x_cur.tolist())
-    f_curs.append(env.objective_function(env.x_cur).numpy())
-    states.append(state.numpy())
-
-    for _ in tqdm(range(n_episodes)):
-        action = actor.act(state)
-        next_state, reward, done, _, _ = env.step(action.item())
-        state = next_state
-
-        actions.append(action)
-        rewards.append(reward.numpy())
+    for run_id in tqdm(range(n_runs)):
+        state, _ = env.reset()
+        actions.append(np.NaN)
+        rewards.append(np.NaN)
         x_curs.append(env.x_cur.tolist())
         f_curs.append(env.objective_function(env.x_cur).numpy())
         states.append(state.numpy())
+        runs.append(run_id)
+        batches.append(-1)
+        for batch_id in tqdm(range(n_batches)):
+            action = actor.act(state)
+            next_state, reward, done, _, _ = env.step(action.item())
+            state = next_state
+
+            actions.append(action)
+            rewards.append(reward.numpy())
+            x_curs.append(env.x_cur.tolist())
+            f_curs.append(env.objective_function(env.x_cur).numpy())
+            states.append(state.numpy())
+            runs.append(run_id)
+            batches.append(batch_id)
 
     actor.train()
     return pd.DataFrame(
@@ -48,5 +55,7 @@ def test_agent(
             "x_cur": x_curs,
             "f_cur": f_curs,
             "states": states,
+            "run": runs,
+            "batch": batches,
         },
     )
