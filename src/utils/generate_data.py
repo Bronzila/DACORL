@@ -89,7 +89,7 @@ def generate_dataset(
 
     agent = get_agent(agent_type, agent_config, "cpu")
 
-    aggregated_run_data = None
+    aggregated_run_data = []
     run_info = {
         "agent": agent_config,
         "environment": env_config,
@@ -158,17 +158,11 @@ def generate_dataset(
                         "run": run_indeces,
                     },
                 )
-                if aggregated_run_data is None:
-                    aggregated_run_data = run_data
-                else:
-                    aggregated_run_data = aggregated_run_data.append(
-                        run_data,
-                        ignore_index=True,
-                    )
+                aggregated_run_data.append(run_data)
     except OutOfTimeError:
         save_data(
             save_run_data,
-            aggregated_run_data,
+            pd.concat(aggregated_run_data),
             save_rep_buffer,
             replay_buffer,
             results_dir,
@@ -179,7 +173,7 @@ def generate_dataset(
 
     save_data(
         save_run_data,
-        aggregated_run_data,
+        pd.concat(aggregated_run_data),
         save_rep_buffer,
         replay_buffer,
         results_dir,
