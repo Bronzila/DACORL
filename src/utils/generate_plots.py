@@ -138,9 +138,8 @@ def plot_actions(dir_path, show=False):
     # Get run info from file
     with Path.open(run_info_path) as file:
         run_info = json.load(file)
-        run_info["function"]
         drawstyle = "default"
-        if run_info["agent_type"] == "step_decay":
+        if run_info["agent"]["type"] == "step_decay":
             drawstyle = "steps-post"
 
     # Remove initial row

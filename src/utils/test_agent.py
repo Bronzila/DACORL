@@ -33,13 +33,13 @@ def test_agent(
         f_curs.append(env.objective_function(env.x_cur).numpy())
         states.append(state.numpy())
         runs.append(run_id)
-        batches.append(-1)
-        for batch_id in tqdm(range(n_batches)):
+        batches.append(0)
+        for batch_id in tqdm(range(1, n_batches)):
             action = actor.act(state)
             next_state, reward, done, _, _ = env.step(action.item())
             state = next_state
 
-            actions.append(action)
+            actions.append(action.item())
             rewards.append(reward.numpy())
             x_curs.append(env.x_cur.tolist())
             f_curs.append(env.objective_function(env.x_cur).numpy())
