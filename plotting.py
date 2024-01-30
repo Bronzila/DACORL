@@ -11,6 +11,10 @@ if __name__ == "__main__":
         help="Path to the directory including the run information and run data",
     )
     parser.add_argument(
+        "--agent_path",
+        help="Relative path of the RL agents data based on data_dir.",
+    )
+    parser.add_argument(
         "--optim_trace",
         help="Generate plots for optimization trace",
         action=argparse.BooleanOptionalAction,
@@ -43,6 +47,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.optim_trace:
-        plot_optimization_trace(args.data_dir, args.show, args.num_runs)
+        plot_optimization_trace(
+            args.data_dir, args.agent_path, args.show, args.num_runs
+        )
     if args.action:
-        plot_actions(args.data_dir, args.show)
+        plot_actions(args.data_dir, args.agent_path, args.show)
