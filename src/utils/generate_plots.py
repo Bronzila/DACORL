@@ -28,9 +28,12 @@ def get_problem_from_name(function_name):
     return problem
 
 
-def plot_optimization_trace(dir_path, show=False, num_runs=1):
+def plot_optimization_trace(dir_path, agent_path=None, show=False, num_runs=1):
     # Get paths
-    run_data_path = Path(dir_path, "aggregated_run_data.csv")
+    if not agent_path:
+        run_data_path = Path(dir_path, "aggregated_run_data.csv")
+    else:
+        run_data_path = Path(dir_path, agent_path, "eval_data.csv")
     run_info_path = Path(dir_path, "run_info.json")
 
     # Get run info from file
@@ -126,10 +129,14 @@ def plot_optimization_trace(dir_path, show=False, num_runs=1):
         plt.savefig(save_path / f"point_traj_{idx}.svg")
 
 
-def plot_actions(dir_path, show=False):
+def plot_actions(dir_path, agent_path=None, show=False):
     plt.clf()
     # Get paths
-    run_data_path = Path(dir_path, "aggregated_run_data.csv")
+    # Get paths
+    if not agent_path:
+        run_data_path = Path(dir_path, "aggregated_run_data.csv")
+    else:
+        run_data_path = Path(dir_path, agent_path, "eval_data.csv")
     run_info_path = Path(dir_path, "run_info.json")
 
     # Read run data
@@ -138,9 +145,8 @@ def plot_actions(dir_path, show=False):
     # Get run info from file
     with Path.open(run_info_path) as file:
         run_info = json.load(file)
-        run_info["function"]
         drawstyle = "default"
-        if run_info["agent_type"] == "step_decay":
+        if run_info["agent"]["type"] == "step_decay":
             drawstyle = "steps-post"
 
     # Remove initial row

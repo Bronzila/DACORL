@@ -6,9 +6,9 @@ version = "0.0.1"
 dependencies = [
   "torch==1.13.1",
   "numpy==1.24.2",
-  "tqdm==4.64.0",
-  "wandb==0.12.21",
-  "pandas",
+  "tqdm==4.66.1",
+  "wandb==0.16.2",
+  "pandas==1.5.3",
 #  "dacbench@git+https://github.com/Bronzila/DACBench.git@ToySGD_MTDAC",
   "gym",
 ]

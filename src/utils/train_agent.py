@@ -21,7 +21,7 @@ def train_agent(
     agent_type: str,
     agent_config: dict,
     num_train_iter: int,
-    num_eval_iter: int,
+    num_eval_runs: int,
     batch_size: int,
     val_freq: int,
     seed: int,
@@ -75,7 +75,8 @@ def train_agent(
             eval_data = test_agent(
                 actor=agent.actor,
                 env=env,
-                n_episodes=num_eval_iter,
+                n_runs=num_eval_runs,
+                n_batches=run_info["environment"]["num_batches"],
                 seed=run_info["seed"],
             )
 

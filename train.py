@@ -55,7 +55,7 @@ if __name__ == "__main__":
         agent_type=args.agent_type,
         agent_config=args.agent_config,
         num_train_iter=args.num_train_iter,
-        num_eval_iter=args.num_eval_iter,
+        num_eval_runs=args.num_eval_iter,
         batch_size=args.batch_size,
         val_freq=args.val_freq,
         seed=args.seed,
