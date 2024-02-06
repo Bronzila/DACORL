@@ -53,12 +53,12 @@ if __name__ == "__main__":
 
     # Read agent config from file
     agent_config_path = Path("configs", "agents", args.agent, "default.json")
-    with open(agent_config_path, "r") as file:
+    with agent_config_path.open() as file:
         agent_config = json.load(file)
 
     # Read environment config from file
     env_config_path = Path("configs", "environment", f"{args.env}.json")
-    with open(env_config_path, "r") as file:
+    with env_config_path.open() as file:
         env_config = json.load(file)
 
     generate_dataset(

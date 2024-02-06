@@ -16,7 +16,7 @@ if __name__ == "__main__":
         help="path to the directory where replay_buffer and info about the replay_buffer are stored",
     )
     parser.add_argument("--agent_type", type=str, default="td3_bc")
-    parser.add_argument("--num_eval_iter", type=int, default=1000)
+    parser.add_argument("--num_runs", type=int, default=100)
     parser.add_argument(
         "--num_train_iter",
         type=int,
@@ -37,14 +37,15 @@ if __name__ == "__main__":
 
     state = env.reset()
     state_dim = state[0].shape[0]
-    agent_config = {"state_dim": state_dim, "action_dim": 1, "max_action": 1}
+    agent_config = {"state_dim": state_dim, "action_dim": 1, "max_action": 0}
     agent = load_agent(args.agent_type, agent_config, agent_path)
 
     # Evaluate agent
     eval_data = test_agent(
         actor=agent.actor,
         env=env,
-        n_episodes=args.num_eval_iter,
+        n_runs=args.num_runs,
+        n_batches=run_info["environment"]["num_batches"],
         seed=run_info["seed"],
     )
 
