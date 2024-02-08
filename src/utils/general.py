@@ -95,6 +95,7 @@ def get_environment(env_config: dict) -> Any:
         bench.config.high = env_config["high"]
         bench.config.function = env_config["function"]
         bench.config.initial_learning_rate = env_config["initial_learning_rate"]
+        bench.config.initial_momentum = env_config["initial_momentum"]
         return bench.get_environment()
     else:
         raise NotImplementedError(

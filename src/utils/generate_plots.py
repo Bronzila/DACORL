@@ -58,7 +58,7 @@ def plot_optimization_trace(dir_path, agent_path=None, show=False, num_runs=1):
     Z = objective_function([torch.Tensor(X), torch.Tensor(Y)]).numpy()
 
     # Use logarithmically spaced contour levels for varying detail
-    if function_name == "Rosenbrock":
+    if function_name == "Rastrigin":
         contour_levels = np.logspace(-3, 3.6, 30)
     else:
         contour_levels = 10
@@ -87,6 +87,7 @@ def plot_optimization_trace(dir_path, agent_path=None, show=False, num_runs=1):
             x=x_values,
             y=y_values,
             color="red",
+            hue=data["batch"],
             label="Trace",
             zorder=10,
         )
@@ -127,6 +128,138 @@ def plot_optimization_trace(dir_path, agent_path=None, show=False, num_runs=1):
             save_path.mkdir(parents=True)
 
         plt.savefig(save_path / f"point_traj_{idx}.svg")
+
+
+def plot_multiple_optim_trace(dir_path, agent_path, show=False, num_runs=1):
+    run_info_path = Path(dir_path, "run_info.json")
+
+    # Get run info from file
+    with Path.open(run_info_path) as file:
+        run_info = json.load(file)
+        env_info = run_info["environment"]
+    function_name = env_info["function"]
+    lower_bound = env_info["low"]
+    upper_bound = env_info["high"]
+
+    # Define problem
+    problem = get_problem_from_name(function_name)
+    objective_function = problem.objective_function
+
+    # Create a meshgrid for plotting the Rastrigin function
+    x_range = np.linspace(lower_bound, upper_bound, 100)
+    y_range = np.linspace(lower_bound, upper_bound, 100)
+    X, Y = np.meshgrid(x_range, y_range)
+    Z = objective_function([torch.Tensor(X), torch.Tensor(Y)]).numpy()
+
+    # Use logarithmically spaced contour levels for varying detail
+    if function_name == "Rastrigin":
+        contour_levels = np.logspace(-1, 2.5, 10)
+    else:
+        contour_levels = 10
+
+    paths = [
+        Path("data", "momentum0", "step_decay_1", "ToySGD", "Rastrigin"),
+        Path("data", "momentum10", "step_decay_1", "ToySGD", "Rastrigin"),
+        Path("data", "momentum20", "step_decay_1", "ToySGD", "Rastrigin"),
+        Path("data", "momentum30", "step_decay_1", "ToySGD", "Rastrigin"),
+        Path("data", "momentum40", "step_decay_1", "ToySGD", "Rastrigin"),
+        Path("data", "momentum50", "step_decay_1", "ToySGD", "Rastrigin"),
+        Path("data", "momentum60", "step_decay_1", "ToySGD", "Rastrigin"),
+        Path("data", "momentum70", "step_decay_1", "ToySGD", "Rastrigin"),
+        Path("data", "momentum80", "step_decay_1", "ToySGD", "Rastrigin"),
+        Path("data", "momentum85", "step_decay_1", "ToySGD", "Rastrigin"),
+        Path("data", "momentum90", "step_decay_1", "ToySGD", "Rastrigin"),
+    ]
+
+    momentum = [
+        0,
+        0.1,
+        0.2,
+        0.3,
+        0.4,
+        0.5,
+        0.6,
+        0.7,
+        0.8,
+        0.85,
+        0.9,
+    ]
+
+    colors = sns.color_palette("Spectral", len(paths))
+
+    for run_id in range(num_runs):
+        plt.clf()
+
+        # Plot the function
+        contour_plot = plt.contourf(
+            X,
+            Y,
+            Z,
+            levels=contour_levels,
+            cmap="viridis",
+            zorder=5,
+        )
+
+        # Add minimum
+        min_point = problem.x_min.tolist()
+        sns.scatterplot(
+            x=[min_point[0]],
+            y=[min_point[1]],
+            color="green",
+            s=100,
+            marker="*",
+            label=f"min at {min_point}",
+            zorder=10,
+        )
+        for id, path in enumerate(paths):
+            data_path = path / "aggregated_run_data.csv"
+            # Read run data
+            df = pd.read_csv(data_path)
+
+            # Group data by runs
+            grouped_df = df.groupby("run")
+
+            # for idx, data in list(grouped_df)[:num_runs]:
+            data = list(grouped_df)[run_id : run_id + 1][0][1]
+
+            # Extract x and y values from the DataFrame
+            x_values = data["x_cur"].apply(lambda coord: eval(coord)[0])
+            y_values = data["x_cur"].apply(lambda coord: eval(coord)[1])
+
+            # Plot the points from the DataFrame
+            sns.scatterplot(
+                x=x_values,
+                y=y_values,
+                label=f"{momentum[id]}",
+                color=colors[len(momentum) - 1 - id],
+                zorder=10,
+                alpha=0.5,
+            )
+
+        # Add labels and a legend
+        plt.xlabel("X")
+        plt.ylabel("Y")
+        plt.title(f"{function_name} Function with Optimization Trace")
+        plt.legend(prop={"size": 5})
+
+        # Add a colorbar to indicate function values
+        colorbar = plt.colorbar(contour_plot)
+        colorbar.set_label("Objective Function Value")
+
+        # Show or save the plot
+        if show:
+            plt.show()
+        else:
+            save_path = Path(
+                dir_path,
+                "figures",
+                "point_traj",
+            )
+
+        if not save_path.exists():
+            save_path.mkdir(parents=True)
+
+        plt.savefig(save_path / f"point_traj_{run_id}.png")
 
 
 def plot_actions(dir_path, agent_path=None, show=False):

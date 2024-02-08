@@ -1,6 +1,10 @@
 import argparse
 
-from src.utils.generate_plots import plot_optimization_trace, plot_actions
+from src.utils.generate_plots import (
+    plot_optimization_trace,
+    plot_actions,
+    plot_multiple_optim_trace,
+)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -48,6 +52,10 @@ if __name__ == "__main__":
 
     if args.optim_trace:
         plot_optimization_trace(
+            args.data_dir, args.agent_path, args.show, args.num_runs
+        )
+    if args.optim_multiple:
+        plot_multiple_optim_trace(
             args.data_dir, args.agent_path, args.show, args.num_runs
         )
     if args.action:
