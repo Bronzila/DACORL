@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,7 +17,7 @@ from dacbench.envs.env_utils.function_definitions import (
 )
 
 
-def get_problem_from_name(function_name):
+def get_problem_from_name(function_name: str) -> Any:
     if function_name == "Rosenbrock":
         problem = Rosenbrock()
     elif function_name == "Rastrigin":
@@ -28,7 +29,12 @@ def get_problem_from_name(function_name):
     return problem
 
 
-def plot_optimization_trace(dir_path, agent_path=None, show=False, num_runs=1):
+def plot_optimization_trace(
+    dir_path: str,
+    agent_path: Optional[str] = None,
+    show: bool = False,
+    num_runs: int = 1,
+) -> None:
     # Get paths
     if not agent_path:
         run_data_path = Path(dir_path, "aggregated_run_data.csv")
@@ -87,7 +93,6 @@ def plot_optimization_trace(dir_path, agent_path=None, show=False, num_runs=1):
             x=x_values,
             y=y_values,
             color="red",
-            hue=data["batch"],
             label="Trace",
             zorder=10,
         )
@@ -130,7 +135,9 @@ def plot_optimization_trace(dir_path, agent_path=None, show=False, num_runs=1):
         plt.savefig(save_path / f"point_traj_{idx}.svg")
 
 
-def plot_multiple_optim_trace(dir_path, agent_path, show=False, num_runs=1):
+def plot_multiple_optim_trace(
+    dir_path: str, agent_path: str, show: bool = False, num_runs: int = 1
+) -> None:
     run_info_path = Path(dir_path, "run_info.json")
 
     # Get run info from file
@@ -262,7 +269,9 @@ def plot_multiple_optim_trace(dir_path, agent_path, show=False, num_runs=1):
         plt.savefig(save_path / f"point_traj_{run_id}.png")
 
 
-def plot_actions(dir_path, agent_path=None, show=False):
+def plot_actions(
+    dir_path: str, agent_path: Optional[str] = None, show: bool = False
+) -> None:
     plt.clf()
     # Get paths
     # Get paths

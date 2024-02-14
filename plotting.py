@@ -25,6 +25,12 @@ if __name__ == "__main__":
         default=False,
     )
     parser.add_argument(
+        "--optim_multiple",
+        help="Comparison plot for optimization trace of multiple runs",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+    )
+    parser.add_argument(
         "--action",
         help="Generate plots for teacher-agent action comparison",
         default=False,
