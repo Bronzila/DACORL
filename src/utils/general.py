@@ -9,6 +9,7 @@ import numpy as np
 import torch
 from CORL.algorithms.offline import td3_bc
 from dacbench.benchmarks import ToySGD2DBenchmark
+from torch import nn
 
 from src.agents import ExponentialDecayAgent, StepDecayAgent
 
@@ -39,6 +40,7 @@ def set_seeds(seed: int) -> None:
 def get_agent(
     agent_type: str,
     agent_config: dict[str, Any],
+    hyperparameters: dict | None = None,
     device: str = "cpu",
 ) -> Any:
     if agent_type == "step_decay":
@@ -52,14 +54,39 @@ def get_agent(
         action_dim = agent_config["action_dim"]
         max_action = agent_config["max_action"]
 
-        actor = td3_bc.Actor(state_dim, action_dim, max_action).to(device)
-        actor_optimizer = torch.optim.Adam(actor.parameters(), lr=3e-4)
+        actor = td3_bc.Actor(
+            state_dim,
+            action_dim,
+            max_action,
+            hyperparameters["hidden_layers_actor"],
+            get_activation(hyperparameters["activation"]),
+        ).to(device)
+        actor_optimizer = torch.optim.Adam(
+            actor.parameters(),
+            lr=hyperparameters["lr_actor"],
+        )
 
-        critic_1 = td3_bc.Critic(state_dim, action_dim).to(device)
-        critic_1_optimizer = torch.optim.Adam(critic_1.parameters(), lr=3e-4)
+        critic_1 = td3_bc.Critic(
+            state_dim,
+            action_dim,
+            hyperparameters["hidden_layers_critic"],
+            get_activation(hyperparameters["activation"]),
+        ).to(device)
+        critic_1_optimizer = torch.optim.Adam(
+            critic_1.parameters(),
+            lr=hyperparameters["lr_critic"],
+        )
 
-        critic_2 = td3_bc.Critic(state_dim, action_dim).to(device)
-        critic_2_optimizer = torch.optim.Adam(critic_2.parameters(), lr=3e-4)
+        critic_2 = td3_bc.Critic(
+            state_dim,
+            action_dim,
+            hyperparameters["hidden_layers_critic"],
+            get_activation(hyperparameters["activation"]),
+        ).to(device)
+        critic_2_optimizer = torch.optim.Adam(
+            critic_2.parameters(),
+            lr=hyperparameters["lr_critic"],
+        )
 
         kwargs = {
             "max_action": max_action,
@@ -100,6 +127,16 @@ def get_environment(env_config: dict) -> Any:
         raise NotImplementedError(
             f"No environment of type {env_config['type']} found.",
         )
+
+
+def get_activation(activation: str) -> nn.Module:
+    if activation == "ReLU":
+        return nn.ReLU
+    if activation == "LeakyReLU":
+        return nn.LeakyReLU
+    if activation == "Tanh":
+        return nn.Tanh
+    return None
 
 
 def save_agent(state_dicts: dict, results_dir: Path, iteration: int) -> None:

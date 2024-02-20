@@ -2,6 +2,7 @@
 data/*
 wandb/
 .vscode/
+smac3_output/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
