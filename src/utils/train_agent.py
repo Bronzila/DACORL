@@ -3,8 +3,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import wandb
-
 from src.utils.general import (
     get_agent,
     get_environment,
@@ -28,6 +26,7 @@ def train_agent(
     wandb_group: str,
     timeout: int,
     debug: bool,
+    hyperparameters: dict,
 ) -> None:
     if debug:
         num_train_iter = 5
@@ -47,12 +46,8 @@ def train_agent(
     agent_config.update(
         {"state_dim": state_dim, "action_dim": 1, "max_action": 1},
     )
-    agent = get_agent(agent_type, agent_config)
+    agent = get_agent(agent_type, agent_config, hyperparameters)
 
-    config = {
-        "agent_config": agent_config,
-        "run_info": run_info,
-    }
 
     if not debug:
         wandb.init(  # type: ignore
@@ -62,13 +57,15 @@ def train_agent(
             config=config,
         )
 
-    for t in range(num_train_iter):
-        log_dict = {}
+    logs = {"actor_loss": [], "critic_loss": []}
+
+    for t in range(int(num_train_iter)):
         batch = replay_buffer.sample(batch_size)
         log_dict = agent.train(batch)
+        for k, v in log_dict.items():
+            logs[k].append(v)
 
-        if not debug:
-            wandb.log(log_dict, agent.total_it)  # type: ignore
+        # if not debug:
 
         if val_freq != 0 and (t + 1) % val_freq == 0:
             env = get_environment(run_info["environment"])
@@ -84,5 +81,6 @@ def train_agent(
             save_agent(agent.state_dict(), results_dir, t)
             eval_data.to_csv(results_dir / f"{t + 1}" / "eval_data.csv")
 
-    if not debug:
-        wandb.finish()  # type: ignore
+    # if not debug:
+
+    return logs
