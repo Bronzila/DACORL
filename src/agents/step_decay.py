@@ -11,7 +11,8 @@ class StepDecayAgent:
 
     def act(self, state):
         self._step += 1
-        learning_rate = state[1]
+        # Since log learning rate is given in state, transform first
+        learning_rate = 10 ** state[1]
 
         if self._step % self._step_size == 0:
             learning_rate = learning_rate * self._gamma
