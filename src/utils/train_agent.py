@@ -48,8 +48,15 @@ def train_agent(
     )
     agent = get_agent(agent_type, agent_config, hyperparameters)
 
-    # if not debug:
-    #     wandb.init(  # type: ignore
+
+    if not debug:
+        wandb.init(  # type: ignore
+            project="DAC4DL",
+            entity="study_project",
+            group=wandb_group,
+            config=config,
+        )
+
     logs = {"actor_loss": [], "critic_loss": []}
 
     for t in range(int(num_train_iter)):
