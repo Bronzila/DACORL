@@ -56,7 +56,7 @@ def train_agent(
 
     if not debug:
         wandb.init(  # type: ignore
-            project="DEDAC",
+            project="DAC4DL",
             entity="study_project",
             group=wandb_group,
             config=config,

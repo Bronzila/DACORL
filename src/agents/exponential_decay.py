@@ -13,7 +13,9 @@ class ExponentialDecayAgent:
         self._decay_steps = decay_steps
 
     def act(self, state):
-        learning_rate = state[1] * self._decay_rate ** (1 / self._decay_steps)
+        # Since log learning rate is given in state, transform first
+        prev_learning_rate = 10 ** state[1]
+        learning_rate = prev_learning_rate * self._decay_rate ** (1 / self._decay_steps)
 
         # return log of learning rate
         return math.log10(learning_rate)

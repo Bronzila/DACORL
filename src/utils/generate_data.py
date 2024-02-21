@@ -97,7 +97,7 @@ def generate_dataset(
         "num_runs": num_runs,
         "num_batches": num_batches,
     }
-
+    starting_points = []
     try:
         for run in range(num_runs):
             if save_run_data:
@@ -108,7 +108,6 @@ def generate_dataset(
                 states = []
                 batch_indeces = []
                 run_indeces = []
-                starting_points = []
             state, meta_info = env.reset()
             starting_points.append(meta_info["start"])
             agent.reset()
@@ -134,7 +133,7 @@ def generate_dataset(
                     action,
                     next_state,
                     reward,
-                    truncated,
+                    done,
                 )
                 state = next_state
                 if save_run_data:
@@ -145,6 +144,9 @@ def generate_dataset(
                     states.append(state.numpy())
                     batch_indeces.append(batch)
                     run_indeces.append(run)
+
+                if done:
+                    break
 
             if save_run_data:
                 run_data = pd.DataFrame(
