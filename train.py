@@ -20,7 +20,7 @@ if __name__ == "__main__":
         help="Not functional yet. Change configuration of the respective agent.",
     )
     parser.add_argument("--num_train_iter", type=int, default=2000)
-    parser.add_argument("--num_eval_iter", type=int, default=1000)
+    parser.add_argument("--num_eval_runs", type=int, default=1000)
     parser.add_argument("--batch_size", type=int, default=256)
     parser.add_argument(
         "--val_freq",
@@ -55,7 +55,7 @@ if __name__ == "__main__":
         agent_type=args.agent_type,
         agent_config=args.agent_config,
         num_train_iter=args.num_train_iter,
-        num_eval_runs=args.num_eval_iter,
+        num_eval_runs=args.num_eval_runs,
         batch_size=args.batch_size,
         val_freq=args.val_freq,
         seed=args.seed,

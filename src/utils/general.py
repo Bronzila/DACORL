@@ -114,6 +114,18 @@ def save_agent(state_dicts: dict, results_dir: Path, iteration: int) -> None:
         torch.save(s, filename / f"agent_{key}")
 
 
+def load_agent(agent_type: str, agent_config: dict, agent_path: Path) -> Any:
+    agent = get_agent(agent_type, agent_config)
+    state_dict = agent.state_dict()
+    new_state_dict = {}
+    for key, _ in state_dict.items():
+        s = torch.load(agent_path / f"agent_{key}")
+        new_state_dict.update({key: s})
+
+    agent.load_state_dict(new_state_dict)
+    return agent
+
+
 agent_to_save_path = {
     "step_decay": "step_decay_1",
     "exponential_decay": "exponential_decay_2",
