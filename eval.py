@@ -47,6 +47,7 @@ if __name__ == "__main__":
         n_runs=args.num_runs,
         n_batches=run_info["environment"]["num_batches"],
         seed=run_info["seed"],
+        starting_points=run_info["starting_points"]
     )
 
     # Save evaluation data

@@ -84,5 +84,7 @@ def train_agent(
             save_agent(agent.state_dict(), results_dir, t)
             eval_data.to_csv(results_dir / f"{t + 1}" / "eval_data.csv")
 
+    save_agent(agent.state_dict(), results_dir, t)
+
     if not debug:
         wandb.finish()  # type: ignore
