@@ -44,11 +44,19 @@ if __name__ == "__main__":
         type=int,
         default=1,
     )
+    parser.add_argument(
+        "--aggregate",
+        help="Defines whether action plot should aggregate all actions \
+              for each batch",
+        type=bool,
+        default=True,
+    )
     args = parser.parse_args()
 
     if args.optim_trace:
         plot_optimization_trace(
-            args.data_dir, args.agent_path, args.show, args.num_runs
-        )
+            args.data_dir, args.agent_path, args.show, args.num_runs,
+    )
     if args.action:
-        plot_actions(args.data_dir, args.agent_path, args.show)
+        plot_actions(args.data_dir, args.agent_path, args.show, args.num_runs,
+                     args.aggregate)

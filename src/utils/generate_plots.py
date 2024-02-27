@@ -129,7 +129,7 @@ def plot_optimization_trace(dir_path, agent_path=None, show=False, num_runs=1):
         plt.savefig(save_path / f"point_traj_{idx}.svg")
 
 
-def plot_actions(dir_path, agent_path=None, show=False):
+def plot_actions(dir_path, agent_path=None, show=False, num_runs=1, aggregate=True):
     plt.clf()
     # Get paths
     # Get paths
@@ -149,25 +149,54 @@ def plot_actions(dir_path, agent_path=None, show=False):
         if run_info["agent"]["type"] == "step_decay":
             drawstyle = "steps-post"
 
-    # Remove initial row
-    df = df.drop(df[df.batch == 0].index)
+    # Group data by runs
+    grouped_df = df.groupby("run")
 
-    # Adjust action value from the DataFrame
-    df["action"] = 10 ** df["action"]
+    aggregated_data = pd.DataFrame()
 
-    sns.lineplot(data=df, x="batch", y="action", drawstyle=drawstyle)
+    for idx, data in list(grouped_df):
+        # Remove initial row
+        data = data.drop(data[data.batch == 0].index)
 
-    # Show or save the plot
-    if show:
-        plt.show()
-    else:
-        save_path = Path(
-            dir_path,
-            "figures",
-            "action",
-        )
+        # Adjust action value from the DataFrame
+        data["action"] = 10 ** data["action"]
 
-        if not save_path.exists():
-            save_path.mkdir(parents=True)
+        aggregated_data = aggregated_data.append(data)
 
-        plt.savefig(save_path / "action.svg")
+        if idx < num_runs:
+            plt.clf()
+            sns.lineplot(data=data, x="batch", y="action", drawstyle=drawstyle)
+
+            # Show or save the plot
+            if show:
+                plt.show()
+            else:
+                save_path = Path(
+                    dir_path,
+                    "figures",
+                    "action",
+                )
+
+                if not save_path.exists():
+                    save_path.mkdir(parents=True)
+
+                plt.savefig(save_path / f"action_{idx}.svg")
+
+    if aggregate:
+        plt.clf()
+        sns.lineplot(data=aggregated_data, x="batch", y="action", drawstyle=drawstyle)
+
+        # Show or save the plot
+        if show:
+            plt.show()
+        else:
+            save_path = Path(
+                dir_path,
+                "figures",
+                "action",
+            )
+
+            if not save_path.exists():
+                save_path.mkdir(parents=True)
+
+            plt.savefig(save_path / "action_aggregate.svg")
