@@ -124,9 +124,3 @@ def load_agent(agent_type: str, agent_config: dict, agent_path: Path) -> Any:
 
     agent.load_state_dict(new_state_dict)
     return agent
-
-
-agent_to_save_path = {
-    "step_decay": "step_decay_1",
-    "exponential_decay": "exponential_decay_2",
-}

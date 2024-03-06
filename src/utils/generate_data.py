@@ -8,7 +8,6 @@ import pandas as pd
 
 from src.utils.general import (
     OutOfTimeError,
-    agent_to_save_path,
     get_agent,
     get_environment,
     set_seeds,
@@ -64,15 +63,17 @@ def generate_dataset(
     if results_dir == "":
         results_dir = Path(
             "data",
-            agent_to_save_path[agent_type],
             environment_type,
+            agent_type,
+            str(agent_config["id"]),
             env_config["function"],
         )
     else:
         results_dir = Path(
             results_dir,
-            agent_to_save_path[agent_type],
             environment_type,
+            agent_type,
+            str(agent_config["id"]),
             env_config["function"],
         )
 
