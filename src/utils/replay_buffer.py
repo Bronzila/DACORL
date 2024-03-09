@@ -94,6 +94,17 @@ class ReplayBuffer:
                 with filename.open(mode="wb") as f:
                     pickle.dump(self, f)
 
+    def merge(self, other: ReplayBuffer):
+        self._buffer_size += other._buffer_size
+        self._size = self._size + other._size
+        self._pointer = self._pointer + other._pointer
+
+        self._states = torch.cat([self._states, other._states])
+        self._actions = torch.cat([self._actions, other._actions])
+        self._next_states = torch.cat([self._next_states, other._next_states])
+        self._rewards = torch.cat([self._rewards, other._rewards])
+        self._dones = torch.cat([self._dones, other._dones])
+
     @classmethod
     def load(cls, filename: Path) -> ReplayBuffer:
         with filename.open(mode="rb") as f:

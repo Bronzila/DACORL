@@ -61,6 +61,7 @@ def test_agent(
 
     if starting_points is not None:
         for run_id, starting_point in tqdm(enumerate(starting_points)):
+            print(run_id)
             env.reset(seed, options={
                 "starting_point": torch.tensor(starting_point),
                 },

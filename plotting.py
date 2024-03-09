@@ -1,6 +1,6 @@
 import argparse
 
-from src.utils.generate_plots import plot_optimization_trace, plot_actions
+from src.utils.generate_plots import plot_actions, plot_optimization_trace
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
