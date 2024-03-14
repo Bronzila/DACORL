@@ -60,7 +60,7 @@ def test_agent(
     batches = []
 
     if starting_points is not None:
-        for run_id, starting_point in tqdm(enumerate(starting_points)):
+        for run_id, starting_point in tqdm(enumerate(starting_points[:n_runs])):
             print(run_id)
             env.reset(seed, options={
                 "starting_point": torch.tensor(starting_point),

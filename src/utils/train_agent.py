@@ -45,7 +45,8 @@ def train_agent(
     state_dim = state.shape[1]
 
     agent_config.update(
-        {"state_dim": state_dim, "action_dim": 1, "max_action": 1},
+        {"state_dim": state_dim, "action_dim": 1,
+         "max_action": 0, "min_action": -10},
     )
     agent = get_agent(agent_type, agent_config)
 
@@ -55,11 +56,14 @@ def train_agent(
     }
 
     if not debug:
+        fct = run_info["environment"]["function"]
+        teacher = run_info["agent"]["type"]
         wandb.init(  # type: ignore
             project="DAC4DL",
             entity="study_project",
             group=wandb_group,
             config=config,
+            name=f"{teacher}-{fct}",
         )
 
     for t in range(num_train_iter):
@@ -76,6 +80,7 @@ def train_agent(
                 actor=agent.actor,
                 env=env,
                 n_runs=num_eval_runs,
+                starting_points=run_info["starting_points"],
                 n_batches=run_info["environment"]["num_batches"],
                 seed=run_info["seed"],
             )

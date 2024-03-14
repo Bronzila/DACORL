@@ -12,7 +12,12 @@ import torch
 from CORL.algorithms.offline import td3_bc
 from dacbench.benchmarks import ToySGD2DBenchmark
 
-from src.agents import ExponentialDecayAgent, StepDecayAgent
+from src.agents import (
+    ConstantAgent,
+    ExponentialDecayAgent,
+    SGDRAgent,
+    StepDecayAgent,
+)
 from src.utils.replay_buffer import ReplayBuffer
 
 
@@ -48,12 +53,17 @@ def get_agent(
         return StepDecayAgent(**agent_config["params"])
     if agent_type == "exponential_decay":
         return ExponentialDecayAgent(**agent_config["params"])
+    if agent_type == "sgdr":
+        return SGDRAgent(**agent_config["params"])
+    if agent_type == "constant":
+        return ConstantAgent()
     if agent_type == "td3_bc":
         config = td3_bc.TrainConfig
 
         state_dim = agent_config["state_dim"]
         action_dim = agent_config["action_dim"]
         max_action = agent_config["max_action"]
+        min_action = agent_config["min_action"]
 
         actor = td3_bc.Actor(state_dim, action_dim, max_action).to(device)
         actor_optimizer = torch.optim.Adam(actor.parameters(), lr=3e-4)
@@ -66,6 +76,7 @@ def get_agent(
 
         kwargs = {
             "max_action": max_action,
+            "min_action": min_action,
             "actor": actor,
             "actor_optimizer": actor_optimizer,
             "critic_1": critic_1,

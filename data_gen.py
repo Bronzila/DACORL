@@ -68,6 +68,10 @@ if __name__ == "__main__":
     with env_config_path.open() as file:
         env_config = json.load(file)
 
+    # Add initial learning rate to agent config for SGDR
+    if agent_config["type"] == "sgdr":
+        agent_config["params"]["initial_learning_rate"] = env_config["initial_learning_rate"]
+
     generate_dataset(
         agent_config=agent_config,
         env_config=env_config,
