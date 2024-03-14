@@ -136,7 +136,6 @@ def generate_dataset(
                     reward,
                     done,
                 )
-                state = next_state
                 if save_run_data:
                     actions.append(action)
                     rewards.append(reward.numpy())
@@ -145,7 +144,7 @@ def generate_dataset(
                     states.append(state.numpy())
                     batch_indeces.append(batch)
                     run_indeces.append(run)
-
+                state = next_state
                 if done:
                     break
 
