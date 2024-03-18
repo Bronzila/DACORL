@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from typing import Any
 
 import numpy as np
@@ -18,7 +19,7 @@ def run_batches(actor, env, n_batches, run_id):
     batches = []
 
     state = env.get_state()
-    actions.append(np.NaN)
+    actions.append(math.log10(env.learning_rate))
     rewards.append(np.NaN)
     x_curs.append(env.x_cur.tolist())
     f_curs.append(env.objective_function(env.x_cur).numpy())
@@ -61,7 +62,6 @@ def test_agent(
 
     if starting_points is not None:
         for run_id, starting_point in tqdm(enumerate(starting_points[:n_runs])):
-            print(run_id)
             env.reset(seed, options={
                 "starting_point": torch.tensor(starting_point),
                 },

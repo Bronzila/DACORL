@@ -48,7 +48,13 @@ if __name__ == "__main__":
         "--aggregate",
         help="Defines whether action plot should aggregate all actions \
               for each batch",
-        type=bool,
+        action=argparse.BooleanOptionalAction,
+        default=True,
+    )
+    parser.add_argument(
+        "--teacher",
+        help="Defines whether action plot should also include teacher",
+        action=argparse.BooleanOptionalAction,
         default=True,
     )
     args = parser.parse_args()
@@ -59,4 +65,4 @@ if __name__ == "__main__":
     )
     if args.action:
         plot_actions(args.data_dir, args.agent_path, args.show, args.num_runs,
-                     args.aggregate)
+                     args.aggregate, args.teacher)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 
 import numpy as np
@@ -113,7 +114,7 @@ def generate_dataset(
             starting_points.append(meta_info["start"])
             agent.reset()
             if save_run_data:
-                actions.append(np.NaN)
+                actions.append(math.log10(env.learning_rate))
                 rewards.append(np.NaN)
                 x_curs.append(env.x_cur.tolist())
                 f_curs.append(env.objective_function(env.x_cur).numpy())

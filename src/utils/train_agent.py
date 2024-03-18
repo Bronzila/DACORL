@@ -58,12 +58,13 @@ def train_agent(
     if not debug:
         fct = run_info["environment"]["function"]
         teacher = run_info["agent"]["type"]
+        state_version = run_info["environment"]["state_version"]
         wandb.init(  # type: ignore
             project="DAC4DL",
             entity="study_project",
             group=wandb_group,
             config=config,
-            name=f"{teacher}-{fct}",
+            name=f"{teacher}-{fct}-{state_version}",
         )
 
     for t in range(num_train_iter):

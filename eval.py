@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
     state = env.reset()
     state_dim = state[0].shape[0]
-    agent_config = {"state_dim": state_dim, "action_dim": 1, "max_action": 0}
+    agent_config = {"state_dim": state_dim, "action_dim": 1, "max_action": 0, "min_action": -10}
     agent = load_agent(args.agent_type, agent_config, agent_path)
 
     # Evaluate agent
