@@ -28,6 +28,7 @@ def train_agent(
     wandb_group: str,
     timeout: int,
     debug: bool,
+    hyperparameters: dict,
 ) -> None:
     if debug:
         num_train_iter = 5
@@ -48,12 +49,7 @@ def train_agent(
         {"state_dim": state_dim, "action_dim": 1,
          "max_action": 0, "min_action": -10},
     )
-    agent = get_agent(agent_type, agent_config)
-
-    config = {
-        "agent_config": agent_config,
-        "run_info": run_info,
-    }
+    agent = get_agent(agent_type, agent_config, hyperparameters)
 
     if not debug:
         fct = run_info["environment"]["function"]
@@ -63,17 +59,19 @@ def train_agent(
             project="DAC4DL",
             entity="study_project",
             group=wandb_group,
-            config=config,
+            config=hyperparameters,
             name=f"{teacher}-{fct}-{state_version}",
         )
 
-    for t in range(num_train_iter):
-        log_dict = {}
+    logs = {"actor_loss": [], "critic_loss": []}
+
+    for t in range(int(num_train_iter)):
         batch = replay_buffer.sample(batch_size)
         log_dict = agent.train(batch)
+        for k, v in log_dict.items():
+            logs[k].append(v)
 
-        if not debug:
-            wandb.log(log_dict, agent.total_it)  # type: ignore
+        # if not debug:
 
         if val_freq != 0 and (t + 1) % val_freq == 0:
             env = get_environment(run_info["environment"])
@@ -94,3 +92,5 @@ def train_agent(
 
     if not debug:
         wandb.finish()  # type: ignore
+
+    return logs
