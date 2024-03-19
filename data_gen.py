@@ -42,6 +42,12 @@ if __name__ == "__main__":
         help="Save the rep buffer",
     )
     parser.add_argument(
+        "--id",
+        type=int,
+        default=0,
+        help="Agent ID",
+    )
+    parser.add_argument(
         "--timeout",
         type=int,
         default=0,
@@ -51,15 +57,20 @@ if __name__ == "__main__":
     args = parser.parse_args()
     start = time.time()
 
+    agent_name = "default" if args.id == 0 else str(args.id)
     # Read agent config from file
-    agent_config_path = Path("configs", "agents", args.agent, "default.json")
-    with open(agent_config_path, "r") as file:
+    agent_config_path = Path("configs", "agents", args.agent, f"{agent_name}.json")
+    with agent_config_path.open() as file:
         agent_config = json.load(file)
 
     # Read environment config from file
     env_config_path = Path("configs", "environment", f"{args.env}.json")
-    with open(env_config_path, "r") as file:
+    with env_config_path.open() as file:
         env_config = json.load(file)
+
+    # Add initial learning rate to agent config for SGDR
+    if agent_config["type"] == "sgdr":
+        agent_config["params"]["initial_learning_rate"] = env_config["initial_learning_rate"]
 
     generate_dataset(
         agent_config=agent_config,

@@ -16,7 +16,7 @@ def find_lowest_values(df, column_name, n=10):
     return sorted_df.head(n)
 
 def calc_mean_and_std_dev(df):
-    final_evaluations = df[df["batch"] == 99]
+    final_evaluations = df.groupby("run").last()
 
     fbests = final_evaluations["f_cur"]
     return fbests.mean(), fbests.std()
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--n",
         type=int,
-        default=10,
+        default=1,
         help="Number of fbest values to retrieve (default: 10)",
     )
 
@@ -54,11 +54,12 @@ if __name__ == "__main__":
 
     # Load data
     df = pd.read_csv(args.path)
+    print(f"Calculating for path {args.path}")
 
     if args.mean:
         mean, std = calc_mean_and_std_dev(df)
         print("Mean +- Std {mean:.3e} ± {std:.3e}".format(mean=mean, std=std))
     if args.lowest:
-        lowest_vals = find_lowest_values(df, "f_cur")
+        lowest_vals = find_lowest_values(df, "f_cur", args.n)
         print("Lowest values:")
         print(lowest_vals[args.column_name])

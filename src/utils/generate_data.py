@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 
 import numpy as np
@@ -8,7 +9,6 @@ import pandas as pd
 
 from src.utils.general import (
     OutOfTimeError,
-    agent_to_save_path,
     get_agent,
     get_environment,
     set_seeds,
@@ -64,15 +64,17 @@ def generate_dataset(
     if results_dir == "":
         results_dir = Path(
             "data",
-            agent_to_save_path[agent_type],
             environment_type,
+            agent_type,
+            str(agent_config["id"]),
             env_config["function"],
         )
     else:
         results_dir = Path(
             results_dir,
-            agent_to_save_path[agent_type],
             environment_type,
+            agent_type,
+            str(agent_config["id"]),
             env_config["function"],
         )
 
@@ -112,7 +114,7 @@ def generate_dataset(
             starting_points.append(meta_info["start"])
             agent.reset()
             if save_run_data:
-                actions.append(np.NaN)
+                actions.append(math.log10(env.learning_rate))
                 rewards.append(np.NaN)
                 x_curs.append(env.x_cur.tolist())
                 f_curs.append(env.objective_function(env.x_cur).numpy())
@@ -135,7 +137,6 @@ def generate_dataset(
                     reward,
                     done,
                 )
-                state = next_state
                 if save_run_data:
                     actions.append(action)
                     rewards.append(reward.numpy())
@@ -144,7 +145,7 @@ def generate_dataset(
                     states.append(state.numpy())
                     batch_indeces.append(batch)
                     run_indeces.append(run)
-
+                state = next_state
                 if done:
                     break
 

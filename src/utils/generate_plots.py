@@ -129,7 +129,7 @@ def plot_optimization_trace(dir_path, agent_path=None, show=False, num_runs=1):
         plt.savefig(save_path / f"point_traj_{idx}.svg")
 
 
-def plot_actions(dir_path, agent_path=None, show=False):
+def plot_actions(dir_path, agent_path=None, show=False, num_runs=1, aggregate=True, teacher=True):
     plt.clf()
     # Get paths
     # Get paths
@@ -139,35 +139,80 @@ def plot_actions(dir_path, agent_path=None, show=False):
         run_data_path = Path(dir_path, agent_path, "eval_data.csv")
     run_info_path = Path(dir_path, "run_info.json")
 
+    # Get exemplatory teacher run for plotting
+    if teacher:
+        run_data_teacher_path = Path(dir_path, "aggregated_run_data.csv")
+        run_data_teacher = pd.read_csv(run_data_teacher_path)
+        completed_runs_ids = run_data_teacher[run_data_teacher["batch"] == 99]["run"].unique()
+        completed_runs = run_data_teacher[run_data_teacher["run"].isin(completed_runs_ids)]
+        single_teacher_run = completed_runs[completed_runs["run"] == completed_runs_ids[0]]
+        single_teacher_run["action"] = 10 ** single_teacher_run["action"]
+
     # Read run data
     df = pd.read_csv(run_data_path)
 
+    drawstyle = "default"
     # Get run info from file
     with Path.open(run_info_path) as file:
         run_info = json.load(file)
-        drawstyle = "default"
+        teacher_drawstyle = "default"
         if run_info["agent"]["type"] == "step_decay":
-            drawstyle = "steps-post"
+            teacher_drawstyle = "steps-post"
 
-    # Remove initial row
-    df = df.drop(df[df.batch == 0].index)
+    label = "Agent"
+    if agent_path is None:
+        label = "Teacher"
+        drawstyle = teacher_drawstyle
 
-    # Adjust action value from the DataFrame
-    df["action"] = 10 ** df["action"]
+    # Group data by runs
+    grouped_df = df.groupby("run")
 
-    sns.lineplot(data=df, x="batch", y="action", drawstyle=drawstyle)
+    aggregated_data = pd.DataFrame()
 
-    # Show or save the plot
-    if show:
-        plt.show()
-    else:
-        save_path = Path(
-            dir_path,
-            "figures",
-            "action",
-        )
+    for idx, data in list(grouped_df):
+        # Adjust action value from the DataFrame
+        data["action"] = 10 ** data["action"]
 
-        if not save_path.exists():
-            save_path.mkdir(parents=True)
+        aggregated_data = aggregated_data.append(data)
 
-        plt.savefig(save_path / "action.svg")
+        if idx < num_runs:
+            plt.clf()
+            sns.lineplot(data=data, x="batch", y="action", drawstyle=drawstyle, label=label)
+            if teacher:
+                sns.lineplot(data=single_teacher_run, x="batch", y="action", drawstyle=teacher_drawstyle, label="Teacher")
+
+            # Show or save the plot
+            if show:
+                plt.show()
+            else:
+                save_path = Path(
+                    dir_path,
+                    "figures",
+                    "action",
+                )
+
+                if not save_path.exists():
+                    save_path.mkdir(parents=True)
+
+                plt.savefig(save_path / f"action_{idx}.svg")
+
+    if aggregate:
+        plt.clf()
+        sns.lineplot(data=aggregated_data, x="batch", y="action", drawstyle=drawstyle, label=label)
+        if teacher:
+                sns.lineplot(data=single_teacher_run, x="batch", y="action", drawstyle=teacher_drawstyle, label="Teacher")
+
+        # Show or save the plot
+        if show:
+            plt.show()
+        else:
+            save_path = Path(
+                dir_path,
+                "figures",
+                "action",
+            )
+
+            if not save_path.exists():
+                save_path.mkdir(parents=True)
+
+            plt.savefig(save_path / "action_aggregate.svg")

@@ -46,16 +46,21 @@ def train_agent(
     state_dim = state.shape[1]
 
     agent_config.update(
-        {"state_dim": state_dim, "action_dim": 1, "max_action": 1},
+        {"state_dim": state_dim, "action_dim": 1,
+         "max_action": 0, "min_action": -10},
     )
     agent = get_agent(agent_type, agent_config, hyperparameters)
 
     if not debug:
+        fct = run_info["environment"]["function"]
+        teacher = run_info["agent"]["type"]
+        state_version = run_info["environment"]["state_version"]
         wandb.init(  # type: ignore
             project="DAC4DL",
             entity="study_project",
             group=wandb_group,
             config=hyperparameters,
+            name=f"{teacher}-{fct}-{state_version}",
         )
 
     logs = {"actor_loss": [], "critic_loss": []}
@@ -74,6 +79,7 @@ def train_agent(
                 actor=agent.actor,
                 env=env,
                 n_runs=num_eval_runs,
+                starting_points=run_info["starting_points"],
                 n_batches=run_info["environment"]["num_batches"],
                 seed=run_info["seed"],
             )
@@ -82,6 +88,9 @@ def train_agent(
             save_agent(agent.state_dict(), results_dir, t)
             eval_data.to_csv(results_dir / f"{t + 1}" / "eval_data.csv")
 
-    # if not debug:
+    save_agent(agent.state_dict(), results_dir, t)
+
+    if not debug:
+        wandb.finish()  # type: ignore
 
     return logs

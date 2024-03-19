@@ -1,17 +1,25 @@
 from __future__ import annotations
 
+import json
 import random
 import signal
 from pathlib import Path
 from typing import Any
 
 import numpy as np
+import pandas as pd
 import torch
 from CORL.algorithms.offline import td3_bc
 from dacbench.benchmarks import ToySGD2DBenchmark
 from torch import nn
 
-from src.agents import ExponentialDecayAgent, StepDecayAgent
+from src.agents import (
+    ConstantAgent,
+    ExponentialDecayAgent,
+    SGDRAgent,
+    StepDecayAgent,
+)
+from src.utils.replay_buffer import ReplayBuffer
 
 
 # Time out related class and function
@@ -47,12 +55,17 @@ def get_agent(
         return StepDecayAgent(**agent_config["params"])
     if agent_type == "exponential_decay":
         return ExponentialDecayAgent(**agent_config["params"])
+    if agent_type == "sgdr":
+        return SGDRAgent(**agent_config["params"])
+    if agent_type == "constant":
+        return ConstantAgent()
     if agent_type == "td3_bc":
         config = td3_bc.TrainConfig
 
         state_dim = agent_config["state_dim"]
         action_dim = agent_config["action_dim"]
         max_action = agent_config["max_action"]
+        min_action = agent_config["min_action"]
 
         actor = td3_bc.Actor(
             state_dim,
@@ -90,6 +103,7 @@ def get_agent(
 
         kwargs = {
             "max_action": max_action,
+            "min_action": min_action,
             "actor": actor,
             "actor_optimizer": actor_optimizer,
             "critic_1": critic_1,
@@ -151,7 +165,44 @@ def save_agent(state_dicts: dict, results_dir: Path, iteration: int) -> None:
         torch.save(s, filename / f"agent_{key}")
 
 
-agent_to_save_path = {
-    "step_decay": "step_decay_1",
-    "exponential_decay": "exponential_decay_2",
-}
+def load_agent(agent_type: str, agent_config: dict, agent_path: Path) -> Any:
+    agent = get_agent(agent_type, agent_config)
+    state_dict = agent.state_dict()
+    new_state_dict = {}
+    for key, _ in state_dict.items():
+        s = torch.load(agent_path / f"agent_{key}")
+        new_state_dict.update({key: s})
+
+    agent.load_state_dict(new_state_dict)
+    return agent
+
+def combine_runs(root_dir: str, function: str):
+    combined_buffer = None
+    combined_run_info = None
+    combined_run_data = []
+    root_path = Path(root_dir)
+    agent_dirs = [entry.name for entry in root_path.iterdir() if entry.is_dir() and entry.name != "combined"]
+    for dirname in agent_dirs:
+        replay_path = Path(root_dir, dirname, function, "rep_buffer")
+        run_info_path = Path(root_dir, dirname, function, "run_info.json")
+        run_data_path = Path(root_dir, dirname, function, "aggregated_run_data.csv")
+
+        df = pd.read_csv(run_data_path)
+        combined_run_data.append(df)
+
+        with run_info_path.open(mode="rb") as f:
+            run_info = json.load(f)
+        temp_buffer = ReplayBuffer.load(replay_path)
+
+        if combined_buffer == None and combined_run_info == None:
+            combined_buffer = temp_buffer
+            combined_run_info = {"environment": run_info["environment"],
+                                 "starting_points": run_info["starting_points"],
+                                 "seed": run_info["seed"],
+                                 "num_runs": run_info["num_runs"],
+                                 "num_batches": run_info["num_batches"],
+                                 "agent": {"type": run_info["agent"]["type"]}}
+        else:
+            combined_buffer.merge(temp_buffer)
+            combined_run_info["starting_points"].extend(run_info["starting_points"])
+    return combined_buffer, combined_run_info, pd.concat(combined_run_data, ignore_index=True)

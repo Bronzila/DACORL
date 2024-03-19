@@ -1,6 +1,6 @@
 import argparse
 
-from src.utils.generate_plots import plot_optimization_trace, plot_actions
+from src.utils.generate_plots import plot_actions, plot_optimization_trace
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -44,11 +44,25 @@ if __name__ == "__main__":
         type=int,
         default=1,
     )
+    parser.add_argument(
+        "--aggregate",
+        help="Defines whether action plot should aggregate all actions \
+              for each batch",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+    )
+    parser.add_argument(
+        "--teacher",
+        help="Defines whether action plot should also include teacher",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+    )
     args = parser.parse_args()
 
     if args.optim_trace:
         plot_optimization_trace(
-            args.data_dir, args.agent_path, args.show, args.num_runs
-        )
+            args.data_dir, args.agent_path, args.show, args.num_runs,
+    )
     if args.action:
-        plot_actions(args.data_dir, args.agent_path, args.show)
+        plot_actions(args.data_dir, args.agent_path, args.show, args.num_runs,
+                     args.aggregate, args.teacher)
