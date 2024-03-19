@@ -40,7 +40,7 @@ def set_seeds(seed: int) -> None:
 def get_agent(
     agent_type: str,
     agent_config: dict[str, Any],
-    hyperparameters: dict | None = None,
+    hyperparameters: dict[str, Any] = {},
     device: str = "cpu",
 ) -> Any:
     if agent_type == "step_decay":
@@ -96,8 +96,8 @@ def get_agent(
             "critic_1_optimizer": critic_1_optimizer,
             "critic_2": critic_2,
             "critic_2_optimizer": critic_2_optimizer,
-            "discount": config.discount,
-            "tau": config.tau,
+            "discount": hyperparameters["discount_factor"],
+            "tau": hyperparameters["target_update_rate"],
             "device": config.device,
             # TD3
             "policy_noise": config.policy_noise * max_action,

@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import wandb
+
 from src.utils.general import (
     get_agent,
     get_environment,
@@ -48,13 +50,12 @@ def train_agent(
     )
     agent = get_agent(agent_type, agent_config, hyperparameters)
 
-
     if not debug:
         wandb.init(  # type: ignore
             project="DAC4DL",
             entity="study_project",
             group=wandb_group,
-            config=config,
+            config=hyperparameters,
         )
 
     logs = {"actor_loss": [], "critic_loss": []}

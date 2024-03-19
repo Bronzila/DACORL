@@ -52,6 +52,11 @@ class TD3BC_Optimizee:
         activation = Categorical(
             "activation", ["ReLU", "LeakyReLU", "Tanh"], default="ReLU"
         )
+        batch_size = Categorical(
+            "batch_size", [2, 4, 8, 16, 32, 64, 128, 256], default=64
+        )
+        discount_factor = Float("discount_factor", (0, 1), default=0.99)
+        target_update_rate = Float("target_update_rate", (0, 1), default=5e-3)
         # Add the parameters to configuration space
         cs.add_hyperparameters(
             [
@@ -60,6 +65,9 @@ class TD3BC_Optimizee:
                 hidden_layers_actor,
                 hidden_layers_critic,
                 activation,
+                batch_size,
+                discount_factor,
+                target_update_rate,
             ]
         )
         return cs
@@ -73,7 +81,7 @@ class TD3BC_Optimizee:
             agent_config={},
             num_train_iter=budget,
             num_eval_runs=0,
-            batch_size=self.batch_size,
+            batch_size=config["batch_size"],
             val_freq=budget + 1,
             seed=seed,
             wandb_group=None,
@@ -82,15 +90,6 @@ class TD3BC_Optimizee:
             debug=self.debug,
         )
 
-        # env = get_environment(self.run_info["environment"])
-        # results = test_agent(
-        #     actor=agent.actor,
-        #     env=env,
-        #     n_runs=50,
-        #     n_batches=self.run_info["environment"]["num_batches"],
-        #     seed=seed,
-        # )
-        # mean, std = calc_mean_and_std_dev(results)
         return np.mean(log_dict["actor_loss"])
 
 
@@ -153,7 +152,7 @@ if __name__ == "__main__":
     scenario = Scenario(
         optimizee.configspace,
         walltime_limit=60 * 60,  # convert 1 hour into seconds
-        n_trials=50,  # Evaluate max 500 different trials
+        n_trials=100,  # Evaluate max 500 different trials
         min_budget=25,  # Train the MLP using a hyperparameter configuration for at least 5 epochs
         max_budget=100,  # Train the MLP using a hyperparameter configuration for at most 25 epochs
         n_workers=8,
@@ -168,7 +167,10 @@ if __name__ == "__main__":
         optimizee.train,
         initial_design=initial_design,
         overwrite=True,
+        # logging_level=0,
     )
     incumbent = smac.optimize()
+
+    print(smac.validate(incumbent))
 
     plot_trajectory(smac)
