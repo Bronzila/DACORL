@@ -83,10 +83,12 @@ def plot_optimization_trace(dir_path, agent_path=None, show=False, num_runs=1):
         y_values = data["x_cur"].apply(lambda coord: eval(coord)[1])
 
         # Plot the points from the DataFrame
+        colors = np.arange(len(x_values))
         sns.scatterplot(
             x=x_values,
             y=y_values,
-            color="red",
+            c=colors,
+            cmap="spring",
             label="Trace",
             zorder=10,
         )
