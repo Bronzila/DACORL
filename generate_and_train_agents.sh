@@ -1,0 +1,4 @@
+msub data_gen_and_train.sh exponential_decay
+msub data_gen_and_train.sh step_decay
+msub data_gen_and_train.sh sgdr
+msub data_gen_and_train.sh constant
