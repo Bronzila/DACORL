@@ -20,9 +20,9 @@ if __name__ == "__main__":
 
     combined_buffer, combined_run_info, combined_run_data = combine_runs(args.root_dir, args.function)
 
-    buffer_path = Path(args.root_dir, "combined", "rep_buffer")
-    run_info_path = Path(args.root_dir, "combined", "run_info.json")
-    run_data_path = Path(args.root_dir, "combined", "aggregated_run_data.csv")
+    buffer_path = Path(args.root_dir, "combined", args.function, "rep_buffer")
+    run_info_path = Path(args.root_dir, "combined", args.function, "run_info.json")
+    run_data_path = Path(args.root_dir, "combined", args.function, "aggregated_run_data.csv")
 
     combined_buffer.save(buffer_path)
     with run_info_path.open(mode="w") as f:

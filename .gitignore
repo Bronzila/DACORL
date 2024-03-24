@@ -2,6 +2,18 @@
 data/*
 wandb/
 .vscode/
+logs/
+*.csv
+*.csv_
+run_info.json
+rep_buffer
+agent_actor
+agent_actor_optimizer
+agent_critic_1
+agent_critic_1_optimizer
+agent_critic_2
+agent_critic_2_optimizer
+agent_total_it
 smac3_output/
 
 # Byte-compiled / optimized / DLL files
