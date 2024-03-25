@@ -1,12 +1,9 @@
 import argparse
 import os
-import re
-import glob
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-
 
 
 def find_lowest_values(df, column_name, n=10):
@@ -68,7 +65,7 @@ if __name__ == "__main__":
     paths = []
     if args.results:
         for folder_path, _, _ in os.walk(args.path):
-            paths.extend(glob.glob(os.path.join(folder_path, "*/eval_data.csv")))
+            paths.extend(Path.glob(Path(folder_path, "*/eval_data.csv")))
     else:
         paths.append(args.path)
     # Load data
@@ -86,12 +83,7 @@ if __name__ == "__main__":
             mean, std = calc_mean_and_std_dev(df)
             mean = float(f"{mean:.3e}")
             std = float(f"{std:.3e}")
-            if mean < min_mean:
-                incumbent_changed = True
-                min_mean = mean
-                min_std = std
-                min_path = path
-            elif mean == min_mean and std < min_std:
+            if mean < min_mean or mean == min_mean and std < min_std:
                 incumbent_changed = True
                 min_mean = mean
                 min_std = std
