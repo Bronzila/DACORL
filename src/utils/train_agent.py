@@ -93,4 +93,6 @@ def train_agent(
     if not debug:
         wandb.finish()  # type: ignore
 
-    return logs
+    final_evaluations = eval_data.groupby("run").last()
+    fbests = final_evaluations["f_cur"]
+    return logs, fbests.mean()
