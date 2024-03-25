@@ -87,8 +87,8 @@ def get_agent(
             "tau": config.tau,
             "device": config.device,
             # TD3
-            "policy_noise": config.policy_noise * max_action,
-            "noise_clip": config.noise_clip * max_action,
+            "policy_noise": config.policy_noise,
+            "noise_clip": config.noise_clip,
             "policy_freq": config.policy_freq,
             # TD3 + BC
             "alpha": config.alpha,
