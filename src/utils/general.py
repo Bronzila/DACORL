@@ -171,19 +171,23 @@ def load_agent(agent_type: str, agent_config: dict, agent_path: Path) -> Any:
     agent.load_state_dict(new_state_dict)
     return agent
 
-def combine_runs(root_dir: str, function: str):
+def get_homogeneous_agent_paths(root_dir: str, function: str):
+    root_path = Path(root_dir)
+    agent_dirs = [entry.name for entry in root_path.iterdir() if entry.is_dir() and entry.name != "combined"]
+    paths = []
+    for dirname in agent_dirs:
+        agent_path = Path(root_dir, dirname, function)
+        paths.append(agent_path)
+    return paths
+
+def combine_runs(agent_paths):
     combined_buffer = None
     combined_run_info = None
     combined_run_data = []
-    root_path = Path(root_dir)
-    agent_dirs = [entry.name for entry in root_path.iterdir() if entry.is_dir() and entry.name != "combined"]
-    for dirname in agent_dirs:
-        replay_path = Path(root_dir, dirname, function, "rep_buffer")
-        run_info_path = Path(root_dir, dirname, function, "run_info.json")
-        run_data_path = Path(root_dir, dirname, function, "aggregated_run_data.csv")
-
-        df = pd.read_csv(run_data_path)
-        combined_run_data.append(df)
+    for idx, root_path in enumerate(agent_paths):
+        replay_path = Path(root_path, "rep_buffer")
+        run_info_path = Path(root_path, "run_info.json")
+        run_data_path = Path(root_path, "aggregated_run_data.csv")
 
         with run_info_path.open(mode="rb") as f:
             run_info = json.load(f)
@@ -200,4 +204,8 @@ def combine_runs(root_dir: str, function: str):
         else:
             combined_buffer.merge(temp_buffer)
             combined_run_info["starting_points"].extend(run_info["starting_points"])
+
+        df = pd.read_csv(run_data_path)
+        df["run"] += idx * run_info["num_runs"]
+        combined_run_data.append(df)
     return combined_buffer, combined_run_info, pd.concat(combined_run_data, ignore_index=True)

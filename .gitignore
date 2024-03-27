@@ -5,6 +5,7 @@ wandb/
 logs/
 *.csv
 *.csv_
+*.svg
 run_info.json
 rep_buffer
 agent_actor
