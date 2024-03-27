@@ -65,7 +65,7 @@ if __name__ == "__main__":
     paths = []
     if args.results:
         for folder_path, _, _ in os.walk(args.path):
-            paths.extend(Path.glob(Path(folder_path, "*/eval_data.csv")))
+            paths.extend(Path(folder_path).glob("*/eval_data.csv"))
     else:
         paths.append(args.path)
     # Load data
