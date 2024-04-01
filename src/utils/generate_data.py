@@ -53,6 +53,7 @@ def generate_dataset(
 ) -> None:
     set_timeout(timeout)
     set_seeds(seed)
+    env_config["seed"] = seed
 
     if not (save_run_data or save_rep_buffer):
         input("You are not saving any results. Enter a key to continue anyway.")
@@ -87,6 +88,7 @@ def generate_dataset(
         state_dim=state_dim,
         action_dim=1,
         buffer_size=buffer_size,
+        seed=seed,
     )
 
     agent = get_agent(agent_type, agent_config, "cpu")
