@@ -7,7 +7,7 @@ import pandas as pd
 
 
 def find_lowest_values(df, column_name, n=10):
-    final_evaluations = df[df["batch"] == 99]
+    final_evaluations = df.groupby("run").last()
 
     # Sort the DataFrame by the specified column in ascending order
     sorted_df = final_evaluations.sort_values(by=column_name)
