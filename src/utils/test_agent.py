@@ -8,6 +8,8 @@ import pandas as pd
 import torch
 from tqdm import tqdm
 
+from src.utils.general import set_seeds
+
 
 def run_batches(actor, env, n_batches, run_id):
     actions = []
@@ -50,6 +52,7 @@ def test_agent(
     starting_points: np.ndarray=None,
 ) -> pd.DataFrame:
     env.seed(seed)
+    set_seeds(seed)
     actor.eval()
 
     actions = []
@@ -62,7 +65,7 @@ def test_agent(
 
     if starting_points is not None:
         for run_id, starting_point in tqdm(enumerate(starting_points[:n_runs])):
-            env.reset(seed, options={
+            env.reset(seed=None, options={
                 "starting_point": torch.tensor(starting_point),
                 },
             )
