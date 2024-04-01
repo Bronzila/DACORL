@@ -41,6 +41,9 @@ def run_batches(actor, env, n_batches, run_id):
         runs.append(run_id)
         batches.append(batch_id)
 
+        if done:
+            break
+
     return actions, rewards, x_curs, f_curs, states, runs, batches
 
 def test_agent(
