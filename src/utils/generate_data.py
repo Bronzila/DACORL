@@ -9,8 +9,8 @@ import pandas as pd
 
 from src.utils.general import (
     OutOfTimeError,
-    get_agent,
     get_environment,
+    get_teacher,
     set_seeds,
     set_timeout,
 )
@@ -80,6 +80,7 @@ def generate_dataset(
 
     num_batches = env_config["num_batches"]
     env = get_environment(env_config)
+    env_config["action_space"] = env.action_space.shape
     state = env.reset()[0]
     state_dim = state.shape[0]
     buffer_size = num_runs * num_batches
@@ -89,7 +90,7 @@ def generate_dataset(
         buffer_size=buffer_size,
     )
 
-    agent = get_agent(agent_type, agent_config, "cpu")
+    agent = get_teacher(agent_type, agent_config)
 
     aggregated_run_data = []
     run_info = {

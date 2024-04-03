@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 import torch
-from src.utils.general import get_agent, get_environment, load_agent
+from src.utils.general import get_environment, load_agent
 from src.utils.test_agent import test_agent
 import time
 import argparse
@@ -37,7 +37,12 @@ if __name__ == "__main__":
 
     state = env.reset()
     state_dim = state[0].shape[0]
-    agent_config = {"state_dim": state_dim, "action_dim": 1, "max_action": 0, "min_action": -10}
+    agent_config = {
+        "state_dim": state_dim,
+        "action_dim": 1,
+        "max_action": 0,
+        "min_action": -10,
+    }
     agent = load_agent(args.agent_type, agent_config, agent_path)
 
     # Evaluate agent
@@ -47,7 +52,7 @@ if __name__ == "__main__":
         n_runs=args.num_runs,
         n_batches=run_info["environment"]["num_batches"],
         seed=run_info["seed"],
-        starting_points=run_info["starting_points"]
+        starting_points=run_info["starting_points"],
     )
 
     # Save evaluation data
