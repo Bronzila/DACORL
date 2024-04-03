@@ -6,6 +6,7 @@ from ConfigSpace import (
     Float,
     Categorical,
     Integer,
+    Constant,
 )
 from matplotlib import pyplot as plt
 from smac import HyperbandFacade, MultiFidelityFacade as MFFacade, Scenario
@@ -23,17 +24,15 @@ from check_fbest import calc_mean_and_std_dev
 warnings.filterwarnings("ignore")
 
 
-class TD3BC_Optimizee:
+class Optimizee:
     def __init__(
         self,
         data_dir: str,
         agent_type: str,
-        batch_size: int,
         debug: bool,
     ) -> None:
         self.data_dir = data_dir
         self.agent_type = agent_type
-        self.batch_size = batch_size
         self.debug = debug
 
         with Path(self.data_dir, "run_info.json").open(mode="rb") as f:
@@ -49,6 +48,7 @@ class TD3BC_Optimizee:
         hidden_layers_critic = Integer(
             "hidden_layers_critic", (0, 5), default=1
         )
+        hidden_dim = Categorical("hidden_dim", [32, 64, 128, 256, 512], default=256)
         activation = Categorical(
             "activation", ["ReLU", "LeakyReLU", "Tanh"], default="ReLU"
         )
@@ -64,6 +64,38 @@ class TD3BC_Optimizee:
                 lr_critic,
                 hidden_layers_actor,
                 hidden_layers_critic,
+                hidden_dim,
+                activation,
+                batch_size,
+                discount_factor,
+                target_update_rate,
+            ]
+        )
+        return cs
+
+    @property
+    def configspace_reduced(self) -> ConfigurationSpace:
+        cs = ConfigurationSpace()
+
+        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4)
+        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4)
+        hidden_layers_actor = Constant("hidden_layers_actor", 1)
+        hidden_layers_critic = Constant("hidden_layers_critic", 1)
+        hidden_dim = Constant("hidden_dim", 256)
+        activation = Constant("activation", "ReLU")
+        batch_size = Categorical(
+            "batch_size", [2, 4, 8, 16, 32, 64, 128, 256], default=64
+        )
+        discount_factor = Float("discount_factor", (0, 1), default=0.99)
+        target_update_rate = Float("target_update_rate", (0, 1), default=5e-3)
+        # Add the parameters to configuration space
+        cs.add_hyperparameters(
+            [
+                lr_actor,
+                lr_critic,
+                hidden_layers_actor,
+                hidden_layers_critic,
+                hidden_dim,
                 activation,
                 batch_size,
                 discount_factor,
@@ -135,6 +167,11 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=256)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument(
+        "--reduced",
+        action="store_true",
+        help="If set, architectural parameters will be constant",
+    )
+    parser.add_argument(
         "--debug",
         action="store_true",
         help="Run for max. 5 iterations and don't log in wanbd.",
@@ -142,7 +179,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    optimizee = TD3BC_Optimizee(
+    optimizee = Optimizee(
         data_dir=args.data_dir,
         agent_type=args.agent_type,
         batch_size=args.batch_size,
@@ -150,11 +187,15 @@ if __name__ == "__main__":
     )
 
     scenario = Scenario(
-        optimizee.configspace,
-        walltime_limit=60 * 60,  # convert 1 hour into seconds
+        (
+            optimizee.configspace_reduced
+            if args.reduced
+            else optimizee.configspace
+        ),
+        walltime_limit=10 * 60 * 60,  # convert 10 hour into seconds
         n_trials=100,  # Evaluate max 500 different trials
-        min_budget=25,  # Train the MLP using a hyperparameter configuration for at least 5 epochs
-        max_budget=100,  # Train the MLP using a hyperparameter configuration for at most 25 epochs
+        min_budget=1000,  # Train the MLP using a hyperparameter configuration for at least 5 epochs
+        max_budget=10000,  # Train the MLP using a hyperparameter configuration for at most 25 epochs
         n_workers=8,
     )
 
