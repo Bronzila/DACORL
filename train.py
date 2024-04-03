@@ -2,6 +2,7 @@ import argparse
 import time
 
 from src.utils.train_agent import train_agent
+from train_hpo import Optimizee
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train any offline agent ")
@@ -12,7 +13,7 @@ if __name__ == "__main__":
         help="path to the directory where replay_buffer and info about the replay_buffer are stored",
     )
     parser.add_argument(
-        "--agent_type", type=str, default="td3_bc", choices=["td3_bc"]
+        "--agent_type", type=str, default="td3_bc", choices=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac"]
     )
     parser.add_argument(
         "--agent_config",
@@ -50,6 +51,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
     start = time.time()
 
+    cs = Optimizee(args.data_dir, agent_type=args.agent_type, debug=args.debug)
+    hyperparameters = cs.configspace.get_default_configuration()
+
     train_agent(
         data_dir=args.data_dir,
         agent_type=args.agent_type,
@@ -62,6 +66,7 @@ if __name__ == "__main__":
         wandb_group=args.wandb_group,
         timeout=args.timeout,
         debug=args.debug,
+        hyperparameters=hyperparameters,
     )
 
     end = time.time()

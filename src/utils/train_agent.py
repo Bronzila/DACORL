@@ -46,8 +46,13 @@ def train_agent(
     state_dim = state.shape[1]
 
     agent_config.update(
-        {"state_dim": state_dim, "action_dim": 1,
-         "max_action": 0, "min_action": -10},
+        {
+            "state_dim": state_dim,
+            "action_dim": 1,
+            "max_action": 0,
+            "min_action": -10,
+            "action_space": run_info["environment"]["action_space"],
+        },
     )
     agent = get_agent(agent_type, agent_config, hyperparameters)
 
@@ -63,7 +68,7 @@ def train_agent(
             name=f"{teacher}-{fct}-{state_version}",
         )
 
-    logs = {"actor_loss": [], "critic_loss": []}
+    logs: dict = {"actor_loss": [], "critic_loss": []}
 
     for t in range(int(num_train_iter)):
         batch = replay_buffer.sample(batch_size)
