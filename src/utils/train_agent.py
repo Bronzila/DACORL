@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import torch
 import wandb
 
 from src.utils.general import (
@@ -79,23 +80,26 @@ def train_agent(
         # if not debug:
 
         if val_freq != 0 and (t + 1) % val_freq == 0:
-            env = get_environment(run_info["environment"])
-            eval_data = test_agent(
-                actor=agent.actor,
-                env=env,
-                n_runs=num_eval_runs,
-                starting_points=run_info["starting_points"],
-                n_batches=run_info["environment"]["num_batches"],
-                seed=run_info["seed"],
-            )
+            with torch.random.fork_rng():
+                env = get_environment(run_info["environment"])
+                eval_data = test_agent(
+                    actor=agent.actor,
+                    env=env,
+                    n_runs=num_eval_runs,
+                    starting_points=run_info["starting_points"],
+                    n_batches=run_info["environment"]["num_batches"],
+                    seed=run_info["seed"],
+                )
 
-            # Save agent early to enable continuation of pipeline
-            save_agent(agent.state_dict(), results_dir, t)
-            eval_data.to_csv(results_dir / f"{t + 1}" / "eval_data.csv")
+                # Save agent early to enable continuation of pipeline
+                save_agent(agent.state_dict(), results_dir, t)
+                eval_data.to_csv(results_dir / f"{t + 1}" / "eval_data.csv")
 
     save_agent(agent.state_dict(), results_dir, t)
 
     if not debug:
         wandb.finish()  # type: ignore
 
-    return logs
+    final_evaluations = eval_data.groupby("run").last()
+    fbests = final_evaluations["f_cur"]
+    return logs, fbests.mean()

@@ -1,25 +1,27 @@
-from pathlib import Path
+import argparse
+import json
 import warnings
+from pathlib import Path
+
+import numpy as np
+import torch.nn as nn
 from ConfigSpace import (
+    Categorical,
     Configuration,
     ConfigurationSpace,
     Float,
-    Categorical,
     Integer,
     Constant,
 )
 from matplotlib import pyplot as plt
-from smac import HyperbandFacade, MultiFidelityFacade as MFFacade, Scenario
-import torch.nn as nn
-import argparse
-from utils.general import get_environment
-from utils.test_agent import test_agent
-import json
-import numpy as np
+from smac import (
+    HyperbandFacade,
+    MultiFidelityFacade as MFFacade,
+    Scenario,
+)
 
-from utils.train_agent import train_agent
-
-from check_fbest import calc_mean_and_std_dev
+from src.utils.general import set_seeds
+from src.utils.train_agent import train_agent
 
 warnings.filterwarnings("ignore")
 
@@ -50,7 +52,7 @@ class Optimizee:
         )
         hidden_dim = Categorical("hidden_dim", [32, 64, 128, 256, 512], default=256)
         activation = Categorical(
-            "activation", ["ReLU", "LeakyReLU", "Tanh"], default="ReLU"
+            "activation", ["ReLU", "LeakyReLU"], default="ReLU"
         )
         batch_size = Categorical(
             "batch_size", [2, 4, 8, 16, 32, 64, 128, 256], default=64
@@ -98,23 +100,23 @@ class Optimizee:
                 hidden_dim,
                 activation,
                 batch_size,
-                discount_factor,
-                target_update_rate,
-            ]
+                # discount_factor,
+                # target_update_rate,
+            ],
         )
         return cs
 
     def train(
         self, config: Configuration, seed: int = 0, budget: int = 25
     ) -> float:
-        log_dict = train_agent(
+        log_dict, eval_mean = train_agent(
             data_dir=self.data_dir,
             agent_type=self.agent_type,
             agent_config={},
             num_train_iter=budget,
-            num_eval_runs=0,
+            num_eval_runs=100,
             batch_size=config["batch_size"],
-            val_freq=budget + 1,
+            val_freq=int(budget),
             seed=seed,
             wandb_group=None,
             timeout=0,
@@ -122,7 +124,7 @@ class Optimizee:
             debug=self.debug,
         )
 
-        return np.mean(log_dict["actor_loss"])
+        return eval_mean
 
 
 def plot_trajectory(facade: MFFacade) -> None:
@@ -164,7 +166,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "--agent_type", type=str, default="td3_bc", choices=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac"]
     )
-    parser.add_argument("--batch_size", type=int, default=256)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument(
         "--reduced",
@@ -178,6 +179,7 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+    set_seeds(args.seed)
 
     optimizee = Optimizee(
         data_dir=args.data_dir,
@@ -192,7 +194,7 @@ if __name__ == "__main__":
             else optimizee.configspace
         ),
         walltime_limit=10 * 60 * 60,  # convert 10 hour into seconds
-        n_trials=100,  # Evaluate max 500 different trials
+        n_trials=500,  # Evaluate max 500 different trials
         min_budget=1000,  # Train the MLP using a hyperparameter configuration for at least 5 epochs
         max_budget=10000,  # Train the MLP using a hyperparameter configuration for at most 25 epochs
         n_workers=8,
@@ -207,7 +209,7 @@ if __name__ == "__main__":
         optimizee.train,
         initial_design=initial_design,
         overwrite=True,
-        # logging_level=0,
+        logging_level=20,
     )
     incumbent = smac.optimize()
 

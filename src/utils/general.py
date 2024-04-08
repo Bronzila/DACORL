@@ -137,8 +137,8 @@ def get_agent(
             "tau": hyperparameters["target_update_rate"],
             "device": device,
             # TD3
-            "policy_noise": config.policy_noise * max_action,
-            "noise_clip": config.noise_clip * max_action,
+            "policy_noise": config.policy_noise,
+            "noise_clip": config.noise_clip,
             "policy_freq": config.policy_freq,
             # TD3 + BC
             "alpha": config.alpha,
@@ -455,6 +455,7 @@ def get_environment(env_config: dict) -> Any:
         bench.config.state_version = env_config["state_version"]
         bench.config.reward_version = env_config["reward_version"]
         bench.config.boundary_termination = env_config["boundary_termination"]
+        bench.config.seed = env_config["seed"]
         return bench.get_environment()
     else:
         raise NotImplementedError(
@@ -493,28 +494,28 @@ def load_agent(agent_type: str, agent_config: dict, agent_path: Path) -> Any:
     return agent
 
 
-def combine_runs(root_dir: str, function: str):
-    combined_buffer = None
-    combined_run_info = None
-    combined_run_data = []
+def get_homogeneous_agent_paths(root_dir: str, function: str):
     root_path = Path(root_dir)
     agent_dirs = [
         entry.name
         for entry in root_path.iterdir()
         if entry.is_dir() and entry.name != "combined"
     ]
+    paths = []
     for dirname in agent_dirs:
-        replay_path = Path(root_dir, dirname, function, "rep_buffer")
-        run_info_path = Path(root_dir, dirname, function, "run_info.json")
-        run_data_path = Path(
-            root_dir,
-            dirname,
-            function,
-            "aggregated_run_data.csv",
-        )
+        agent_path = Path(root_dir, dirname, function)
+        paths.append(agent_path)
+    return paths
 
-        df = pd.read_csv(run_data_path)
-        combined_run_data.append(df)
+
+def combine_runs(agent_paths):
+    combined_buffer = None
+    combined_run_info = None
+    combined_run_data = []
+    for idx, root_path in enumerate(agent_paths):
+        replay_path = Path(root_path, "rep_buffer")
+        run_info_path = Path(root_path, "run_info.json")
+        run_data_path = Path(root_path, "aggregated_run_data.csv")
 
         with run_info_path.open(mode="rb") as f:
             run_info = json.load(f)
@@ -535,6 +536,10 @@ def combine_runs(root_dir: str, function: str):
             combined_run_info["starting_points"].extend(
                 run_info["starting_points"],
             )
+
+        df = pd.read_csv(run_data_path)
+        df["run"] += idx * run_info["num_runs"]
+        combined_run_data.append(df)
     return (
         combined_buffer,
         combined_run_info,

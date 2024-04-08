@@ -13,6 +13,7 @@ class ReplayBuffer:
         state_dim: int,
         action_dim: int,
         buffer_size: int,
+        seed: int = 0,
         device: str = "cpu",
     ) -> None:
         self._buffer_size = buffer_size
@@ -45,14 +46,13 @@ class ReplayBuffer:
             device=device,
         )
         self._device = device
+        self.rng = np.random.default_rng(seed)
 
     def _to_tensor(self, data: np.ndarray) -> torch.Tensor:
         return torch.tensor(data, dtype=torch.float32, device=self._device)
 
     def sample(self, batch_size: int) -> list[torch.tensor]:
-        # randint potentially legacy code
-        # Replace legacy `np.random.randint` call with `np.random.Generator`
-        indices = np.random.randint(
+        indices = self.rng.integers(
             0,
             min(self._size, self._pointer),
             size=batch_size,
