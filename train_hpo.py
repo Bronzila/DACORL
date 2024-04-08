@@ -162,7 +162,7 @@ if __name__ == "__main__":
         help="path to the directory where replay_buffer and info about the replay_buffer are stored",
     )
     parser.add_argument(
-        "--agent_type", type=str, default="td3_bc", choices=["td3_bc"]
+        "--agent_type", type=str, default="td3_bc", choices=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac"]
     )
     parser.add_argument("--batch_size", type=int, default=256)
     parser.add_argument("--seed", type=int, default=0)
@@ -182,7 +182,6 @@ if __name__ == "__main__":
     optimizee = Optimizee(
         data_dir=args.data_dir,
         agent_type=args.agent_type,
-        batch_size=args.batch_size,
         debug=args.debug,
     )
 

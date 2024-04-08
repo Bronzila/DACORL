@@ -28,7 +28,6 @@ from src.agents import (
     StepDecayAgent,
 )
 from src.utils.agent_components import (
-    ConfigurableActor,
     ConfigurableCritic,
 )
 from src.utils.replay_buffer import ReplayBuffer
@@ -89,11 +88,10 @@ def get_agent(
     if agent_type == "td3_bc":
         config = td3_bc.TrainConfig
 
-        actor = ConfigurableActor(
+        actor = td3_bc.Actor(
             state_dim=state_dim,
             action_dim=action_dim,
             hidden_dim=hyperparameters["hidden_dim"],
-            max_action=max_action,
             hidden_layers=hyperparameters["hidden_layers_actor"],
             activation=get_activation(hyperparameters["activation"]),
         ).to(device)
@@ -154,7 +152,6 @@ def get_agent(
             state_dim=state_dim,
             action_dim=action_dim,
             hidden_dim=hyperparameters["hidden_dim"],
-            max_action=max_action,
             hidden_layers=hyperparameters["hidden_layers_actor"],
             activation=get_activation(hyperparameters["activation"]),
         ).to(device)
@@ -165,6 +162,7 @@ def get_agent(
 
         kwargs = {
             "max_action": max_action,
+            "min_action": min_action,
             "actor": actor,
             "actor_optimizer": actor_optimizer,
             "discount": hyperparameters["discount_factor"],
@@ -178,6 +176,8 @@ def get_agent(
             state_dim=state_dim,
             action_dim=action_dim,
             hidden_dim=hyperparameters["hidden_dim"],
+            max_action=max_action,
+            min_action=min_action,
             n_hidden_layers=hyperparameters["hidden_layers_actor"],
             activation=get_activation(hyperparameters["activation"]),
             log_std_multiplier=config.policy_log_std_multiplier,
@@ -225,8 +225,6 @@ def get_agent(
             "discount": hyperparameters["discount_factor"],
             "soft_target_update_rate": hyperparameters["target_update_rate"],
             "device": device,
-            "max_action": max_action,
-            "min_action": min_action,
             # CQL
             "target_entropy": -np.prod(agent_config["action_space"]).item(),
             "alpha_multiplier": config.alpha_multiplier,
