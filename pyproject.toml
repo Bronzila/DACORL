@@ -8,7 +8,7 @@ dependencies = [
   "numpy==1.24.2",
   "tqdm==4.66.1",
   "wandb==0.16.2",
-  "pandas==1.5.3",
+  "pandas>=1.5.3",
 #  "dacbench@git+https://github.com/Bronzila/DACBench.git@ToySGD_MTDAC",
   "gym",
 ]
