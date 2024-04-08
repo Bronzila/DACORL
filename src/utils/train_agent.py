@@ -5,6 +5,7 @@ from pathlib import Path
 
 import torch
 import wandb
+from tqdm import trange
 
 from src.utils.general import (
     get_agent,
@@ -71,7 +72,7 @@ def train_agent(
 
     logs: dict = {"actor_loss": [], "critic_loss": []}
 
-    for t in range(int(num_train_iter)):
+    for t in trange(int(num_train_iter)):
         batch = replay_buffer.sample(batch_size)
         log_dict = agent.train(batch)
         for k, v in log_dict.items():

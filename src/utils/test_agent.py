@@ -6,7 +6,6 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import torch
-from tqdm import tqdm
 
 from src.utils.general import set_seeds
 
@@ -28,7 +27,7 @@ def run_batches(actor, env, n_batches, run_id):
     states.append(state.numpy())
     runs.append(run_id)
     batches.append(0)
-    for batch_id in tqdm(range(1, n_batches)):
+    for batch_id in range(1, n_batches):
         action = actor.act(state)
         next_state, reward, done, _, _ = env.step(action.item())
         state = next_state
@@ -46,13 +45,14 @@ def run_batches(actor, env, n_batches, run_id):
 
     return actions, rewards, x_curs, f_curs, states, runs, batches
 
+
 def test_agent(
     actor: Any,
     env: Any,
     n_runs: int,
     n_batches: int,
     seed: int,
-    starting_points: np.ndarray=None,
+    starting_points: np.ndarray | None = None,
 ) -> pd.DataFrame:
     env.seed(seed)
     set_seeds(seed)
@@ -67,13 +67,19 @@ def test_agent(
     batches = []
 
     if starting_points is not None:
-        for run_id, starting_point in tqdm(enumerate(starting_points[:n_runs])):
-            env.reset(seed=None, options={
-                "starting_point": torch.tensor(starting_point),
+        for run_id, starting_point in enumerate(starting_points[:n_runs]):
+            env.reset(
+                seed=None,
+                options={
+                    "starting_point": torch.tensor(starting_point),
                 },
             )
-            r_a, r_r, r_x, r_f, r_s, r_runs, r_b = run_batches(actor, env,
-                                                               n_batches, run_id)
+            r_a, r_r, r_x, r_f, r_s, r_runs, r_b = run_batches(
+                actor,
+                env,
+                n_batches,
+                run_id,
+            )
             actions.extend(r_a)
             rewards.extend(r_r)
             x_curs.extend(r_x)
@@ -82,10 +88,14 @@ def test_agent(
             runs.extend(r_runs)
             batches.extend(r_b)
     else:
-        for run_id in tqdm(range(n_runs)):
+        for run_id in range(n_runs):
             env.reset()
-            r_a, r_r, r_x, r_f, r_s, r_runs, r_b = run_batches(actor, env,
-                                                            n_batches, run_id)
+            r_a, r_r, r_x, r_f, r_s, r_runs, r_b = run_batches(
+                actor,
+                env,
+                n_batches,
+                run_id,
+            )
             actions.extend(r_a)
             rewards.extend(r_r)
             x_curs.extend(r_x)
