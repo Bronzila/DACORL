@@ -11,6 +11,7 @@ from ConfigSpace import (
     ConfigurationSpace,
     Float,
     Integer,
+    Constant
 )
 from matplotlib import pyplot as plt
 from smac import (
@@ -49,8 +50,8 @@ class TD3BC_Optimizee:
         # hidden_layers_critic = Integer(
         #     "hidden_layers_critic", (0, 5), default=1
         # )
-        activation = Categorical(
-            "activation", ["ReLU", "LeakyReLU"], default="ReLU"
+        activation = Constant(
+            "activation", "ReLU"
         )
         batch_size = Categorical(
             "batch_size", [2, 4, 8, 16, 32, 64, 128, 256], default=64
@@ -75,6 +76,7 @@ class TD3BC_Optimizee:
     def train(
         self, config: Configuration, seed: int = 0, budget: int = 25
     ) -> float:
+        print(seed)
         log_dict, eval_mean = train_agent(
             data_dir=self.data_dir,
             agent_type=self.agent_type,
@@ -93,7 +95,7 @@ class TD3BC_Optimizee:
         return eval_mean
 
 
-def plot_trajectory(facade: MFFacade) -> None:
+def plot_trajectory(facade: MFFacade, output_path) -> None:
     """Plots the trajectory (incumbents) of the optimization process."""
     plt.figure()
     plt.title("Trajectory")
@@ -118,7 +120,7 @@ def plot_trajectory(facade: MFFacade) -> None:
     plt.scatter(X, Y, marker="x")
 
     plt.legend()
-    plt.show()
+    plt.savefig(output_path / "traj.svg")
 
 
 if __name__ == "__main__":
@@ -138,6 +140,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Run for max. 5 iterations and don't log in wanbd.",
     )
+    parser.add_argument(
+        "--output_path",
+        type=str,
+        help="Path where optimization logs are saved",
+        default="smac"
+    )
 
     args = parser.parse_args()
     set_seeds(args.seed)
@@ -147,13 +155,14 @@ if __name__ == "__main__":
         agent_type=args.agent_type,
         debug=args.debug,
     )
-
+    output_path = Path(args.output_path)
     scenario = Scenario(
         optimizee.configspace,
-        walltime_limit=60 * 60 * 10,  # convert 1 hour into seconds
-        n_trials=500,
-        min_budget=1000,  # Train the MLP using a hyperparameter configuration for at least 5 epochs
-        max_budget=10000,  # Train the MLP using a hyperparameter configuration for at most 25 epochs
+        output_directory=output_path,
+        walltime_limit=60 * 60 * 10,  # convert 10 hours into seconds
+        n_trials=5000,
+        min_budget=1000,
+        max_budget=15000,
         n_workers=1,
     )
 
@@ -170,6 +179,11 @@ if __name__ == "__main__":
     )
     incumbent = smac.optimize()
 
-    print(smac.validate(incumbent))
+    print("Incumbent:")
+    print(incumbent)
+    print(f"Final score: {smac.validate(incumbent)}")
 
-    plot_trajectory(smac)
+    plot_trajectory(smac, output_path)
+
+    with (output_path / "inc.json").open("w") as f:
+        json.dump(dict(incumbent), f)

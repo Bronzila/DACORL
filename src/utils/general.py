@@ -67,6 +67,8 @@ def get_agent(
         max_action = agent_config["max_action"]
         min_action = agent_config["min_action"]
 
+        alpha = agent_config["alpha"] if "alpha" in agent_config else config.alpha 
+
         actor = td3_bc.Actor(
             state_dim,
             action_dim,
@@ -113,7 +115,7 @@ def get_agent(
             "noise_clip": config.noise_clip,
             "policy_freq": config.policy_freq,
             # TD3 + BC
-            "alpha": config.alpha,
+            "alpha": alpha,
         }
         return td3_bc.TD3_BC(**kwargs)
 
@@ -182,6 +184,7 @@ def get_homogeneous_agent_paths(root_dir: str, function: str):
     return paths
 
 def combine_runs(agent_paths):
+    print(agent_paths)
     combined_buffer = None
     combined_run_info = None
     combined_run_data = []

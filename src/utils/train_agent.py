@@ -72,7 +72,8 @@ def train_agent(
         for k, v in log_dict.items():
             logs[k].append(v)
 
-        # if not debug:
+        if not debug:
+            wandb.log(log_dict, agent.total_it)
 
         if val_freq != 0 and (t + 1) % val_freq == 0:
             with torch.random.fork_rng():
@@ -80,7 +81,7 @@ def train_agent(
                 eval_data = test_agent(
                     actor=agent.actor,
                     env=env,
-                    n_runs=num_eval_runs,
+                    n_runs=len(run_info["starting_points"]),
                     starting_points=run_info["starting_points"],
                     n_batches=run_info["environment"]["num_batches"],
                     seed=run_info["seed"],

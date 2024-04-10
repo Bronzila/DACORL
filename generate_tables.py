@@ -14,6 +14,9 @@ if __name__ == "__main__":
         default="data/ToySGD"
     )
     parser.add_argument(
+        "--custom_path", type=str, help="Base path",
+    )
+    parser.add_argument(
         "--lowest",
         help="Get fbest table",
         action=argparse.BooleanOptionalAction,
@@ -36,24 +39,29 @@ if __name__ == "__main__":
     parser.add_argument(
         "--agents",
         help="Specify which agents to generate the table for",
-        type=list,
+        type=str,
+        nargs="*",
         default=["exponential_decay", "step_decay", "sgdr", "constant"],
     )
     parser.add_argument(
         "--functions",
         help="Specify which functions to generate the table for",
-        type=list,
+        type=str,
+        nargs="*",
         default=["Ackley", "Rastrigin", "Rosenbrock", "Sphere"],
     )
     parser.add_argument(
         "--ids",
         help="Specify which ids to generate tables for",
-        type=list,
+        type=int,
+        nargs="*",
         default=[0],
     )
     args = parser.parse_args()
 
     base_path = Path(args.path)
+    if args.custom_path:
+        base_path = Path(args.custom_path)
     for agent_id in args.ids:
         header = [None]
         header.extend(args.functions)
@@ -67,9 +75,12 @@ if __name__ == "__main__":
                     run_data_path = base_path / agent / str(agent_id) / function / "results"
                 else:
                     run_data_path = base_path / agent/ str(agent_id) / function / "aggregated_run_data.csv"
-                mean, std, lowest, min_path = calculate_statistics(path=run_data_path, results=args.results)
+                if args.custom_path:                    
+                    # run_data_path = base_path / agent / function / "results" if args.results else base_path / agent / function / "aggregated_run_data.csv"
+                    run_data_path = base_path / function / "results" if args.results else base_path / function / "aggregated_run_data.csv"
+                mean, std, lowest, min_path = calculate_statistics(path=run_data_path, results=args.results, verbose=args.verbose)
                 pattern = r"(\d+)"
-                train_steps = int(re.findall(pattern, str(min_path))[-1])
+                train_steps = int(re.findall(pattern, str(min_path))[-1]) if args.results else 0
                 if args.mean:
                     row_mean.append(f"{mean:.3e} ± {std:.3e}, {train_steps}")
                 if args.lowest:
