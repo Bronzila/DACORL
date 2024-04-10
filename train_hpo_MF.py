@@ -9,14 +9,14 @@ from ConfigSpace import (
     Categorical,
     Configuration,
     ConfigurationSpace,
-    Constant,
     Float,
     Integer,
+    Constant
 )
 from matplotlib import pyplot as plt
 from smac import (
     HyperbandFacade,
-    HyperparameterOptimizationFacade as HPOFacade,
+    MultiFidelityFacade as MFFacade,
     Scenario,
 )
 
@@ -32,12 +32,10 @@ class TD3BC_Optimizee:
         data_dir: str,
         agent_type: str,
         debug: bool,
-        budget: int,
     ) -> None:
         self.data_dir = data_dir
         self.agent_type = agent_type
         self.debug = debug
-        self.budget = budget
 
         with Path(self.data_dir, "run_info.json").open(mode="rb") as f:
             self.run_info = json.load(f)
@@ -76,16 +74,16 @@ class TD3BC_Optimizee:
         return cs
 
     def train(
-        self, config: Configuration, seed: int = 0
+        self, config: Configuration, seed: int = 0, budget: int = 25
     ) -> float:
         print(seed)
         log_dict, eval_mean = train_agent(
             data_dir=self.data_dir,
             agent_type=self.agent_type,
             agent_config={},
-            num_train_iter=self.budget,
+            num_train_iter=budget,
             batch_size=config["batch_size"],
-            val_freq=int(self.budget),
+            val_freq=int(budget),
             seed=seed,
             wandb_group=None,
             timeout=0,
@@ -96,7 +94,7 @@ class TD3BC_Optimizee:
         return eval_mean
 
 
-def plot_trajectory(facade: HPOFacade, output_path) -> None:
+def plot_trajectory(facade: MFFacade, output_path) -> None:
     """Plots the trajectory (incumbents) of the optimization process."""
     plt.figure()
     plt.title("Trajectory")
@@ -136,7 +134,6 @@ if __name__ == "__main__":
         "--agent_type", type=str, default="td3_bc", choices=["td3_bc"]
     )
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--budget", type=int, default=10000)
     parser.add_argument(
         "--debug",
         action="store_true",
@@ -156,7 +153,6 @@ if __name__ == "__main__":
         data_dir=args.data_dir,
         agent_type=args.agent_type,
         debug=args.debug,
-        budget=args.budget,
     )
     output_path = Path(args.output_path)
     scenario = Scenario(
@@ -164,21 +160,21 @@ if __name__ == "__main__":
         output_directory=output_path,
         walltime_limit=60 * 60 * 10,  # convert 10 hours into seconds
         n_trials=5000,
+        min_budget=1000,
+        max_budget=15000,
         n_workers=1,
         deterministic=False,
     )
 
-    intensifier = HPOFacade.get_intensifier(scenario, max_config_calls=5)
     # We want to run five random configurations before starting the optimization.
-    initial_design = HPOFacade.get_initial_design(scenario, n_configs=5)
+    initial_design = MFFacade.get_initial_design(scenario, n_configs=5)
 
     # Create our SMAC object and pass the scenario and the train method
-    smac = HPOFacade(
+    smac = MFFacade(
         scenario,
         optimizee.train,
         initial_design=initial_design,
         overwrite=True,
-        intensifier=intensifier,
         logging_level=20,
     )
     incumbent = smac.optimize()

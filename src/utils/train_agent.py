@@ -15,6 +15,7 @@ from src.utils.general import (
 )
 from src.utils.replay_buffer import ReplayBuffer
 from src.utils.test_agent import test_agent
+from typing import Optional
 
 
 def train_agent(
@@ -22,7 +23,6 @@ def train_agent(
     agent_type: str,
     agent_config: dict,
     num_train_iter: int,
-    num_eval_runs: int,
     batch_size: int,
     val_freq: int,
     seed: int,
@@ -30,6 +30,7 @@ def train_agent(
     timeout: int,
     debug: bool,
     hyperparameters: dict,
+    num_eval_runs: int | None = None,
 ) -> None:
     if debug:
         num_train_iter = 5
@@ -78,10 +79,11 @@ def train_agent(
         if val_freq != 0 and (t + 1) % val_freq == 0:
             with torch.random.fork_rng():
                 env = get_environment(run_info["environment"])
+                eval_runs = num_eval_runs if num_eval_runs is not None else len(run_info["starting_points"])
                 eval_data = test_agent(
                     actor=agent.actor,
                     env=env,
-                    n_runs=len(run_info["starting_points"]),
+                    n_runs=eval_runs,
                     starting_points=run_info["starting_points"],
                     n_batches=run_info["environment"]["num_batches"],
                     seed=run_info["seed"],
