@@ -56,7 +56,7 @@ def get_agent(
     if agent_type == "sgdr":
         return SGDRAgent(**agent_config["params"])
     if agent_type == "constant":
-        return ConstantAgent()
+        return ConstantAgent(**agent_config["params"])
     if agent_type == "td3_bc":
         config = td3_bc.TrainConfig
 

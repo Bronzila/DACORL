@@ -72,6 +72,11 @@ if __name__ == "__main__":
     if agent_config["type"] == "sgdr":
         agent_config["params"]["initial_learning_rate"] = env_config["initial_learning_rate"]
 
+    if agent_config["type"] == "constant" and agent_config["id"] == 0:
+        agent_config["params"]["learning_rate"] = env_config["initial_learning_rate"]
+    elif agent_config["type"] == "constant":
+        env_config["initial_learning_rate"] = agent_config["params"]["learning_rate"]
+
     generate_dataset(
         agent_config=agent_config,
         env_config=env_config,
