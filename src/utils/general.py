@@ -58,7 +58,7 @@ def get_agent(
     if agent_type == "sgdr":
         return SGDRAgent(**agent_config["params"])
     if agent_type == "constant":
-        return ConstantAgent()
+        return ConstantAgent(**agent_config["params"])
     if agent_type == "td3_bc":
         config = td3_bc.TrainConfig
 
@@ -67,7 +67,7 @@ def get_agent(
         max_action = agent_config["max_action"]
         min_action = agent_config["min_action"]
 
-        alpha = agent_config["alpha"] if "alpha" in agent_config else config.alpha 
+        alpha = hyperparameters.get("alpha", config.alpha)
 
         actor = td3_bc.Actor(
             state_dim,

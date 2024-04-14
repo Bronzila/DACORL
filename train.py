@@ -46,6 +46,10 @@ if __name__ == "__main__":
         action="store_true",
         help="Run for max. 5 iterations and don't log in wanbd.",
     )
+    parser.add_argument(
+        "--eval_protocol", type=str, default="train", choices=["train", "interpolation"]
+    )
+    parser.add_argument("--eval_seed", type=int, default=123)
 
     args = parser.parse_args()
     start = time.time()
@@ -62,6 +66,8 @@ if __name__ == "__main__":
         wandb_group=args.wandb_group,
         timeout=args.timeout,
         debug=args.debug,
+        eval_protocol=args.eval_protocol,
+        eval_seed=args.eval_seed
     )
 
     end = time.time()

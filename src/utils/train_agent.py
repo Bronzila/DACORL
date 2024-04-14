@@ -31,6 +31,8 @@ def train_agent(
     debug: bool,
     hyperparameters: dict,
     num_eval_runs: int | None = None,
+    eval_protocol: str="train",
+    eval_seed: int=123,
 ) -> None:
     if debug:
         num_train_iter = 5
@@ -80,14 +82,23 @@ def train_agent(
             with torch.random.fork_rng():
                 env = get_environment(run_info["environment"])
                 eval_runs = num_eval_runs if num_eval_runs is not None else len(run_info["starting_points"])
-                eval_data = test_agent(
-                    actor=agent.actor,
-                    env=env,
-                    n_runs=eval_runs,
-                    starting_points=run_info["starting_points"],
-                    n_batches=run_info["environment"]["num_batches"],
-                    seed=run_info["seed"],
-                )
+                if eval_protocol == "train":
+                    eval_data = test_agent(
+                        actor=agent.actor,
+                        env=env,
+                        n_runs=eval_runs,
+                        starting_points=run_info["starting_points"],
+                        n_batches=run_info["environment"]["num_batches"],
+                        seed=run_info["seed"],
+                    )
+                elif eval_protocol == "interpolation":
+                    eval_data = test_agent(
+                        actor=agent.actor,
+                        env=env,
+                        n_runs=eval_runs,
+                        n_batches=run_info["environment"]["num_batches"],
+                        seed=eval_seed,
+                    )
 
                 # Save agent early to enable continuation of pipeline
                 save_agent(agent.state_dict(), results_dir, t)

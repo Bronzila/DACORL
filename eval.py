@@ -23,6 +23,10 @@ if __name__ == "__main__":
         default=100,
         help="Number of training iterations, on which the agent was trained on.",
     )
+    parser.add_argument(
+        "--eval_protocol", type=str, default="train", choices=["train", "interpolation"]
+    )
+    parser.add_argument("--eval_seed", type=int, default=123)
 
     args = parser.parse_args()
 
@@ -41,15 +45,23 @@ if __name__ == "__main__":
     agent = load_agent(args.agent_type, agent_config, agent_path)
 
     # Evaluate agent
-    eval_data = test_agent(
-        actor=agent.actor,
-        env=env,
-        n_runs=args.num_runs,
-        n_batches=run_info["environment"]["num_batches"],
-        seed=run_info["seed"],
-        starting_points=run_info["starting_points"]
-    )
-
+    if args.eval_protocol == "train":
+        eval_data = test_agent(
+            actor=agent.actor,
+            env=env,
+            n_runs=args.num_runs,
+            n_batches=run_info["environment"]["num_batches"],
+            seed=run_info["seed"],
+            starting_points=run_info["starting_points"]
+        )
+    elif args.eval_protocol == "interpolation":
+        eval_data = test_agent(
+            actor=agent.actor,
+            env=env,
+            n_runs=args.num_runs,
+            n_batches=run_info["environment"]["num_batches"],
+            seed=args.eval_seed,
+        )
     # Save evaluation data
     eval_dir = Path(args.data_dir, "eval")
     if not eval_dir.exists():
