@@ -65,7 +65,10 @@ def get_agent(
         max_action = agent_config["max_action"]
         min_action = agent_config["min_action"]
 
-        actor = td3_bc.Actor(state_dim, action_dim, max_action).to(device)
+        actor = td3_bc.Actor(state_dim,
+                             action_dim,
+                             max_action,
+                             activation=torch.nn.ReLU).to(device)
         actor_optimizer = torch.optim.Adam(actor.parameters(), lr=3e-4)
 
         critic_1 = td3_bc.Critic(state_dim, action_dim).to(device)
