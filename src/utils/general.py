@@ -54,6 +54,8 @@ def get_agent(
     if hyperparameters is None:
         print("No hyperparameters specified, resorting to defaults.")
         hyperparameters = {}
+    else:
+        hyperparameters = dict(hyperparameters)
 
     if agent_type == "step_decay":
         return StepDecayAgent(**agent_config["params"])

@@ -32,10 +32,14 @@ class TD3BC_Optimizee:
         data_dir: str,
         agent_type: str,
         debug: bool,
+        eval_protocol: str,
+        eval_seed: int,
     ) -> None:
         self.data_dir = data_dir
         self.agent_type = agent_type
         self.debug = debug
+        self.eval_protocol = eval_protocol
+        self.eval_seed = eval_seed
 
         with Path(self.data_dir, "run_info.json").open(mode="rb") as f:
             self.run_info = json.load(f)
@@ -89,6 +93,8 @@ class TD3BC_Optimizee:
             timeout=0,
             hyperparameters=config,
             debug=self.debug,
+            eval_protocol=self.eval_protocol,
+            eval_seed=self.eval_seed,
         )
 
         return eval_mean
@@ -145,6 +151,10 @@ if __name__ == "__main__":
         help="Path where optimization logs are saved",
         default="smac"
     )
+    parser.add_argument(
+        "--eval_protocol", type=str, default="train", choices=["train", "interpolation"]
+    )
+    parser.add_argument("--eval_seed", type=int, default=123)
 
     args = parser.parse_args()
     set_seeds(args.seed)
@@ -153,6 +163,8 @@ if __name__ == "__main__":
         data_dir=args.data_dir,
         agent_type=args.agent_type,
         debug=args.debug,
+        eval_protocol=args.eval_protocol,
+        eval_seed=args.eval_seed,
     )
     output_path = Path(args.output_path)
     scenario = Scenario(
