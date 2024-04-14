@@ -4,7 +4,7 @@ import json
 import random
 import signal
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -48,9 +48,13 @@ def set_seeds(seed: int) -> None:
 def get_agent(
     agent_type: str,
     agent_config: dict[str, Any],
-    hyperparameters: dict[str, Any] = {},
+    hyperparameters: dict[str, Any] | None = None,
     device: str = "cpu",
 ) -> Any:
+    if hyperparameters is None:
+        print("No hyperparameters specified, resorting to defaults.")
+        hyperparameters = {}
+
     if agent_type == "step_decay":
         return StepDecayAgent(**agent_config["params"])
     if agent_type == "exponential_decay":
@@ -73,11 +77,11 @@ def get_agent(
             state_dim,
             action_dim,
             max_action,
-            get_activation(hyperparameters["activation"]),
+            get_activation(hyperparameters.get("activation", "ReLU")),
         ).to(device)
         actor_optimizer = torch.optim.Adam(
             actor.parameters(),
-            lr=hyperparameters["lr_actor"],
+            lr=hyperparameters.get("lr_actor", 3e-4),
         )
 
         critic_1 = td3_bc.Critic(
@@ -86,7 +90,7 @@ def get_agent(
         ).to(device)
         critic_1_optimizer = torch.optim.Adam(
             critic_1.parameters(),
-            lr=hyperparameters["lr_critic"],
+            lr=hyperparameters.get("lr_critic", 3e-4),
         )
 
         critic_2 = td3_bc.Critic(
@@ -95,7 +99,7 @@ def get_agent(
         ).to(device)
         critic_2_optimizer = torch.optim.Adam(
             critic_2.parameters(),
-            lr=hyperparameters["lr_critic"],
+            lr=hyperparameters.get("lr_critic", 3e-4),
         )
 
         kwargs = {
@@ -109,7 +113,7 @@ def get_agent(
             "critic_2_optimizer": critic_2_optimizer,
             "discount": config.discount,
             "tau": config.tau,
-            "device": config.device,
+            "device": device,
             # TD3
             "policy_noise": config.policy_noise,
             "noise_clip": config.noise_clip,
