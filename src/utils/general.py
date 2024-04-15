@@ -51,12 +51,6 @@ def get_agent(
     hyperparameters: dict[str, Any] | None = None,
     device: str = "cpu",
 ) -> Any:
-    if hyperparameters is None:
-        print("No hyperparameters specified, resorting to defaults.")
-        hyperparameters = {}
-    else:
-        hyperparameters = dict(hyperparameters)
-
     if agent_type == "step_decay":
         return StepDecayAgent(**agent_config["params"])
     if agent_type == "exponential_decay":
@@ -66,6 +60,12 @@ def get_agent(
     if agent_type == "constant":
         return ConstantAgent(**agent_config["params"])
     if agent_type == "td3_bc":
+        if hyperparameters is None:
+            print("No hyperparameters specified, resorting to defaults.")
+            hyperparameters = {}
+        else:
+            hyperparameters = dict(hyperparameters)
+
         config = td3_bc.TrainConfig
 
         state_dim = agent_config["state_dim"]

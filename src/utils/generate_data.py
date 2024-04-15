@@ -91,7 +91,7 @@ def generate_dataset(
         seed=seed,
     )
 
-    agent = get_agent(agent_type, agent_config, "cpu")
+    agent = get_agent(agent_type, agent_config, device="cpu")
 
     aggregated_run_data = []
     run_info = {
