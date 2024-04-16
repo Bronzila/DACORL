@@ -1,0 +1,4 @@
+sbatch meta_data_gen_and_train.sh exponential_decay
+sbatch meta_data_gen_and_train.sh step_decay
+sbatch meta_data_gen_and_train.sh sgdr
+sbatch meta_data_gen_and_train.sh constant
