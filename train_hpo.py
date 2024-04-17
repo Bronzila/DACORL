@@ -173,6 +173,12 @@ if __name__ == "__main__":
         help="If set, architectural parameters will be constant",
     )
     parser.add_argument(
+        "--save_incumbent",
+        action="store_true",
+        default=True,
+        help="Flag if we save the incumbent configuration"
+    )
+    parser.add_argument(
         "--debug",
         action="store_true",
         help="Run for max. 5 iterations and don't log in wanbd.",
@@ -213,6 +219,12 @@ if __name__ == "__main__":
     )
     incumbent = smac.optimize()
 
-    print(smac.validate(incumbent))
+    if args.save_incumbent:
+        save_config_dir = Path(args.data_dir) / "results" / args.agent_type
+        save_config_dir.mkdir(exist_ok=True)
+        path = save_config_dir / "incumbent.json"
+        print(f"Saving incumbent to : {path}")
+        with path.open("w") as f:
+            json.dump(incumbent.get_dictionary(), f, indent=4)
 
-    plot_trajectory(smac)
+    print(smac.validate(incumbent))
