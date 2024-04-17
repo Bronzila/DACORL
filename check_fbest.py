@@ -56,7 +56,7 @@ def calculate_statistics(calc_mean=True, calc_lowest=True, n_lowest=1, path=None
                 lowest_vals_of_min_mean = lowest_vals["f_cur"]
             if verbose:
                 print("Lowest values:")
-                print(lowest_vals[args.column_name])
+                print(lowest_vals["f_cur"])
     return min_mean, min_std, lowest_vals_of_min_mean, min_path
 
 if __name__ == "__main__":
