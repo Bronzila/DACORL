@@ -82,6 +82,7 @@ def generate_dataset(
     num_batches = env_config["num_batches"]
     env = get_environment(env_config)
     state = env.reset()[0]
+    env.seed(seed) # Reseed environment here to allow for proper starting point generation
     state_dim = state.shape[0]
     buffer_size = num_runs * num_batches
     replay_buffer = ReplayBuffer(

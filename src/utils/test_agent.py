@@ -28,7 +28,7 @@ def run_batches(actor, env, n_batches, run_id):
     states.append(state.numpy())
     runs.append(run_id)
     batches.append(0)
-    for batch_id in tqdm(range(1, n_batches)):
+    for batch_id in range(1, n_batches):
         action = actor.act(state)
         next_state, reward, done, _, _ = env.step(action.item())
         state = next_state
@@ -67,7 +67,7 @@ def test_agent(
     batches = []
 
     if starting_points is not None:
-        for run_id, starting_point in tqdm(enumerate(starting_points[:n_runs])):
+        for run_id, starting_point in enumerate(starting_points[:n_runs]):
             env.reset(seed=None, options={
                 "starting_point": torch.tensor(starting_point),
                 },
