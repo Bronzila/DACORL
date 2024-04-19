@@ -36,7 +36,17 @@ def generate_sgdr_agent(agent_id):
     return agent
 
 def generate_constant_agent(agent_id):
-    raise NotImplementedError()
+    log_lr = np.random.uniform(-4, -1)
+    lr = 10 ** log_lr
+    agent = {
+        "params": {
+            "learning_rate": lr,
+        },
+        "type": "constant",
+        "id": agent_id,
+    }
+
+    return agent
 
 def generate_exponential_agent(agent_id):
     decay_rate = np.random.uniform(0.5, 0.99)
@@ -74,6 +84,8 @@ def generate_random_agent_configs(n, agent_type):
             agent_configs.append(generate_exponential_agent(id + 1))
         elif agent_type == "sgdr":
             agent_configs.append(generate_sgdr_agent(id + 1))
+        elif agent_type == "constant":
+            agent_configs.append(generate_constant_agent(id + 1))
 
     save_agents(agent_configs, agent_type)
 
@@ -85,7 +97,7 @@ if __name__ == "__main__":
         default="random",
     )
     parser.add_argument(
-        "--agent_type", type=str, default="step_decay", choices=["step_decay", "exponential_decay", "sgdr"]
+        "--agent_type", type=str, default="step_decay", choices=["step_decay", "exponential_decay", "sgdr", "constant"]
     )
     parser.add_argument(
         "--n",
@@ -94,6 +106,6 @@ if __name__ == "__main__":
         help="Number of agents to generate",
     )
     args = parser.parse_args()
-
+    np.random.seed(0)
     if args.generation_type == "random":
         generate_random_agent_configs(args.n, args.agent_type)
