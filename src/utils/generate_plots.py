@@ -131,23 +131,46 @@ def plot_optimization_trace(dir_path, agent_path=None, show=False, num_runs=1):
         plt.savefig(save_path / f"point_traj_{idx}.svg")
 
 
-def plot_actions(dir_path, agent_path=None, show=False, num_runs=1, aggregate=True, teacher=True):
+def plot_actions(
+    dir_path,
+    agent_path=None,
+    show=False,
+    num_runs=1,
+    aggregate=True,
+    teacher=True,
+):
     plt.clf()
-    # Get paths
     # Get paths
     if not agent_path:
         run_data_path = Path(dir_path, "aggregated_run_data.csv")
+        filename = "action"
     else:
         run_data_path = Path(dir_path, agent_path, "eval_data.csv")
+
+        tmp = agent_path.split("/")
+        if tmp[0] is None:
+            agent_type = tmp[2]
+            fidelity = tmp[3]
+        else:
+            agent_type = tmp[1]
+            fidelity = tmp[2]
+        filename = f"action_{agent_type}_{fidelity}"
+
     run_info_path = Path(dir_path, "run_info.json")
 
     # Get exemplatory teacher run for plotting
     if teacher:
         run_data_teacher_path = Path(dir_path, "aggregated_run_data.csv")
         run_data_teacher = pd.read_csv(run_data_teacher_path)
-        completed_runs_ids = run_data_teacher[run_data_teacher["batch"] == 99]["run"].unique()
-        completed_runs = run_data_teacher[run_data_teacher["run"].isin(completed_runs_ids)]
-        single_teacher_run = completed_runs[completed_runs["run"] == completed_runs_ids[0]]
+        completed_runs_ids = run_data_teacher[run_data_teacher["batch"] == 99][
+            "run"
+        ].unique()
+        completed_runs = run_data_teacher[
+            run_data_teacher["run"].isin(completed_runs_ids)
+        ]
+        single_teacher_run = completed_runs[
+            completed_runs["run"] == completed_runs_ids[0]
+        ]
         single_teacher_run["action"] = 10 ** single_teacher_run["action"]
 
     # Read run data
@@ -179,30 +202,47 @@ def plot_actions(dir_path, agent_path=None, show=False, num_runs=1, aggregate=Tr
 
         if idx < num_runs:
             plt.clf()
-            sns.lineplot(data=data, x="batch", y="action", drawstyle=drawstyle, label=label)
+            sns.lineplot(
+                data=data,
+                x="batch",
+                y="action",
+                drawstyle=drawstyle,
+                label=label,
+            )
             if teacher:
-                sns.lineplot(data=single_teacher_run, x="batch", y="action", drawstyle=teacher_drawstyle, label="Teacher")
-
-            # Show or save the plot
-            if show:
-                plt.show()
-            else:
-                save_path = Path(
-                    dir_path,
-                    "figures",
-                    "action",
+                sns.lineplot(
+                    data=single_teacher_run,
+                    x="batch",
+                    y="action",
+                    drawstyle=teacher_drawstyle,
+                    label="Teacher",
                 )
 
-                if not save_path.exists():
-                    save_path.mkdir(parents=True)
+            # # Show or save the plot
+            # if show:
+            #         dir_path,
+            #         "figures",
+            #         "action",
 
-                plt.savefig(save_path / f"action_{idx}.svg")
+            #     if not save_path.exists():
 
     if aggregate:
         plt.clf()
-        sns.lineplot(data=aggregated_data, x="batch", y="action", drawstyle=drawstyle, label=label)
+        sns.lineplot(
+            data=aggregated_data,
+            x="batch",
+            y="action",
+            drawstyle=drawstyle,
+            label=label,
+        )
         if teacher:
-                sns.lineplot(data=single_teacher_run, x="batch", y="action", drawstyle=teacher_drawstyle, label="Teacher")
+            sns.lineplot(
+                data=single_teacher_run,
+                x="batch",
+                y="action",
+                drawstyle=teacher_drawstyle,
+                label="Teacher",
+            )
 
         # Show or save the plot
         if show:
@@ -216,5 +256,5 @@ def plot_actions(dir_path, agent_path=None, show=False, num_runs=1, aggregate=Tr
 
             if not save_path.exists():
                 save_path.mkdir(parents=True)
-
-            plt.savefig(save_path / "action_aggregate.svg")
+            print(f"Saving figure to {save_path / f'{filename}_aggregate.svg'}")
+            plt.savefig(save_path / f"{filename}_aggregate.svg")
