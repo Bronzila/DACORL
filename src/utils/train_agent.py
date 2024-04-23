@@ -5,7 +5,6 @@ from pathlib import Path
 
 import torch
 import wandb
-from tqdm import trange
 
 from src.utils.general import (
     get_agent,
@@ -23,14 +22,17 @@ def train_agent(
     agent_type: str,
     agent_config: dict,
     num_train_iter: int,
-    num_eval_runs: int,
     batch_size: int,
     val_freq: int,
+    num_eval_runs: int | None,
     seed: int,
     wandb_group: str,
     timeout: int,
     debug: bool,
+    use_wandb: bool,
     hyperparameters: dict,
+    eval_protocol: str,
+    eval_seed: int,
 ) -> None:
     if debug:
         num_train_iter = 5
@@ -58,7 +60,7 @@ def train_agent(
     )
     agent = get_agent(agent_type, agent_config, hyperparameters)
 
-    if not debug:
+    if (not debug) or use_wandb:
         fct = run_info["environment"]["function"]
         teacher = run_info["agent"]["type"]
         state_version = run_info["environment"]["state_version"]
@@ -72,7 +74,7 @@ def train_agent(
 
     logs: dict = {"actor_loss": [], "critic_loss": []}
 
-    for t in trange(int(num_train_iter)):
+    for t in range(int(num_train_iter)):
         batch = replay_buffer.sample(batch_size)
         log_dict = agent.train(batch)
         for k, v in log_dict.items():
@@ -83,14 +85,28 @@ def train_agent(
         if val_freq != 0 and (t + 1) % val_freq == 0:
             with torch.random.fork_rng():
                 env = get_environment(run_info["environment"])
-                eval_data = test_agent(
-                    actor=agent.actor,
-                    env=env,
-                    n_runs=num_eval_runs,
-                    starting_points=run_info["starting_points"],
-                    n_batches=run_info["environment"]["num_batches"],
-                    seed=run_info["seed"],
+                eval_runs = (
+                    num_eval_runs
+                    if num_eval_runs is not None
+                    else len(run_info["starting_points"])
                 )
+                if eval_protocol == "train":
+                    eval_data = test_agent(
+                        actor=agent.actor,
+                        env=env,
+                        n_runs=eval_runs,
+                        starting_points=run_info["starting_points"],
+                        n_batches=run_info["environment"]["num_batches"],
+                        seed=run_info["seed"],
+                    )
+                elif eval_protocol == "interpolation":
+                    eval_data = test_agent(
+                        actor=agent.actor,
+                        env=env,
+                        n_runs=eval_runs,
+                        n_batches=run_info["environment"]["num_batches"],
+                        seed=eval_seed,
+                    )
 
                 # Save agent early to enable continuation of pipeline
                 save_agent(agent.state_dict(), results_dir, t)
@@ -98,7 +114,7 @@ def train_agent(
 
     save_agent(agent.state_dict(), results_dir, t)
 
-    if not debug:
+    if (not debug) or use_wandb:
         wandb.finish()  # type: ignore
 
     final_evaluations = eval_data.groupby("run").last()
