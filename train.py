@@ -66,6 +66,7 @@ if __name__ == "__main__":
         wandb_group=args.wandb_group,
         timeout=args.timeout,
         debug=args.debug,
+        use_wandb=True,
         hyperparameters=hyperparameters,
     )
 
