@@ -15,7 +15,8 @@ from ConfigSpace import (
 )
 from matplotlib import pyplot as plt
 from smac import (
-    HyperparameterOptimizationFacade as HPOFacade,
+    HyperbandFacade,
+    MultiFidelityFacade as MFFacade,
     Scenario,
 )
 
@@ -31,14 +32,10 @@ class Optimizee:
         data_dir: str,
         agent_type: str,
         debug: bool,
-        eval_protocol: str,
-        eval_seed: int,
     ) -> None:
         self.data_dir = data_dir
         self.agent_type = agent_type
         self.debug = debug
-        self.eval_protocol = eval_protocol
-        self.eval_seed = eval_seed
 
         with Path(self.data_dir, "run_info.json").open(mode="rb") as f:
             self.run_info = json.load(f)
@@ -126,14 +123,12 @@ class Optimizee:
             hyperparameters=config,
             debug=self.debug,
             use_wandb=False,
-            eval_protocol=self.eval_protocol,
-            eval_seed=self.eval_seed,
         )
 
         return eval_mean
 
 
-def plot_trajectory(facade: HPOFacade) -> None:
+def plot_trajectory(facade: MFFacade) -> None:
     """Plots the trajectory (incumbents) of the optimization process."""
     plt.figure()
     plt.title("Trajectory")
@@ -170,12 +165,6 @@ if __name__ == "__main__":
         help="path to the directory where replay_buffer and info about the replay_buffer are stored",
     )
     parser.add_argument(
-        "--output_path",
-        type=str,
-        help="Path where optimization logs are saved",
-        default="smac"
-    )
-    parser.add_argument(
         "--agent_type", type=str, default="td3_bc", choices=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac"]
     )
     parser.add_argument("--seed", type=int, default=0)
@@ -195,11 +184,6 @@ if __name__ == "__main__":
         action="store_true",
         help="Run for max. 5 iterations and don't log in wanbd.",
     )
-    parser.add_argument(
-        "--eval_protocol", type=str, default="train", choices=["train", "interpolation"]
-    )
-    parser.add_argument("--eval_seed", type=int, default=123)
-
 
     args = parser.parse_args()
     set_seeds(args.seed)
@@ -208,39 +192,32 @@ if __name__ == "__main__":
         data_dir=args.data_dir,
         agent_type=args.agent_type,
         debug=args.debug,
-        eval_protocol=args.eval_protocol,
-        eval_seed=args.eval_seed,
     )
 
-    output_path = Path(args.output_path)
     scenario = Scenario(
-        optimizee.configspace,
-        output_directory=output_path,
-        n_trials=5000,
+        (
+            optimizee.configspace_reduced
+            if args.reduced
+            else optimizee.configspace
+        ),
+        n_trials=250,  # Evaluate max 500 different trials
+        min_budget=1000,  # Train the MLP using a hyperparameter configuration for at least 5 epochs
+        max_budget=10000,  # Train the MLP using a hyperparameter configuration for at most 25 epochs
         n_workers=1,
-        deterministic=False,
     )
 
-    intensifier = HPOFacade.get_intensifier(scenario, max_config_calls=5)
     # We want to run five random configurations before starting the optimization.
-    initial_design = HPOFacade.get_initial_design(scenario, n_configs=5)
+    initial_design = MFFacade.get_initial_design(scenario, n_configs=5)
 
     # Create our SMAC object and pass the scenario and the train method
-    smac = HPOFacade(
+    smac = MFFacade(
         scenario,
         optimizee.train,
         initial_design=initial_design,
         overwrite=True,
-        intensifier=intensifier,
         logging_level=20,
     )
     incumbent = smac.optimize()
-
-    print("Incumbent:")
-    print(incumbent)
-    print(f"Final score: {smac.validate(incumbent)}")
-
-    plot_trajectory(smac, output_path)
 
     if args.save_incumbent:
         save_config_dir = Path(args.data_dir) / "results" / args.agent_type

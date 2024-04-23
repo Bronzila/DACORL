@@ -15,8 +15,8 @@ FC2=Rastrigin
 FC3=Rosenbrock
 FC4=Sphere
 NUM_RUNS=100
-VERSION=default
-RESULTS_DIR="data_hpo"
+VERSION=extended_velocity
+RESULTS_DIR="data_hpo_fixed"
 
 start=`date +%s`
 
@@ -28,19 +28,19 @@ conda activate DACORL
 if [ ${SLURM_ARRAY_TASK_ID} -eq 1 ]
 then
     python data_gen.py --save_run_data --save_rep_buffer --env $FC1\_$VERSION --agent $AGENT --num_runs $NUM_RUNS --id $ID --results_dir $RESULTS_DIR
-    python train_hpo.py --data_dir $RESULTS_DIR/ToySGD/$AGENT/$ID/$FC1 --agent_type $RL_AGENT
+    python train_hpo.py --data_dir $RESULTS_DIR/ToySGD/$AGENT/$ID/$FC1 --agent_type $RL_AGENT --output_path smac_$AGENT\_$FC1\_$RL_AGENT
 elif [ ${SLURM_ARRAY_TASK_ID} -eq 2 ]
 then
     python data_gen.py --save_run_data --save_rep_buffer --env $FC2\_$VERSION --agent $AGENT --num_runs $NUM_RUNS --id $ID --results_dir $RESULTS_DIR
-    python train_hpo.py --data_dir $RESULTS_DIR/ToySGD/$AGENT/$ID/$FC2 --agent_type $RL_AGENT
+    python train_hpo.py --data_dir $RESULTS_DIR/ToySGD/$AGENT/$ID/$FC2 --agent_type $RL_AGENT --output_path smac_$AGENT\_$FC2\_$RL_AGENT
 elif [ ${SLURM_ARRAY_TASK_ID} -eq 3 ]
 then
     python data_gen.py --save_run_data --save_rep_buffer --env $FC3\_$VERSION --agent $AGENT --num_runs $NUM_RUNS --id $ID --results_dir $RESULTS_DIR
-    python train_hpo.py --data_dir $RESULTS_DIR/ToySGD/$AGENT/$ID/$FC3 --agent_type $RL_AGENT
+    python train_hpo.py --data_dir $RESULTS_DIR/ToySGD/$AGENT/$ID/$FC3 --agent_type $RL_AGENT --output_path smac_$AGENT\_$FC3\_$RL_AGENT
 elif [ ${SLURM_ARRAY_TASK_ID} -eq 4 ]
 then
     python data_gen.py --save_run_data --save_rep_buffer --env $FC4\_$VERSION --agent $AGENT --num_runs $NUM_RUNS --id $ID --results_dir $RESULTS_DIR
-    python train_hpo.py --data_dir $RESULTS_DIR/ToySGD/$AGENT/$ID/$FC4 --agent_type $RL_AGENT
+    python train_hpo.py --data_dir $RESULTS_DIR/ToySGD/$AGENT/$ID/$FC4 --agent_type $RL_AGENT --output_path smac_$AGENT\_$FC4\_$RL_AGENT
 fi
 
 # Print some Information about the end-time to STDOUT
