@@ -1,5 +1,5 @@
 # Ours
-data/*
+data*/*
 wandb/
 .vscode/
 logs/
