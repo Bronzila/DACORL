@@ -2,10 +2,9 @@ import argparse
 import re
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
-from check_fbest import calculate_statistics
 from markdown_table_generator import generate_markdown, table_from_string_list
+
+from src.utils.general import calculate_statistics
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate tables")
