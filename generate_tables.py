@@ -52,7 +52,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--ids",
         help="Specify which ids to generate tables for",
-        type=int,
+        type=str,
         nargs="*",
         default=[0],
     )

@@ -101,10 +101,10 @@ def train_agent(
                     )
 
                 # Save agent early to enable continuation of pipeline
-                save_agent(agent.state_dict(), results_dir, t)
-                eval_data.to_csv(results_dir / f"{t + 1}" / "eval_data.csv")
+                save_agent(agent.state_dict(), results_dir, t, seed)
+                eval_data.to_csv(results_dir/ str(seed) / f"{t + 1}" / "eval_data.csv")
 
-    save_agent(agent.state_dict(), results_dir, t)
+    save_agent(agent.state_dict(), results_dir, t, seed)
 
     if not debug:
         wandb.finish()  # type: ignore
