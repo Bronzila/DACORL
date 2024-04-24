@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import random
 import signal
 from pathlib import Path
@@ -182,7 +183,7 @@ def combine_runs(agent_paths):
         combined_run_data.append(df)
     return combined_buffer, combined_run_info, pd.concat(combined_run_data, ignore_index=True)
 
-def combine_runs(data_paths, num_runs=100):
+def combine_run_data(data_paths, num_runs=100):
     combined_run_data = []
     for idx, root_path in enumerate(data_paths):
         run_data_path = Path(root_path, "eval_data.csv")
@@ -216,6 +217,8 @@ def calculate_statistics(calc_mean=True, calc_lowest=True, n_lowest=1, path=None
     # Load data
     min_mean = np.inf
     min_std = np.inf
+    min_iqm = np.inf
+    min_iqm_std = np.inf
     min_path = ""
     lowest_vals_of_min_mean = []
     for path in paths:
@@ -233,6 +236,7 @@ def calculate_statistics(calc_mean=True, calc_lowest=True, n_lowest=1, path=None
                 min_mean = mean
                 min_std = std
                 min_path = path
+                min_iqm, min_iqm_std = compute_IQM(df)
             if verbose:
                 print(f"Mean +- Std {mean:.3e} ± {std:.3e}")
         if calc_lowest:
@@ -241,8 +245,8 @@ def calculate_statistics(calc_mean=True, calc_lowest=True, n_lowest=1, path=None
                 lowest_vals_of_min_mean = lowest_vals["f_cur"]
             if verbose:
                 print("Lowest values:")
-                print(lowest_vals[args.column_name])
-    return min_mean, min_std, lowest_vals_of_min_mean, min_path
+                print(lowest_vals["f_cur"])
+    return min_mean, min_std, lowest_vals_of_min_mean, min_iqm, min_iqm_std, min_path
 
 def compute_IQM(df):
     final_evaluations = df.groupby("run").last()
