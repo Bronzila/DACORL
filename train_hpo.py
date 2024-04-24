@@ -31,12 +31,14 @@ class Optimizee:
         data_dir: str,
         agent_type: str,
         debug: bool,
+        budget: int,
         eval_protocol: str,
         eval_seed: int,
     ) -> None:
         self.data_dir = data_dir
         self.agent_type = agent_type
         self.debug = debug
+        self.budget = budget
         self.eval_protocol = eval_protocol
         self.eval_seed = eval_seed
 
@@ -53,7 +55,9 @@ class Optimizee:
         hidden_layers_critic = Integer(
             "hidden_layers_critic", (0, 5), default=1
         )
-        hidden_dim = Categorical("hidden_dim", [32, 64, 128, 256, 512], default=256)
+        hidden_dim = Categorical(
+            "hidden_dim", [32, 64, 128, 256, 512], default=256
+        )
         activation = Categorical(
             "activation", ["ReLU", "LeakyReLU"], default="ReLU"
         )
@@ -109,17 +113,15 @@ class Optimizee:
         )
         return cs
 
-    def train(
-        self, config: Configuration, seed: int = 0, budget: int = 25
-    ) -> float:
+    def train(self, config: Configuration, seed: int = 0) -> float:
         log_dict, eval_mean = train_agent(
             data_dir=self.data_dir,
             agent_type=self.agent_type,
             agent_config={},
-            num_train_iter=budget,
+            num_train_iter=self.budget,
             num_eval_runs=100,
             batch_size=config["batch_size"],
-            val_freq=int(budget),
+            val_freq=int(self.budget),
             seed=seed,
             wandb_group=None,
             timeout=0,
@@ -173,12 +175,16 @@ if __name__ == "__main__":
         "--output_path",
         type=str,
         help="Path where optimization logs are saved",
-        default="smac"
+        default="smac",
     )
     parser.add_argument(
-        "--agent_type", type=str, default="td3_bc", choices=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac"]
+        "--agent_type",
+        type=str,
+        default="td3_bc",
+        choices=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac"],
     )
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--budget", type=int, default=10000)
     parser.add_argument(
         "--reduced",
         action="store_true",
@@ -188,7 +194,7 @@ if __name__ == "__main__":
         "--save_incumbent",
         action="store_true",
         default=True,
-        help="Flag if we save the incumbent configuration"
+        help="Flag if we save the incumbent configuration",
     )
     parser.add_argument(
         "--debug",
@@ -196,10 +202,12 @@ if __name__ == "__main__":
         help="Run for max. 5 iterations and don't log in wanbd.",
     )
     parser.add_argument(
-        "--eval_protocol", type=str, default="train", choices=["train", "interpolation"]
+        "--eval_protocol",
+        type=str,
+        default="train",
+        choices=["train", "interpolation"],
     )
     parser.add_argument("--eval_seed", type=int, default=123)
-
 
     args = parser.parse_args()
     set_seeds(args.seed)
@@ -208,6 +216,7 @@ if __name__ == "__main__":
         data_dir=args.data_dir,
         agent_type=args.agent_type,
         debug=args.debug,
+        budget=args.budget,
         eval_protocol=args.eval_protocol,
         eval_seed=args.eval_seed,
     )
@@ -216,7 +225,7 @@ if __name__ == "__main__":
     scenario = Scenario(
         optimizee.configspace,
         output_directory=output_path,
-        n_trials=5000,
+        n_trials=900,
         n_workers=1,
         deterministic=False,
     )
