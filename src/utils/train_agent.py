@@ -60,7 +60,7 @@ def train_agent(
     )
     agent = get_agent(agent_type, agent_config, hyperparameters)
 
-    if (not debug) or use_wandb:
+    if (not debug) and use_wandb:
         fct = run_info["environment"]["function"]
         teacher = run_info["agent"]["type"]
         state_version = run_info["environment"]["state_version"]
@@ -114,7 +114,7 @@ def train_agent(
 
     save_agent(agent.state_dict(), results_dir, t)
 
-    if (not debug) or use_wandb:
+    if (not debug) and use_wandb:
         wandb.finish()  # type: ignore
 
     final_evaluations = eval_data.groupby("run").last()
