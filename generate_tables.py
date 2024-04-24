@@ -84,7 +84,7 @@ if __name__ == "__main__":
                 if args.custom_path:                    
                     # run_data_path = base_path / agent / function / "results" if args.results else base_path / agent / function / "aggregated_run_data.csv"
                     run_data_path = base_path / function / "results" if args.results else base_path / function / "aggregated_run_data.csv"
-                mean, std, lowest, iqm, iqm_std, min_path = calculate_statistics(path=run_data_path, results=args.results, verbose=args.verbose)
+                mean, std, lowest, iqm, iqm_std, min_path = calculate_statistics(path=run_data_path, results=args.results, verbose=args.verbose, multi_seed=args.multi_seed)
                 pattern = r"(\d+)"
                 train_steps = int(re.findall(pattern, str(min_path))[-1]) if args.results else 0
                 if args.mean:

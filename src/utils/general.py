@@ -245,7 +245,8 @@ def calc_mean_and_std_dev(df):
     fbests = final_evaluations["f_cur"]
     return fbests.mean(), fbests.std()
 
-def calculate_statistics(calc_mean=True, calc_lowest=True, n_lowest=1, path=None, results=True, verbose=False):
+def calculate_single_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=1, path=None,
+                                    results=True, verbose=False):
     paths = []
     if results:
         for folder_path, _, _ in os.walk(path):
@@ -285,6 +286,35 @@ def calculate_statistics(calc_mean=True, calc_lowest=True, n_lowest=1, path=None
                 print("Lowest values:")
                 print(lowest_vals["f_cur"])
     return min_mean, min_std, lowest_vals_of_min_mean, min_iqm, min_iqm_std, min_path
+
+def calculate_multi_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=1, path=None,
+                                    results=True, verbose=False):
+    # TODO here we currently assume, that we only have one eval file in results/td3_bc/<seed>/
+    paths = []
+    if results:
+        for folder_path, _, _ in os.walk(path):
+            paths.extend(Path(folder_path).glob("*/eval_data.csv"))
+    else:
+        paths.append(path)
+
+    combined_data = combine_run_data(paths)
+    if calc_mean:
+            mean, std = calc_mean_and_std_dev(combined_data)
+            mean = float(f"{mean:.3e}")
+            std = float(f"{std:.3e}")
+            iqm, iqm_std = compute_IQM(combined_data)
+    if calc_lowest:
+        lowest_vals = find_lowest_values(combined_data, "f_cur", n_lowest)["f_cur"]
+    return mean, std, lowest_vals, iqm, iqm_std, paths[0] # path doesnt really matter here
+
+def calculate_statistics(calc_mean=True, calc_lowest=True, n_lowest=1, path=None,
+                         results=True, verbose=False, multi_seed=False):
+    if multi_seed:
+        return calculate_multi_seed_statistics(calc_mean, calc_mean, calc_lowest,
+                                               n_lowest, path, results, verbose)
+    else:
+        return calculate_single_seed_statistics(calc_mean, calc_lowest, n_lowest,
+                                                path, results, verbose)
 
 def compute_IQM(df):
     final_evaluations = df.groupby("run").last()
