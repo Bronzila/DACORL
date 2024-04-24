@@ -1,4 +1,5 @@
 # Ours
+smac/
 data*/*
 wandb/
 .vscode/
