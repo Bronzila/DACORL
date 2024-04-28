@@ -13,7 +13,10 @@ if __name__ == "__main__":
         help="path to the directory where replay_buffer and info about the replay_buffer are stored",
     )
     parser.add_argument(
-        "--agent_type", type=str, default="td3_bc", choices=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac"]
+        "--agent_type",
+        type=str,
+        default="td3_bc",
+        choices=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac"],
     )
     parser.add_argument(
         "--agent_config",
@@ -47,11 +50,30 @@ if __name__ == "__main__":
         action="store_true",
         help="Run for max. 5 iterations and don't log in wanbd.",
     )
+    parser.add_argument(
+        "--wandb",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+    )
+    parser.add_argument(
+        "--eval_protocol",
+        type=str,
+        default="train",
+        choices=["train", "interpolation"],
+    )
+    parser.add_argument("--eval_seed", type=int, default=123)
 
     args = parser.parse_args()
     start = time.time()
 
-    cs = Optimizee(args.data_dir, agent_type=args.agent_type, debug=args.debug)
+    cs = Optimizee(
+        args.data_dir,
+        agent_type=args.agent_type,
+        debug=args.debug,
+        budget=None,
+        eval_protocol=args.eval_protocol,
+        eval_seed=args.eval_seed,
+    )
     hyperparameters = cs.configspace.get_default_configuration()
 
     train_agent(
@@ -66,8 +88,10 @@ if __name__ == "__main__":
         wandb_group=args.wandb_group,
         timeout=args.timeout,
         debug=args.debug,
-        use_wandb=True,
+        use_wandb=args.wandb,
         hyperparameters=hyperparameters,
+        eval_protocol=args.eval_protocol,
+        eval_seed=args.eval_seed,
     )
 
     end = time.time()

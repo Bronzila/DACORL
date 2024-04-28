@@ -69,7 +69,7 @@ def train_agent(
             entity="study_project",
             group=wandb_group,
             config=hyperparameters,
-            name=f"{teacher}-{fct}-{state_version}",
+            name=f"{agent_type}-{teacher}-{fct}-{state_version}",
         )
 
     logs: dict = {"actor_loss": [], "critic_loss": []}
@@ -80,7 +80,8 @@ def train_agent(
         for k, v in log_dict.items():
             logs[k].append(v)
 
-        # if not debug:
+        # if (not debug) and use_wandb:
+            # wandb.log(log_dict)
 
         if val_freq != 0 and (t + 1) % val_freq == 0:
             with torch.random.fork_rng():

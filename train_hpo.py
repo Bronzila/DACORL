@@ -1,10 +1,9 @@
 import argparse
 import json
+from typing import Optional
 import warnings
 from pathlib import Path
 
-import numpy as np
-import torch.nn as nn
 from ConfigSpace import (
     Categorical,
     Configuration,
@@ -31,7 +30,7 @@ class Optimizee:
         data_dir: str,
         agent_type: str,
         debug: bool,
-        budget: int,
+        budget: Optional[int],
         eval_protocol: str,
         eval_seed: int,
     ) -> None:
