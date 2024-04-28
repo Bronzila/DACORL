@@ -117,6 +117,7 @@ ignore = [
   "PLC1901", # "" can be simplified to be falsey
   "PLR0913", # Too many arguments to function call (15 > 10)
   "TCH003",  # Move stdlib import into TYPE_CHECKING
+  "FBT001",  # Boolean positional arg in function definition
   # These tend to be lighweight and confuse pyright
 ]
 
