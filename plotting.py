@@ -57,6 +57,12 @@ if __name__ == "__main__":
         action=argparse.BooleanOptionalAction,
         default=True,
     )
+    parser.add_argument(
+        "--reward",
+        help="Defines whether action plot should also include the reward",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+    )
     args = parser.parse_args()
 
     if args.optim_trace:
@@ -65,4 +71,4 @@ if __name__ == "__main__":
     )
     if args.action:
         plot_actions(args.data_dir, args.agent_path, args.show, args.num_runs,
-                     args.aggregate, args.teacher)
+                     args.aggregate, args.teacher, args.reward)

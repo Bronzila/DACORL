@@ -138,6 +138,7 @@ def plot_actions(
     num_runs=1,
     aggregate=True,
     teacher=True,
+    reward=False,
 ):
     plt.clf()
     # Get paths
@@ -202,12 +203,21 @@ def plot_actions(
 
         if idx < num_runs:
             plt.clf()
-            sns.lineplot(
+            ax = sns.lineplot(
                 data=data,
                 x="batch",
                 y="action",
                 drawstyle=drawstyle,
                 label=label,
+            )
+            ax2 = ax.twinx()
+            sns.lineplot(
+                data=data,
+                x="batch",
+                y="reward",
+                drawstyle=drawstyle,
+                label="Reward",
+                ax=ax2,
             )
             if teacher:
                 sns.lineplot(
@@ -228,12 +238,23 @@ def plot_actions(
 
     if aggregate:
         plt.clf()
-        sns.lineplot(
+        ax = sns.lineplot(
             data=aggregated_data,
             x="batch",
             y="action",
             drawstyle=drawstyle,
             label=label,
+            legend=False,
+        )
+        ax2 = ax.twinx()
+        sns.lineplot(
+            data=aggregated_data,
+            x="batch",
+            y="reward",
+            color="r",
+            label="Reward",
+            ax=ax2,
+            legend=False,
         )
         if teacher:
             sns.lineplot(
@@ -242,8 +263,11 @@ def plot_actions(
                 y="action",
                 drawstyle=teacher_drawstyle,
                 label="Teacher",
+                ax=ax,
+                legend=False,
             )
 
+        ax.figure.legend()
         # Show or save the plot
         if show:
             plt.show()
