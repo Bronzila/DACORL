@@ -9,7 +9,7 @@ do
     do
         for agent in bc td3_bc cql awac edac lb_sac sac_n
         do
-            python -W ignore plotting.py --data_dir $root_dir/ToySGD/$teacher/$id/$function/ --agent_path results/$agent/$fidelity --action --num_runs 100 --teacher
+            python -W ignore plotting.py --data_dir $root_dir/ToySGD/$teacher/$id/$function/ --agent_path results/$agent/$fidelity --action --num_runs 0 --teacher
         done
     done
 done
