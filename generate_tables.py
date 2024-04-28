@@ -1,5 +1,4 @@
 import argparse
-import re
 from pathlib import Path
 
 import numpy as np
@@ -31,19 +30,19 @@ if __name__ == "__main__":
     parser.add_argument(
         "--teacher",
         help="Specify which agents to generate the table for",
-        type=list,
+        nargs='+',
         default=["exponential_decay", "step_decay", "sgdr", "constant"],
     )
     parser.add_argument(
         "--agents",
         help="Specify which agents to generate the table for",
-        type=list,
+        nargs='+',
         default=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac"],
     )
     parser.add_argument(
         "--functions",
         help="Specify which functions to generate the table for",
-        type=list,
+        nargs='+',
         default=["Ackley", "Rastrigin", "Rosenbrock", "Sphere"],
     )
     parser.add_argument(
@@ -55,7 +54,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--ids",
         help="Specify which ids to generate tables for",
-        type=list,
+        nargs='+', 
         default=[0],
     )
     args = parser.parse_args()
