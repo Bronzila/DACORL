@@ -34,9 +34,6 @@ def train_agent(
     eval_protocol: str="train",
     eval_seed: int=123,
 ) -> None:
-    if debug:
-        num_train_iter = 5
-        val_freq = 5
 
     set_timeout(timeout)
     set_seeds(seed)
