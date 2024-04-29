@@ -1,0 +1,11 @@
+{
+    "type": "ToySGD",
+    "function": "Ackley",
+    "num_batches": 100,
+    "initial_learning_rate": 0.01,
+    "high": 5,
+    "low": -5,
+    "state_version": "extended_velocity",
+    "reward_version": "regret",
+    "boundary_termination": true
+}

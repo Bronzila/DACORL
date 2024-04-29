@@ -1,0 +1,11 @@
+{
+    "type": "ToySGD",
+    "function": "Rosenbrock",
+    "num_batches": 100,
+    "initial_learning_rate": 0.0002,
+    "high": 2,
+    "low": -2,
+    "state_version": "extended_all",
+    "reward_version": "regret",
+    "boundary_termination": true
+}
