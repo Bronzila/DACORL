@@ -6,8 +6,8 @@
 #MSUB -l pmem=16000mb
 #MSUB -t [1-4]
 
-cd /work/ws/nemo/fr_jf442-thesis-0/MTORL-DAC
-source activate MTORL-DAC
+cd /work/dlclarge2/gieringl-DACORL/MTORL-DAC
+source activate DACORL
 
 #AGENT=${1:-exponential_decay}
 AGENT=exponential_decay

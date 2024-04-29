@@ -1,4 +1,4 @@
-source activate MTORL-DAC
+source activate DACORL
 id=combined
 root_dir=data_multi
 
