@@ -101,7 +101,7 @@ def train_agent(
                 save_agent(agent.state_dict(), results_dir, t, seed)
                 eval_data.to_csv(results_dir/ str(seed) / f"{t + 1}" / "eval_data.csv")
                 with (results_dir/ str(seed) / f"{t + 1}" / "config.json").open("w") as f:
-                    json.dump(hyperparameters, f)
+                    json.dump(dict(hyperparameters), f, indent=2)
 
     save_agent(agent.state_dict(), results_dir, t, seed)
 
