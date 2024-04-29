@@ -82,6 +82,27 @@ class TD3BC_Optimizee:
     def train(
         self, config: Configuration, seed: int = 0
     ) -> float:
+        # results = []
+        # for _seed in range(10)
+        #     log_dict, eval_mean = train_agent(
+        #         data_dir=self.data_dir,
+        #         agent_type=self.agent_type,
+        #         agent_config={},
+        #         num_train_iter=self.budget,
+        #         batch_size=config["batch_size"],
+        #         val_freq=int(self.budget),
+        #         seed=_seed,
+        #         wandb_group=None,
+        #         timeout=0,
+        #         hyperparameters=config,
+        #         debug=self.debug,
+        #         eval_protocol=self.eval_protocol,
+        #         eval_seed=self.eval_seed,
+        #     )
+        #     results.append(eval_mean)
+
+        # return np.array(results).mean()
+
         print(seed)
         log_dict, eval_mean = train_agent(
             data_dir=self.data_dir,
@@ -142,7 +163,7 @@ if __name__ == "__main__":
         "--agent_type", type=str, default="td3_bc", choices=["td3_bc"]
     )
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--budget", type=int, default=10000)
+    parser.add_argument("--budget", type=int, default=15000)
     parser.add_argument(
         "--debug",
         action="store_true",
@@ -174,8 +195,8 @@ if __name__ == "__main__":
     scenario = Scenario(
         optimizee.configspace,
         output_directory=output_path,
-        walltime_limit=60 * 60 * 10,  # convert 10 hours into seconds
-        n_trials=5000,
+        walltime_limit=60 * 60 * 30,  # convert 10 hours into seconds
+        n_trials=800,
         n_workers=1,
         deterministic=False,
     )

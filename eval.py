@@ -17,10 +17,11 @@ if __name__ == "__main__":
     )
     parser.add_argument("--agent_type", type=str, default="td3_bc")
     parser.add_argument("--num_runs", type=int, default=100)
+    parser.add_argument("--training_seed", type=int, default=100)
     parser.add_argument(
         "--num_train_iter",
         type=int,
-        default=100,
+        default=15000,
         help="Number of training iterations, on which the agent was trained on.",
     )
     parser.add_argument(
@@ -31,7 +32,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     agent_path = Path(
-        args.data_dir, "results", args.agent_type, f"{args.num_train_iter}"
+        args.data_dir, "results", args.agent_type, str(args.training_seed), f"{args.num_train_iter}"
     )
     with Path(args.data_dir, "run_info.json").open(mode="rb") as f:
         run_info = json.load(f)
@@ -43,7 +44,7 @@ if __name__ == "__main__":
     state_dim = state[0].shape[0]
     agent_config = {"state_dim": state_dim, "action_dim": 1, "max_action": 0, "min_action": -10}
     agent = load_agent(args.agent_type, agent_config, agent_path)
-
+    print(f"Evaluating agent in {agent_path}")
     # Evaluate agent
     if args.eval_protocol == "train":
         eval_data = test_agent(
@@ -63,7 +64,4 @@ if __name__ == "__main__":
             seed=args.eval_seed,
         )
     # Save evaluation data
-    eval_dir = Path(args.data_dir, "eval")
-    if not eval_dir.exists():
-        eval_dir.mkdir(parents=True)
-    eval_data.to_csv(eval_dir / "eval_data.csv")
+    eval_data.to_csv(agent_path / "eval_data.csv")

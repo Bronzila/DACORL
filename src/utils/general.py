@@ -224,7 +224,7 @@ def combine_runs(agent_paths):
 def combine_run_data(data_paths, num_runs=100):
     combined_run_data = []
     for idx, root_path in enumerate(data_paths):
-        run_data_path = Path(root_path, "eval_data.csv")
+        run_data_path = Path(root_path)
         df = pd.read_csv(run_data_path)
         df["run"] += idx * num_runs
         combined_run_data.append(df)
@@ -289,7 +289,7 @@ def calculate_single_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=
 
 def calculate_multi_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=1, path=None,
                                     results=True, verbose=False):
-    # TODO here we currently assume, that we only have one eval file in results/td3_bc/<seed>/
+    # TODO here we currently assume, that we only have one training folder and eval file in results/td3_bc/<seed>/
     paths = []
     if results:
         for folder_path, _, _ in os.walk(path):
@@ -310,7 +310,7 @@ def calculate_multi_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=1
 def calculate_statistics(calc_mean=True, calc_lowest=True, n_lowest=1, path=None,
                          results=True, verbose=False, multi_seed=False):
     if multi_seed:
-        return calculate_multi_seed_statistics(calc_mean, calc_mean, calc_lowest,
+        return calculate_multi_seed_statistics(calc_mean, calc_lowest,
                                                n_lowest, path, results, verbose)
     else:
         return calculate_single_seed_statistics(calc_mean, calc_lowest, n_lowest,
