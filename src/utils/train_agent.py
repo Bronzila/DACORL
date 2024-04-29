@@ -72,16 +72,19 @@ def train_agent(
             name=f"{agent_type}-{teacher}-{fct}-{state_version}",
         )
 
-    logs: dict = {"actor_loss": [], "critic_loss": []}
+    logs: dict = {}
 
     for t in range(int(num_train_iter)):
         batch = replay_buffer.sample(batch_size)
         log_dict = agent.train(batch)
         for k, v in log_dict.items():
-            logs[k].append(v)
+            if k not in logs:
+                logs[k] = [v]
+            else:
+                logs[k].append(v)
 
-        # if (not debug) and use_wandb:
-            # wandb.log(log_dict)
+        if (not debug) and use_wandb:
+            wandb.log(log_dict)
 
         if val_freq != 0 and (t + 1) % val_freq == 0:
             with torch.random.fork_rng():

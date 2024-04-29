@@ -16,7 +16,7 @@ if __name__ == "__main__":
         "--agent_type",
         type=str,
         default="td3_bc",
-        choices=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac"],
+        choices=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac", "iql", "dt"],
     )
     parser.add_argument(
         "--agent_config",

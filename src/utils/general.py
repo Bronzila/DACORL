@@ -13,7 +13,9 @@ from CORL.algorithms.offline import (
     any_percent_bc as bc,
     awac,
     cql,
+    dt,
     edac,
+    iql,
     lb_sac,
     sac_n,
     td3_bc,
@@ -429,14 +431,103 @@ def get_agent(
 
         return lb_sac.LBSAC(**kwargs)
 
-    # if agent_type == "iql":
-    #     #     # IQL
-    #     pass
+    if agent_type == "iql":
+        config = iql.TrainConfig
+        v_network = iql.ValueFunction(
+            state_dim=state_dim,
+            hidden_dim=hyperparameters["hidden_dim"],
+            n_hidden=hyperparameters["hidden_layers_critic"],
+        )
+        q_network = iql.TwinQ(
+            state_dim=state_dim,
+            action_dim=action_dim,
+            hidden_dim=hyperparameters["hidden_dim"],
+            n_hidden=hyperparameters["hidden_layers_critic"],
+        )
+        actor = (
+            iql.DeterministicPolicy(
+                state_dim,
+                action_dim,
+                max_action,
+                min_action,
+                hidden_dim=hyperparameters["hidden_dim"],
+                n_hidden=hyperparameters["hidden_layers_actor"],
+                dropout=config.actor_dropout,
+            )
+            if config.iql_deterministic
+            else iql.GaussianPolicy(
+                state_dim,
+                action_dim,
+                max_action,
+                min_action,
+                hidden_dim=hyperparameters["hidden_dim"],
+                n_hidden=hyperparameters["hidden_layers_actor"],
+                dropout=config.actor_dropout,
+            )
+        ).to(device)
+        v_optimizer = torch.optim.Adam(
+            v_network.parameters(),
+            lr=hyperparameters["lr_critic"],
+        )
+        q_optimizer = torch.optim.Adam(
+            q_network.parameters(),
+            lr=hyperparameters["lr_critic"],
+        )
+        actor_optimizer = torch.optim.Adam(
+            actor.parameters(),
+            lr=hyperparameters["lr_actor"],
+        )
 
+        kwargs = {
+            "max_action": max_action,
+            "actor": actor,
+            "actor_optimizer": actor_optimizer,
+            "q_network": q_network,
+            "q_optimizer": q_optimizer,
+            "v_network": v_network,
+            "v_optimizer": v_optimizer,
+            "discount": hyperparameters["discount_factor"],
+            "tau": hyperparameters["target_update_rate"],
+            "device": device,
+            # IQL
+            "beta": config.beta,
+            "iql_tau": config.iql_tau,
+            "max_steps": config.max_timesteps,
+        }
+
+        # Initialize actor
+        return iql.ImplicitQLearning(**kwargs)
     # if agent_type == "rebrac":
 
-    # if agent_type == "dt":
-    #     pass
+    if agent_type == "dt":
+        config = dt.TrainConfig()
+        model = dt.DecisionTransformer(
+            state_dim=state_dim,
+            action_dim=action_dim,
+            seq_len=config.seq_len,
+            episode_len=config.episode_len,
+            embedding_dim=config.embedding_dim,  # hyperparameters["hidden_dim"],
+            num_layers=config.num_layers,  # hyperparameters["actor"],
+            num_heads=config.num_heads,
+            attention_dropout=config.attention_dropout,
+            residual_dropout=config.residual_dropout,
+            embedding_dropout=config.embedding_dropout,
+            max_action=max_action,
+            min_action=min_action,
+        )
+
+        optimizer = torch.optim.AdamW(
+            model.parameters(),
+            lr=config.learning_rate,
+            weight_decay=config.weight_decay,
+            betas=config.betas,
+        )
+        scheduler = torch.optim.lr_scheduler.LambdaLR(
+            optimizer,
+            lambda steps: min((steps + 1) / config.warmup_steps, 1),
+        )
+
+        return dt.DTWrapper(model, optimizer, scheduler, config.clip_grad)
 
     raise NotImplementedError(
         f"No agent with type {agent_type} implemented.",

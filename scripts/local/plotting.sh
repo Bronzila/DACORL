@@ -1,13 +1,13 @@
 source activate DACORL
 id=0
-root_dir=data/check_lb-sac
+root_dir=data/hpo_extended_velocity
 fidelity=10000
 
-for teacher in exponential_decay step_decay sgdr constant
+for teacher in step_decay sgdr constant exponential_decay 
 do
-    for function in Ackley Rastrigin Rosenbrock Sphere
+    for function in Rastrigin Rosenbrock Sphere Ackley
     do
-        for agent in lb_sac #bc td3_bc cql awac edac  sac_n
+        for agent in bc td3_bc cql awac edac lb_sac sac_n iql dt
         do
             python -W ignore plotting.py --data_dir $root_dir/ToySGD/$teacher/$id/$function/ --agent_path results/$agent/$fidelity --action --num_runs 0 --teacher
         done

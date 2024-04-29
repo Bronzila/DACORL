@@ -199,7 +199,7 @@ def plot_actions(
         # Adjust action value from the DataFrame
         data["action"] = 10 ** data["action"]
 
-        aggregated_data = aggregated_data.append(data)
+        aggregated_data = aggregated_data._append(data)
 
         if idx < num_runs:
             plt.clf()
