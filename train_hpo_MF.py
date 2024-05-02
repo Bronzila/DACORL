@@ -4,18 +4,15 @@ import warnings
 from pathlib import Path
 
 import numpy as np
-import torch.nn as nn
 from ConfigSpace import (
     Categorical,
     Configuration,
     ConfigurationSpace,
+    Constant,
     Float,
-    Integer,
-    Constant
 )
 from matplotlib import pyplot as plt
 from smac import (
-    HyperbandFacade,
     MultiFidelityFacade as MFFacade,
     Scenario,
 )
@@ -32,6 +29,7 @@ class TD3BC_Optimizee:
         data_dir: str,
         agent_type: str,
         debug: bool,
+        budget: int,
         eval_protocol: str,
         eval_seed: int,
     ) -> None:
@@ -40,6 +38,7 @@ class TD3BC_Optimizee:
         self.debug = debug
         self.eval_protocol = eval_protocol
         self.eval_seed = eval_seed
+        self.budget = budget
 
         with Path(self.data_dir, "run_info.json").open(mode="rb") as f:
             self.run_info = json.load(f)
@@ -80,24 +79,30 @@ class TD3BC_Optimizee:
     def train(
         self, config: Configuration, seed: int = 0, budget: int = 25
     ) -> float:
-        print(seed)
-        log_dict, eval_mean = train_agent(
-            data_dir=self.data_dir,
-            agent_type=self.agent_type,
-            agent_config={},
-            num_train_iter=budget,
-            batch_size=config["batch_size"],
-            val_freq=int(budget),
-            seed=seed,
-            wandb_group=None,
-            timeout=0,
-            hyperparameters=config,
-            debug=self.debug,
-            eval_protocol=self.eval_protocol,
-            eval_seed=self.eval_seed,
-        )
+        results = []
+        for _seed in range(int(round(budget))):
+            print(_seed)
+            log_dict, eval_mean = train_agent(
+                data_dir=self.data_dir,
+                agent_type=self.agent_type,
+                agent_config={},
+                num_train_iter=self.budget,
+                batch_size=config["batch_size"],
+                val_freq=int(self.budget),
+                seed=_seed,
+                wandb_group=None,
+                timeout=0,
+                hyperparameters=config,
+                debug=self.debug,
+                eval_protocol=self.eval_protocol,
+                eval_seed=self.eval_seed,
+            )
+            print(f"Mean for seed {_seed}: {eval_mean}")
+            results.append(eval_mean)
 
-        return eval_mean
+        seed_aggregated_mean = np.array(results).mean()
+        print(f"aggregated mean: {seed_aggregated_mean}")
+        return seed_aggregated_mean
 
 
 def plot_trajectory(facade: MFFacade, output_path) -> None:
@@ -140,6 +145,7 @@ if __name__ == "__main__":
         "--agent_type", type=str, default="td3_bc", choices=["td3_bc"]
     )
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--budget", type=int, default=15000)
     parser.add_argument(
         "--debug",
         action="store_true",
@@ -163,6 +169,7 @@ if __name__ == "__main__":
         data_dir=args.data_dir,
         agent_type=args.agent_type,
         debug=args.debug,
+        budget=args.budget,
         eval_protocol=args.eval_protocol,
         eval_seed=args.eval_seed,
     )
@@ -170,22 +177,26 @@ if __name__ == "__main__":
     scenario = Scenario(
         optimizee.configspace,
         output_directory=output_path,
-        walltime_limit=60 * 60 * 10,  # convert 10 hours into seconds
-        n_trials=5000,
-        min_budget=1000,
-        max_budget=15000,
+        walltime_limit=60 * 60 * 30,  # convert 10 hours into seconds
+        n_trials=500,
+        min_budget=3,
+        max_budget=12,
         n_workers=1,
-        deterministic=False,
+        deterministic=True,
     )
 
     # We want to run five random configurations before starting the optimization.
     initial_design = MFFacade.get_initial_design(scenario, n_configs=5)
+
+    # Use eta=2 to get brackets with [3, 6, 12] seeds
+    intensifier = MFFacade.get_intensifier(scenario, eta=2)
 
     # Create our SMAC object and pass the scenario and the train method
     smac = MFFacade(
         scenario,
         optimizee.train,
         initial_design=initial_design,
+        intensifier=intensifier,
         overwrite=True,
         logging_level=20,
     )
