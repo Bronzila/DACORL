@@ -131,6 +131,8 @@ class Optimizee:
             eval_seed=self.eval_seed,
         )
 
+        print(f"Seed: {seed}")
+        print(f"Mean: {eval_mean}")
         return eval_mean
 
 
@@ -180,7 +182,7 @@ if __name__ == "__main__":
         "--agent_type",
         type=str,
         default="td3_bc",
-        choices=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac"],
+        choices=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac", "iql", "dt"],
     )
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--budget", type=int, default=10000)
