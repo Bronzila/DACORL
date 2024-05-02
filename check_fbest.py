@@ -35,7 +35,10 @@ def calculate_statistics(calc_mean=True, calc_lowest=True, n_lowest=1, path=None
     lowest_vals_of_min_mean = []
     for path in paths:
         incumbent_changed = False
-        df = pd.read_csv(path)
+        try:
+            df = pd.read_csv(path)
+        except:
+            return None, None, None, None
         if verbose:
             print(f"Calculating for path {path}")
 

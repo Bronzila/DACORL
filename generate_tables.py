@@ -37,7 +37,7 @@ if __name__ == "__main__":
         "--agents",
         help="Specify which agents to generate the table for",
         nargs='+',
-        default=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac"],
+        default=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac", "iql"],
     )
     parser.add_argument(
         "--functions",
@@ -74,12 +74,18 @@ if __name__ == "__main__":
                     if agent == "teacher":
                         run_data_path = base_path / teacher/ str(agent_id) / function / "aggregated_run_data.csv"
                     else:
-                        run_data_path = base_path / teacher / str(agent_id) / function / "results" / agent / f"{args.hpo_budget}" / "eval_data.csv"
+                        run_data_path = base_path / teacher / str(agent_id) / function / "results" / agent / str(0) / f"{args.hpo_budget}" / "eval_data.csv"
                     mean, std, lowest, min_path = calculate_statistics(path=run_data_path, results=False, verbose=args.verbose)
 
                     if args.mean:
+                        if mean is None:
+                            row_mean.append(" ")
+                            continue
                         row_mean.append(f"{mean:.3e} ± {std:.3e}")
                     if args.lowest:
+                        if lowest is None:
+                            row_lowest.append(" ")
+                            continue
                         lowest = lowest.to_numpy()[0]
                         row_lowest.append(f"{lowest:.3e}")
                 if args.mean:
