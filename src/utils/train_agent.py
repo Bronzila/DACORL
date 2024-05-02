@@ -43,6 +43,7 @@ def train_agent(
         run_info = json.load(f)
 
     replay_buffer = ReplayBuffer.load(Path(data_dir, "rep_buffer"))
+    replay_buffer.seed(seed)
     state, _, _, _, _ = replay_buffer.sample(1)
     state_dim = state.shape[1]
 

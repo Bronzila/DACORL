@@ -48,6 +48,9 @@ class ReplayBuffer:
         self._device = device
         self.rng = np.random.default_rng(seed)
 
+    def seed(self, seed: int) -> None:
+        self.rng = np.random.default_rng(seed)
+
     def _to_tensor(self, data: np.ndarray) -> torch.Tensor:
         return torch.tensor(data, dtype=torch.float32, device=self._device)
 
