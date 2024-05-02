@@ -109,3 +109,6 @@ class ReplayBuffer:
     def load(cls, filename: Path) -> ReplayBuffer:
         with filename.open(mode="rb") as f:
             return pickle.load(f)
+
+    def set_seed(self, seed: int) -> None:
+        self.rng = np.random.default_rng(seed)

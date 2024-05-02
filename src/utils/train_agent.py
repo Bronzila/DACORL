@@ -46,6 +46,7 @@ def train_agent(
         run_info = json.load(f)
 
     replay_buffer = ReplayBuffer.load(Path(data_dir, "rep_buffer"))
+    replay_buffer.set_seed(seed)
     state, _, _, _, _ = replay_buffer.sample(1)
     state_dim = state.shape[1]
 
@@ -70,6 +71,7 @@ def train_agent(
             group=wandb_group,
             config=hyperparameters,
             name=f"{agent_type}-{teacher}-{fct}-{state_version}",
+            tags=["agent_test", f"{agent_type}", f"{teacher}", f"{fct}"],
         )
 
     logs: dict = {}
@@ -113,10 +115,12 @@ def train_agent(
                     )
 
                 # Save agent early to enable continuation of pipeline
-                save_agent(agent.state_dict(), results_dir, t)
-                eval_data.to_csv(results_dir / f"{t + 1}" / "eval_data.csv")
+                save_agent(agent.state_dict(), results_dir, t, seed)
+                eval_data.to_csv(
+                    results_dir / str(seed) / f"{t + 1}" / "eval_data.csv",
+                )
 
-    save_agent(agent.state_dict(), results_dir, t)
+    save_agent(agent.state_dict(), results_dir, t, seed)
 
     if (not debug) and use_wandb:
         wandb.finish()  # type: ignore
