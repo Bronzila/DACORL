@@ -79,6 +79,10 @@ def generate_dataset(
             env_config["function"],
         )
 
+    if results_dir.exists():
+        print(f"Data already exists: {results_dir}")
+        return
+
     num_batches = env_config["num_batches"]
     env = get_environment(env_config)
     env_config["action_space"] = env.action_space.shape
