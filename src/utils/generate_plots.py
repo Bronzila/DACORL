@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import warnings
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -145,17 +146,22 @@ def plot_actions(
     if not agent_path:
         run_data_path = Path(dir_path, "aggregated_run_data.csv")
         filename = "action"
+        warnings.warn(
+            "No agent_path given. Therefore the default filename will be selected. Expect files to be overwritten",
+        )
     else:
         run_data_path = Path(dir_path, agent_path, "eval_data.csv")
 
         tmp = agent_path.split("/")
         if tmp[0] is None:
             agent_type = tmp[2]
-            fidelity = tmp[3]
+            seed = tmp[3]
+            fidelity = tmp[4]
         else:
             agent_type = tmp[1]
-            fidelity = tmp[2]
-        filename = f"action_{agent_type}_{fidelity}"
+            seed = tmp[2]
+            fidelity = tmp[3]
+        filename = f"action_{agent_type}_{seed}_{fidelity}"
 
     run_info_path = Path(dir_path, "run_info.json")
 
@@ -251,7 +257,7 @@ def plot_actions(
             data=aggregated_data,
             x="batch",
             y="reward",
-            color="r",
+            color="g",
             label="Reward",
             ax=ax2,
             legend=False,
@@ -272,10 +278,12 @@ def plot_actions(
         if show:
             plt.show()
         else:
+            dir_path = Path(dir_path)
             save_path = Path(
-                dir_path,
+                dir_path.parents[2],  # PROJECT/ToySGD/
                 "figures",
-                "action",
+                dir_path.name,  # FUNCTION/
+                dir_path.parents[1].name,  # TEACHER/
             )
 
             if not save_path.exists():

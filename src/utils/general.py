@@ -564,8 +564,13 @@ def get_activation(activation: str) -> nn.Module:
     return None
 
 
-def save_agent(state_dicts: dict, results_dir: Path, iteration: int) -> None:
-    filename = results_dir / f"{iteration + 1}"
+def save_agent(
+    state_dicts: dict,
+    results_dir: Path,
+    iteration: int,
+    seed: int = 0,
+) -> None:
+    filename = results_dir / str(seed) / f"{iteration + 1}"
     if not filename.exists():
         filename.mkdir(parents=True)
 
