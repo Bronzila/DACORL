@@ -1,4 +1,4 @@
-#MSUB -N data_gen_and_train_single_agent
+#MSUB -N train_single_agent
 #MSUB -e logs/${MOAB_JOBID}.e
 #MSUB -o logs/${MOAB_JOBID}.o
 #MSUB -l nodes=1:ppn=4
@@ -9,9 +9,9 @@
 cd /work/dlclarge2/gieringl-DACORL/MTORL-DAC
 source activate DACORL
 
-AGENT=${1:-exponential_decay}
+TEACHER=${1:-exponential_decay}
+AGENT=${1:-td3_bc}
 ID=combined
-BS=256
 NUM_TRAIN_ITER=20000
 VAL_FREQ=2000
 NUM_RUNS=100
@@ -20,7 +20,7 @@ FC2=Rastrigin
 FC3=Rosenbrock
 FC4=Sphere
 VERSION=default
-DATA_DIR="data_multi"
+DATA_DIR="data/test_agents"
 
 # Print some information about the job to STDOUT
 echo "Workingdir: $(pwd)";
@@ -30,16 +30,16 @@ echo "Running job ${MOAB_JOBID} of user ${MOAB_USER} using ${MOAB_NODECOUNT} nod
 
 if [ ${MOAB_JOBARRAYINDEX} -eq 1 ]
 then
-    python train.py --data_dir $DATA_DIR/ToySGD/$AGENT/$ID/$FC1 --num_train_iter $NUM_TRAIN_ITER --num_eval_runs $NUM_RUNS --val_freq $VAL_FREQ --batch_size $BS
+    python train.py --data_dir $DATA_DIR/ToySGD/$TEACHER/$ID/$FC1 --num_train_iter $NUM_TRAIN_ITER --num_eval_runs $NUM_RUNS --val_freq $VAL_FREQ --agent_type $AGENT
 elif [ ${MOAB_JOBARRAYINDEX} -eq 2 ]
 then
-    python train.py --data_dir $DATA_DIR/ToySGD/$AGENT/$ID/$FC2 --num_train_iter $NUM_TRAIN_ITER --num_eval_runs $NUM_RUNS --val_freq $VAL_FREQ --batch_size $BS
+    python train.py --data_dir $DATA_DIR/ToySGD/$TEACHER/$ID/$FC2 --num_train_iter $NUM_TRAIN_ITER --num_eval_runs $NUM_RUNS --val_freq $VAL_FREQ --agent_type $AGENT
 elif [ ${MOAB_JOBARRAYINDEX} -eq 3 ]
 then
-    python train.py --data_dir $DATA_DIR/ToySGD/$AGENT/$ID/$FC3 --num_train_iter $NUM_TRAIN_ITER --num_eval_runs $NUM_RUNS --val_freq $VAL_FREQ --batch_size $BS
+    python train.py --data_dir $DATA_DIR/ToySGD/$TEACHER/$ID/$FC3 --num_train_iter $NUM_TRAIN_ITER --num_eval_runs $NUM_RUNS --val_freq $VAL_FREQ --agent_type $AGENT
 elif [ ${MOAB_JOBARRAYINDEX} -eq 4 ]
 then
-    python train.py --data_dir $DATA_DIR/ToySGD/$AGENT/$ID/$FC4 --num_train_iter $NUM_TRAIN_ITER --num_eval_runs $NUM_RUNS --val_freq $VAL_FREQ --batch_size $BS
+    python train.py --data_dir $DATA_DIR/ToySGD/$TEACHER/$ID/$FC4 --num_train_iter $NUM_TRAIN_ITER --num_eval_runs $NUM_RUNS --val_freq $VAL_FREQ --agent_type $AGENT
 fi
 
 # Print some Information about the end-time to STDOUT
