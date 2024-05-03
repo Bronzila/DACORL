@@ -50,6 +50,7 @@ def generate_dataset(
     timeout: int,
     save_run_data: bool,
     save_rep_buffer: bool,
+    verbose: bool=True,
 ) -> None:
     set_timeout(timeout)
     set_seeds(seed)
@@ -126,10 +127,11 @@ def generate_dataset(
                 run_indeces.append(run)
 
             for batch in range(1, num_batches):
-                print(
-                    f"Starting batch {batch}/{num_batches} of run {run}. \
-                    Total {batch + run * num_batches}/{num_runs * num_batches}",
-                )
+                if verbose:
+                    print(
+                        f"Starting batch {batch}/{num_batches} of run {run}. \
+                        Total {batch + run * num_batches}/{num_runs * num_batches}",
+                    )
 
                 action = agent.act(state)
                 next_state, reward, done, truncated, info = env.step(action)
@@ -192,3 +194,5 @@ def generate_dataset(
         msg += "rep_buffer " if save_rep_buffer else ""
         msg += "run_data " if save_run_data else ""
         print(f"{msg}to {results_dir}")
+
+    return pd.concat(aggregated_run_data)
