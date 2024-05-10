@@ -360,7 +360,7 @@ def get_agent(
             lr=hyperparameters["lr_actor"],
         )
 
-        critic = edac.VectorizedCritic(
+        critic = sac_n.VectorizedCritic(
             state_dim=state_dim,
             action_dim=action_dim,
             hidden_dim=hyperparameters["hidden_dim"],
