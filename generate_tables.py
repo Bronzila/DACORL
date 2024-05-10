@@ -72,10 +72,14 @@ if __name__ == "__main__":
                 row_lowest = [agent]
                 for j, teacher in enumerate(args.teacher):
                     if agent == "teacher":
-                        run_data_path = base_path / teacher/ str(agent_id) / function / "aggregated_run_data.csv"
+                        run_data_paths = [base_path / teacher/ str(agent_id) / function / "aggregated_run_data.csv"]
                     else:
-                        run_data_path = base_path / teacher / str(agent_id) / function / "results" / agent / str(0) / f"{args.hpo_budget}" / "eval_data.csv"
-                    mean, std, lowest, min_path = calculate_statistics(path=run_data_path, results=False, verbose=args.verbose)
+                        for path in (base_path / teacher / str(agent_id) / function / "results" / agent).rglob(f"*/{args.hpo_budget}/eval_data.csv"):
+                            run_data_paths.append(path)
+                            break
+                        if len(run_data_paths) == 0:
+                            raise ValueError(f"No file found matching the pattern: \"*/{args.hpo_budget}/eval_data.csv\"")
+                    mean, std, lowest, lowest_std, _ = calculate_statistics(path=run_data_paths, results=False, verbose=args.verbose)
 
                     if args.mean:
                         if mean is None:
@@ -86,8 +90,8 @@ if __name__ == "__main__":
                         if lowest is None:
                             row_lowest.append(" ")
                             continue
-                        lowest = lowest.to_numpy()[0]
-                        row_lowest.append(f"{lowest:.3e}")
+                        lowest = lowest
+                        row_lowest.append(f"{lowest:.3e} ± {lowest_std:.3e}")
                 if args.mean:
                     rows_mean.append(row_mean)
                 if args.lowest:
