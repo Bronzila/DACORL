@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import json
-import warnings
 from pathlib import Path
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,7 +17,7 @@ from dacbench.envs.env_utils.function_definitions import (
 )
 
 
-def get_problem_from_name(function_name):
+def get_problem_from_name(function_name) -> Any:
     if function_name == "Rosenbrock":
         problem = Rosenbrock()
     elif function_name == "Rastrigin":
@@ -29,7 +29,12 @@ def get_problem_from_name(function_name):
     return problem
 
 
-def plot_optimization_trace(dir_path, agent_path=None, show=False, num_runs=1):
+def plot_optimization_trace(
+    dir_path,
+    agent_path=None,
+    show=False,
+    num_runs=1,
+) -> None:
     # Get paths
     if not agent_path:
         run_data_path = Path(dir_path, "aggregated_run_data.csv")
@@ -132,36 +137,139 @@ def plot_optimization_trace(dir_path, agent_path=None, show=False, num_runs=1):
         plt.savefig(save_path / f"point_traj_{idx}.svg")
 
 
-def plot_actions(
-    dir_path,
-    agent_path=None,
-    show=False,
-    num_runs=1,
-    aggregate=True,
-    teacher=True,
-    reward=False,
-):
+def plot_type(
+    plot_type: str,
+    dir_path: str,
+    fidelity: int,
+    seed: int | None,
+    show: bool = False,
+    teacher: bool = True,
+) -> None:
     plt.clf()
-    # Get paths
-    if not agent_path:
-        run_data_path = Path(dir_path, "aggregated_run_data.csv")
-        filename = "action"
-        warnings.warn(
-            "No agent_path given. Therefore the default filename will be selected. Expect files to be overwritten",
-        )
-    else:
-        run_data_path = Path(dir_path, agent_path, "eval_data.csv")
 
-        tmp = agent_path.split("/")
-        if tmp[0] is None:
-            agent_type = tmp[2]
-            seed = tmp[3]
-            fidelity = tmp[4]
-        else:
-            agent_type = tmp[1]
-            seed = tmp[2]
-            fidelity = tmp[3]
+    dir_path = Path(dir_path)
+
+    run_data_path = []
+    agent_names = []
+    if type(seed) is int:
+        for path in (dir_path / "results").rglob(
+            f"{seed}/{fidelity}/eval_data.csv",
+        ):
+            run_data_path.append(path)
+        filename = f"{plot_type}_{fidelity}_{seed}"
+    elif seed is None:
+        for agent in (Path(dir_path) / "results").glob("*"):
+            agent_runs = []
+            agent_names.append(agent.name)
+            for path in agent.rglob("*/eval_data.csv"):
+                agent_runs.append(path)
+            run_data_path.append(agent_runs)
+        filename = f"{plot_type}_{fidelity}"
+
+    run_info_path = Path(dir_path, "run_info.json")
+
+    if teacher:
+        run_data_teacher_path = Path(dir_path, "aggregated_run_data.csv")
+        run_data_teacher = pd.read_csv(run_data_teacher_path)
+        completed_runs_ids = run_data_teacher[run_data_teacher["batch"] == 99][
+            "run"
+        ].unique()
+        completed_runs = run_data_teacher[
+            run_data_teacher["run"].isin(completed_runs_ids)
+        ]
+        single_teacher_run = completed_runs[
+            completed_runs["run"] == completed_runs_ids[0]
+        ]
+        single_teacher_run["action"] = 10 ** single_teacher_run["action"]
+
+        # Get run info from file
+        with Path.open(run_info_path) as file:
+            run_info = json.load(file)
+            teacher_drawstyle = "default"
+            if run_info["agent"]["type"] == "step_decay":
+                teacher_drawstyle = "steps-post"
+
+    if teacher:
+        ax = sns.lineplot(
+            data=single_teacher_run,
+            x="batch",
+            y=plot_type,
+            drawstyle=teacher_drawstyle,
+            label=dir_path.parents[1].name,
+        )
+    for agent_name, agent_paths in zip(agent_names, run_data_path):
+        aggregated_df = pd.DataFrame()
+        # if agent_name == "edac" or agent_name == "":
+        for seed_path in agent_paths:
+            print(seed_path)
+            # Read run data
+            df = pd.read_csv(seed_path)
+
+            df["action"] = df["action"].map(lambda x: 10**x)
+
+            aggregated_df = pd.concat([aggregated_df, df], ignore_index=True)
+
+        print(f"Max {agent_name}: {aggregated_df['action'].max()}")
+        print(f"Is inf: {any(np.isinf(aggregated_df['action']))}")
+        print(f"Is nan: {any(np.isnan(aggregated_df['action']))}")
+
+        sns.lineplot(
+            data=aggregated_df,
+            x="batch",
+            y=plot_type,
+            ax=ax,
+            label=agent_name.upper(),
+        )
+
+    if plot_type == "action":
+        ax.set_ylim(0, 1.0)
+    ax.set_title(f"{plot_type} on {dir_path.name}")
+    # Show or save the plot
+    if show:
+        plt.show()
+    else:
+        save_path = Path(
+            dir_path.parents[2],  # PROJECT/ToySGD/
+            "figures",
+            dir_path.name,  # FUNCTION/
+            dir_path.parents[1].name,  # TEACHER/
+        )
+
+        if not save_path.exists():
+            save_path.mkdir(parents=True)
+        print(f"Saving figure to {save_path / f'{filename}_aggregate.svg'}")
+        plt.savefig(save_path / f"{filename}_aggregate.svg")
+
+
+def plot_actions(
+    dir_path: str,
+    agent_type: str,
+    fidelity: int,
+    seed: int | None,
+    show: bool = False,
+    num_runs: int = 1,
+    aggregate: bool = True,
+    teacher: bool = True,
+    reward: bool = False,
+) -> None:
+    plt.clf()
+    run_data_path = []
+    if type(seed) is int:
+        run_data_path.append(
+            Path(dir_path)
+            / "results"
+            / agent_type
+            / seed
+            / fidelity
+            / "eval_data.csv",
+        )
         filename = f"action_{agent_type}_{seed}_{fidelity}"
+    elif seed is None:
+        filename = f"action_{agent_type}_aggregate_{fidelity}"
+        for path in (Path(dir_path) / "results" / agent_type).rglob(
+            "*/eval_data.csv",
+        ):
+            run_data_path.append(path)
 
     run_info_path = Path(dir_path, "run_info.json")
 
@@ -180,88 +288,84 @@ def plot_actions(
         ]
         single_teacher_run["action"] = 10 ** single_teacher_run["action"]
 
-    # Read run data
-    df = pd.read_csv(run_data_path)
+        # Get run info from file
+        with Path.open(run_info_path) as file:
+            run_info = json.load(file)
+            teacher_drawstyle = "default"
+            if run_info["agent"]["type"] == "step_decay":
+                teacher_drawstyle = "steps-post"
 
+    aggregated_df = pd.DataFrame()
     drawstyle = "default"
-    # Get run info from file
-    with Path.open(run_info_path) as file:
-        run_info = json.load(file)
-        teacher_drawstyle = "default"
-        if run_info["agent"]["type"] == "step_decay":
-            teacher_drawstyle = "steps-post"
 
-    label = "Agent"
-    if agent_path is None:
-        label = "Teacher"
-        drawstyle = teacher_drawstyle
+    for seed_path in run_data_path:
+        print(seed_path)
+        # Read run data
+        df = pd.read_csv(seed_path)
 
-    # Group data by runs
-    grouped_df = df.groupby("run")
+        df["action"] = df["action"].map(lambda x: 10**x)
 
-    aggregated_data = pd.DataFrame()
+        aggregated_df = pd.concat([aggregated_df, df], ignore_index=True)
 
-    for idx, data in list(grouped_df):
-        # Adjust action value from the DataFrame
-        data["action"] = 10 ** data["action"]
-
-        aggregated_data = aggregated_data._append(data)
-
-        if idx < num_runs:
-            plt.clf()
-            ax = sns.lineplot(
-                data=data,
-                x="batch",
-                y="action",
-                drawstyle=drawstyle,
-                label=label,
-            )
-            ax2 = ax.twinx()
-            sns.lineplot(
-                data=data,
-                x="batch",
-                y="reward",
-                drawstyle=drawstyle,
-                label="Reward",
-                ax=ax2,
-            )
-            if teacher:
-                sns.lineplot(
-                    data=single_teacher_run,
+        if num_runs > 0:
+            for data in list(df.groupby("run")):
+                # Adjust action value from the DataFrame
+                plt.clf()
+                ax = sns.lineplot(
+                    data=data,
                     x="batch",
                     y="action",
-                    drawstyle=teacher_drawstyle,
-                    label="Teacher",
+                    drawstyle=drawstyle,
+                    label=agent_type.upper(),
                 )
+                if reward:
+                    ax2 = ax.twinx()
+                    sns.lineplot(
+                        data=data,
+                        x="batch",
+                        y="reward",
+                        drawstyle=drawstyle,
+                        label="Reward",
+                        ax=ax2,
+                    )
+                if teacher:
+                    sns.lineplot(
+                        data=single_teacher_run,
+                        x="batch",
+                        y="action",
+                        drawstyle=teacher_drawstyle,
+                        label="Teacher",
+                    )
 
-            # # Show or save the plot
-            # if show:
-            #         dir_path,
-            #         "figures",
-            #         "action",
+                # # Show or save the plot
+                # if show:
+                #         dir_path,
+                #         "figures",
+                #         "action",
 
-            #     if not save_path.exists():
+                #     if not save_path.exists():
 
     if aggregate:
         plt.clf()
         ax = sns.lineplot(
-            data=aggregated_data,
+            data=aggregated_df,
             x="batch",
             y="action",
             drawstyle=drawstyle,
-            label=label,
+            label=agent_type.upper(),
             legend=False,
         )
-        ax2 = ax.twinx()
-        sns.lineplot(
-            data=aggregated_data,
-            x="batch",
-            y="reward",
-            color="g",
-            label="Reward",
-            ax=ax2,
-            legend=False,
-        )
+        if reward:
+            ax2 = ax.twinx()
+            sns.lineplot(
+                data=aggregated_df,
+                x="batch",
+                y="reward",
+                color="g",
+                label="Reward",
+                ax=ax2,
+                legend=False,
+            )
         if teacher:
             sns.lineplot(
                 data=single_teacher_run,
