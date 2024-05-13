@@ -119,8 +119,45 @@ class TD3BC_Optimizee:
             eval_protocol=self.eval_protocol,
             eval_seed=self.eval_seed,
         )
-
+        print(f"Results for seed {seed}: {eval_mean}")
         return eval_mean
+
+    @property
+    def configspace_arch(self) -> ConfigurationSpace:
+        cs = ConfigurationSpace()
+
+        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4)
+        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4)
+        hidden_layers = Integer("hidden_layers", (0, 5), default=1)
+        hidden_dim = Categorical(
+            "hidden_dim", [16, 32, 64, 128, 256], default=64
+        )
+        # hidden_layers_critic = Integer(
+        #     "hidden_layers_critic", (0, 5), default=1
+        # )
+        activation = Constant(
+            "activation", "ReLU"
+        )
+        batch_size = Categorical(
+            "batch_size", [2, 4, 8, 16, 32, 64, 128, 256], default=64
+        )
+        # discount_factor = Float("discount_factor", (0, 1), default=0.99)
+        # target_update_rate = Float("target_update_rate", (0, 1), default=5e-3)
+        # Add the parameters to configuration space
+        cs.add_hyperparameters(
+            [
+                lr_actor,
+                lr_critic,
+                hidden_layers,
+                hidden_dim,
+                # hidden_layers_critic,
+                activation,
+                batch_size,
+                # discount_factor,
+                # target_update_rate,
+            ],
+        )
+        return cs
 
 
 def plot_trajectory(facade: HPOFacade, output_path) -> None:
@@ -163,11 +200,17 @@ if __name__ == "__main__":
         "--agent_type", type=str, default="td3_bc", choices=["td3_bc"]
     )
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--time_limit", type=int, default=30)
     parser.add_argument("--budget", type=int, default=15000)
     parser.add_argument(
         "--debug",
         action="store_true",
         help="Run for max. 5 iterations and don't log in wanbd.",
+    )
+    parser.add_argument(
+        "--arch_cs",
+        action="store_true",
+        help="Use architecture config space.",
     )
     parser.add_argument(
         "--output_path",
@@ -192,16 +235,17 @@ if __name__ == "__main__":
         eval_seed=args.eval_seed,
     )
     output_path = Path(args.output_path)
+    cs = optimizee.configspace_arch if args.arch_cs else optimizee.configspace
     scenario = Scenario(
-        optimizee.configspace,
+        cs,
         output_directory=output_path,
-        walltime_limit=60 * 60 * 30,  # convert 10 hours into seconds
+        walltime_limit=60 * 60 * args.time_limit,  # convert 10 hours into seconds
         n_trials=800,
         n_workers=1,
         deterministic=False,
     )
 
-    intensifier = HPOFacade.get_intensifier(scenario, max_config_calls=5)
+    intensifier = HPOFacade.get_intensifier(scenario, max_config_calls=10)
     # We want to run five random configurations before starting the optimization.
     initial_design = HPOFacade.get_initial_design(scenario, n_configs=5)
 

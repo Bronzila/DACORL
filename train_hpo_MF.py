@@ -10,6 +10,7 @@ from ConfigSpace import (
     ConfigurationSpace,
     Constant,
     Float,
+    Integer
 )
 from matplotlib import pyplot as plt
 from smac import (
@@ -67,6 +68,43 @@ class TD3BC_Optimizee:
                 lr_actor,
                 lr_critic,
                 # hidden_layers_actor,
+                # hidden_layers_critic,
+                activation,
+                batch_size,
+                # discount_factor,
+                # target_update_rate,
+            ],
+        )
+        return cs
+    
+    @property
+    def configspace_arch(self) -> ConfigurationSpace:
+        cs = ConfigurationSpace()
+
+        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4)
+        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4)
+        hidden_layers = Integer("hidden_layers", (0, 5), default=1)
+        hidden_dim = Categorical(
+            "hidden_dim", [16, 32, 64, 128, 256], default=64
+        )
+        # hidden_layers_critic = Integer(
+        #     "hidden_layers_critic", (0, 5), default=1
+        # )
+        activation = Constant(
+            "activation", "ReLU"
+        )
+        batch_size = Categorical(
+            "batch_size", [2, 4, 8, 16, 32, 64, 128, 256], default=64
+        )
+        # discount_factor = Float("discount_factor", (0, 1), default=0.99)
+        # target_update_rate = Float("target_update_rate", (0, 1), default=5e-3)
+        # Add the parameters to configuration space
+        cs.add_hyperparameters(
+            [
+                lr_actor,
+                lr_critic,
+                hidden_layers,
+                hidden_dim,
                 # hidden_layers_critic,
                 activation,
                 batch_size,
@@ -152,6 +190,11 @@ if __name__ == "__main__":
         help="Run for max. 5 iterations and don't log in wanbd.",
     )
     parser.add_argument(
+        "--arch_cs",
+        action="store_true",
+        help="Use architecture config space.",
+    )
+    parser.add_argument(
         "--output_path",
         type=str,
         help="Path where optimization logs are saved",
@@ -174,8 +217,9 @@ if __name__ == "__main__":
         eval_seed=args.eval_seed,
     )
     output_path = Path(args.output_path)
+    cs = optimizee.configspace_arch if args.arch_cs else optimizee.configspace
     scenario = Scenario(
-        optimizee.configspace,
+        cs,
         output_directory=output_path,
         walltime_limit=60 * 60 * 30,  # convert 10 hours into seconds
         n_trials=500,
@@ -189,7 +233,7 @@ if __name__ == "__main__":
     initial_design = MFFacade.get_initial_design(scenario, n_configs=5)
 
     # Use eta=2 to get brackets with [3, 6, 12] seeds
-    intensifier = MFFacade.get_intensifier(scenario, eta=2)
+    intensifier = MFFacade.get_intensifier(scenario, eta=2, incumbent_selection="highest_budget")
 
     # Create our SMAC object and pass the scenario and the train method
     smac = MFFacade(
