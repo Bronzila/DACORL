@@ -81,6 +81,8 @@ def get_agent(
             action_dim,
             max_action,
             get_activation(hyperparameters.get("activation", "ReLU")),
+            hidden_dim=hyperparameters.get("hidden_dim", 64),
+            hidden_layers=hyperparameters.get("hidden_layers", 1),
         ).to(device)
         actor_optimizer = torch.optim.Adam(
             actor.parameters(),
@@ -288,7 +290,7 @@ def calculate_single_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=
     return min_mean, min_std, lowest_vals_of_min_mean, min_iqm, min_iqm_std, min_path
 
 def calculate_multi_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=1, path=None,
-                                    results=True, verbose=False):
+                                    results=True, verbose=False, num_runs=100):
     # TODO here we currently assume, that we only have one training folder and eval file in results/td3_bc/<seed>/
     paths = []
     if results:
@@ -297,7 +299,7 @@ def calculate_multi_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=1
     else:
         paths.append(path)
 
-    combined_data = combine_run_data(paths)
+    combined_data = combine_run_data(paths, num_runs=num_runs)
     if calc_mean:
             mean, std = calc_mean_and_std_dev(combined_data)
             mean = float(f"{mean:.3e}")
@@ -308,10 +310,10 @@ def calculate_multi_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=1
     return mean, std, lowest_vals, iqm, iqm_std, paths[0] # path doesnt really matter here
 
 def calculate_statistics(calc_mean=True, calc_lowest=True, n_lowest=1, path=None,
-                         results=True, verbose=False, multi_seed=False):
+                         results=True, verbose=False, multi_seed=False, num_runs=100):
     if multi_seed:
         return calculate_multi_seed_statistics(calc_mean, calc_lowest,
-                                               n_lowest, path, results, verbose)
+                                               n_lowest, path, results, verbose, num_runs)
     else:
         return calculate_single_seed_statistics(calc_mean, calc_lowest, n_lowest,
                                                 path, results, verbose)

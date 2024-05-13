@@ -61,6 +61,12 @@ if __name__ == "__main__":
         help="Calculate table for multi-seed",
         action=argparse.BooleanOptionalAction,
     )
+    parser.add_argument(
+        "--num_runs",
+        help="Number of runs used for evaluation. Needed for multi-seed results in order to adjust indeces correctly",
+        type=int,
+        default=100
+    )
     args = parser.parse_args()
 
     base_path = Path(args.path)
@@ -84,7 +90,7 @@ if __name__ == "__main__":
                 if args.custom_path:                    
                     # run_data_path = base_path / agent / function / "results" if args.results else base_path / agent / function / "aggregated_run_data.csv"
                     run_data_path = base_path / function / "results" if args.results else base_path / function / "aggregated_run_data.csv"
-                mean, std, lowest, iqm, iqm_std, min_path = calculate_statistics(path=run_data_path, results=args.results, verbose=args.verbose, multi_seed=args.multi_seed)
+                mean, std, lowest, iqm, iqm_std, min_path = calculate_statistics(path=run_data_path, results=args.results, verbose=args.verbose, multi_seed=args.multi_seed, num_runs=args.num_runs)
                 pattern = r"(\d+)"
                 train_steps = int(re.findall(pattern, str(min_path))[-1]) if args.results else 0
                 if args.mean:
