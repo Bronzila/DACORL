@@ -183,6 +183,7 @@ if __name__ == "__main__":
         "--agent_type", type=str, default="td3_bc", choices=["td3_bc"]
     )
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--time_limit", type=int, default=30)
     parser.add_argument("--budget", type=int, default=15000)
     parser.add_argument(
         "--debug",
@@ -221,7 +222,7 @@ if __name__ == "__main__":
     scenario = Scenario(
         cs,
         output_directory=output_path,
-        walltime_limit=60 * 60 * 30,  # convert 10 hours into seconds
+        walltime_limit=60 * 60 * args.time_limit,  # convert 10 hours into seconds
         n_trials=500,
         min_budget=3,
         max_budget=12,
