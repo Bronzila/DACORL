@@ -36,7 +36,10 @@ then
     python3.10 teacher_hpo.py --data_dir $RESULTS_DIR --agent_type sgdr --output_path teach_hpo_sgdr
 elif [ 4 -eq $SLURM_ARRAY_TASK_ID ]
 then
-    python3.10 teacher_hpo.py --data_dir $RESULTS_DIR --agent_type constant --output_path teach_hpo_const
+    python3.10 teacher_hpo.py --data_dir $RESULTS_DIR --agent_type constant --output_path teach_hpo_const_Ackley --env Ackley_$VERSION
+    python3.10 teacher_hpo.py --data_dir $RESULTS_DIR --agent_type constant --output_path teach_hpo_const_Rastrigin --env Rastrigin_$VERSION
+    python3.10 teacher_hpo.py --data_dir $RESULTS_DIR --agent_type constant --output_path teach_hpo_const_Rosenbrock --env Rosenbrock_$VERSION
+    python3.10 teacher_hpo.py --data_dir $RESULTS_DIR --agent_type constant --output_path teach_hpo_const_Sphere --env Sphere_$VERSION
 fi
 
 # Print some Information about the end-time to STDOUT
