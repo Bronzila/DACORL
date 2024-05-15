@@ -27,17 +27,23 @@ class TD3BC_Optimizee:
         self,
         data_dir: str,
         agent_type: str,
+        env: str,
     ) -> None:
         self.data_dir = data_dir
         self.agent_type = agent_type
         self.env_configs = []
-        for filename in ["Ackley_extended_vel.json",
-                         "Rastrigin_extended_vel.json", "Rosenbrock_extended_vel.json",
-                         "Sphere_extended_vel.json"]:
-            env_config_path = Path("configs", "environment", filename)
+        if env:
+            env_config_path = Path("configs", "environment", env + ".json")
             with env_config_path.open() as file:
-                env_config = json.load(file)
-            self.env_configs.append(env_config)
+                self.env_configs.append(json.load(file))
+        else:
+            for filename in ["Ackley_extended_vel.json",
+                            "Rastrigin_extended_vel.json", "Rosenbrock_extended_vel.json",
+                            "Sphere_extended_vel.json"]:
+                env_config_path = Path("configs", "environment", filename)
+                with env_config_path.open() as file:
+                    env_config = json.load(file)
+                self.env_configs.append(env_config)
 
     @property
     def configspace(self) -> ConfigurationSpace:
@@ -93,7 +99,6 @@ class TD3BC_Optimizee:
             "id": 0,
             "type": self.agent_type,
         }
-        print(seed)
         results = []
         for env_config in self.env_configs:
             if self.agent_type == "sgdr":
@@ -124,11 +129,12 @@ if __name__ == "__main__":
         "--agent_type", type=str, default="exponential_decay", choices=["exponential_decay", "step_decay", "sgdr", "constant"]
     )
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--env", default=None, type=str, help="Environment to tune HPs on, if None, tune for all environments.")
     parser.add_argument(
         "--output_path",
         type=str,
         help="Path where optimization logs are saved",
-        default="smac"
+        default="smac",
     )
 
     args = parser.parse_args()
@@ -137,6 +143,7 @@ if __name__ == "__main__":
     optimizee = TD3BC_Optimizee(
         data_dir=args.data_dir,
         agent_type=args.agent_type,
+        env=args.env,
     )
     output_path = Path(args.output_path)
     scenario = Scenario(
@@ -148,14 +155,11 @@ if __name__ == "__main__":
     )
 
     intensifier = HPOFacade.get_intensifier(scenario, max_config_calls=1)
-    # We want to run five random configurations before starting the optimization.
-    # initial_design = HPOFacade.get_initial_design(scenario, n_configs=5)
 
     # Create our SMAC object and pass the scenario and the train method
     smac = HPOFacade(
         scenario,
         optimizee.train,
-        # initial_design=initial_design,
         intensifier=intensifier,
         overwrite=True,
         logging_level=20,
