@@ -98,7 +98,7 @@ class TD3BC_Optimizee:
         for env_config in self.env_configs:
             if self.agent_type == "sgdr":
                 agent_config["params"]["initial_learning_rate"] = env_config["initial_learning_rate"]
-            agg_run_data = generate_dataset(agent_config, env_config, num_runs=100, seed=seed,
+            agg_run_data = generate_dataset(agent_config, env_config, num_runs=1000, seed=seed,
                              results_dir=self.data_dir, save_run_data=True, timeout=0,
                              save_rep_buffer=True, verbose=False)
 
@@ -142,7 +142,7 @@ if __name__ == "__main__":
     scenario = Scenario(
         optimizee.configspace,
         output_directory=output_path,
-        n_trials=800,
+        n_trials=400,
         n_workers=1,
         deterministic=False,
     )
