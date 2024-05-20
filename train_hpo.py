@@ -89,15 +89,18 @@ class Optimizee:
 
         lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4)
         lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4)
-        hidden_layers_actor = Constant("hidden_layers_actor", 1)
-        hidden_layers_critic = Constant("hidden_layers_critic", 1)
-        hidden_dim = Constant("hidden_dim", 256)
+        hidden_layers_actor = Integer("hidden_layers_actor", (0, 5), default=1)
+        hidden_layers_critic = Integer(
+            "hidden_layers_critic", (0, 5), default=1
+        )
+        actor_hidden_dim = Constant("actor_hidden_dim", [2, 4, 8, 16, 32, 64, 128, 256], default=64)
+        critic_hidden_dim = Categorical("critic_hidden_dim", [2, 4, 8, 16, 32, 64, 128, 256], default=64)
         activation = Constant("activation", "ReLU")
         batch_size = Categorical(
             "batch_size", [2, 4, 8, 16, 32, 64, 128, 256], default=64
         )
-        discount_factor = Float("discount_factor", (0, 1), default=0.99)
-        target_update_rate = Float("target_update_rate", (0, 1), default=5e-3)
+        discount_factor = Float("discount_factor", (0.75, 1), default=0.99)
+        target_update_rate = Float("target_update_rate", (0, 0.25), default=5e-3)
         # Add the parameters to configuration space
         cs.add_hyperparameters(
             [
@@ -105,11 +108,12 @@ class Optimizee:
                 lr_critic,
                 hidden_layers_actor,
                 hidden_layers_critic,
-                hidden_dim,
+                actor_hidden_dim,
+                critic_hidden_dim,
                 activation,
                 batch_size,
-                # discount_factor,
-                # target_update_rate,
+                discount_factor,
+                target_update_rate,
             ],
         )
         return cs
@@ -233,7 +237,7 @@ if __name__ == "__main__":
 
     output_path = Path(args.output_path)
     scenario = Scenario(
-        optimizee.configspace,
+        optimizee.configspace_reduced,
         output_directory=output_path,
         n_trials=600,
         n_workers=1,
