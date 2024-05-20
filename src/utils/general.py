@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import random
 import signal
 from pathlib import Path
@@ -654,3 +655,172 @@ def combine_runs(agent_paths):
         combined_run_info,
         pd.concat(combined_run_data, ignore_index=True),
     )
+
+
+def combine_run_data(
+    data_paths: list[str],
+    num_runs: int = 100,
+) -> pd.DataFrame:
+    combined_run_data = []
+    for idx, root_path in enumerate(data_paths):
+        run_data_path = Path(root_path)
+        df = pd.read_csv(run_data_path)
+        df["run"] += idx * num_runs
+        combined_run_data.append(df)
+    return pd.concat(combined_run_data, ignore_index=True)
+
+
+def find_lowest_values(df, column_name, n=10):
+    final_evaluations = df.groupby("run").last()
+
+    # Sort the DataFrame by the specified column in ascending order
+    sorted_df = final_evaluations.sort_values(by=column_name)
+
+    # Get the lowest n values from the sorted DataFrame
+    return sorted_df.head(n)
+
+
+def calc_mean_and_std_dev(df: pd.DataFrame) -> float:
+    final_evaluations = df.groupby("run").last()
+
+    fbests = final_evaluations["f_cur"]
+    return fbests.mean(), fbests.std()
+
+
+def calculate_single_seed_statistics(
+    calc_mean: bool = True,
+    calc_lowest: bool = True,
+    n_lowest: int = 1,
+    path: str | None | None = None,
+    results: bool = True,
+    verbose: bool = False,
+) -> tuple(float, float, float, float, float, Path):
+    paths = []
+    if results:
+        for folder_path, _, _ in os.walk(path):
+            paths.extend(Path(folder_path).glob("*/eval_data.csv"))
+    else:
+        paths.append(path)
+    # Load data
+    min_mean = np.inf
+    min_std = np.inf
+    min_iqm = np.inf
+    min_iqm_std = np.inf
+    min_path = ""
+    lowest_vals_of_min_mean = []
+    for path in paths:
+        incumbent_changed = False
+        df = pd.read_csv(path)
+        if verbose:
+            print(f"Calculating for path {path}")
+
+        if calc_mean:
+            mean, std = calc_mean_and_std_dev(df)
+            mean = float(f"{mean:.3e}")
+            std = float(f"{std:.3e}")
+            if mean < min_mean or mean == min_mean and std < min_std:
+                incumbent_changed = True
+                min_mean = mean
+                min_std = std
+                min_path = path
+                min_iqm, min_iqm_std = compute_iqm(df)
+            if verbose:
+                print(f"Mean +- Std {mean:.3e} ± {std:.3e}")
+        if calc_lowest:
+            lowest_vals = find_lowest_values(df, "f_cur", n_lowest)
+            if incumbent_changed:
+                lowest_vals_of_min_mean = lowest_vals["f_cur"]
+            if verbose:
+                print("Lowest values:")
+                print(lowest_vals["f_cur"])
+    return (
+        min_mean,
+        min_std,
+        lowest_vals_of_min_mean,
+        min_iqm,
+        min_iqm_std,
+        min_path,
+    )
+
+
+def calculate_multi_seed_statistics(
+    calc_mean: bool = True,
+    calc_lowest: bool = True,
+    n_lowest: int = 1,
+    path: str | None = None,
+    results: bool = True,
+    verbose: bool = False,
+    num_runs: int = 100,
+) -> tuple(float, float, float, float, float, Path):
+    # TODO here we currently assume, that we only have one training
+    # folder and eval file in results/td3_bc/<seed>/
+    paths = []
+    if results:
+        for seed_path in Path(path).rglob(f"*{10000}/eval_data.csv"):
+            paths.append(seed_path)
+    else:
+        paths.append(path)
+
+    combined_data = combine_run_data(paths, num_runs=num_runs)
+    if calc_mean:
+        mean, std = calc_mean_and_std_dev(combined_data)
+        mean = float(f"{mean:.3e}")
+        std = float(f"{std:.3e}")
+        iqm, iqm_std = compute_iqm(combined_data)
+    if calc_lowest:
+        lowest_vals = find_lowest_values(combined_data, "f_cur", n_lowest)[
+            "f_cur"
+        ]
+    return (
+        mean,
+        std,
+        lowest_vals,
+        iqm,
+        iqm_std,
+        paths[0],
+    )  # path doesnt really matter here
+
+
+def calculate_statistics(
+    calc_mean=True,
+    calc_lowest=True,
+    n_lowest=1,
+    path=None,
+    results=True,
+    verbose=False,
+    multi_seed=False,
+    num_runs=100,
+) -> tuple(float, float, float, float, float, Path):
+    if multi_seed:
+        return calculate_multi_seed_statistics(
+            calc_mean,
+            calc_lowest,
+            n_lowest,
+            path,
+            results,
+            verbose,
+            num_runs,
+        )
+    else:
+        return calculate_single_seed_statistics(
+            calc_mean,
+            calc_lowest,
+            n_lowest,
+            path,
+            results,
+            verbose,
+        )
+
+
+def compute_iqm(df):
+    final_evaluations = df.groupby("run").last()
+    df_sorted = final_evaluations.sort_values(by="f_cur")
+
+    # Calculate the number of rows representing 25% of the DataFrame
+    num_rows = len(df_sorted)
+    num_to_remove = int(0.25 * num_rows)
+
+    # Remove the upper and lower 25% of the DataFrame
+    df_trimmed = df_sorted[num_to_remove:-num_to_remove]
+    fbests = df_trimmed["f_cur"]
+    return fbests.mean(), fbests.std()
