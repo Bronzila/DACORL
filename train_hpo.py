@@ -235,12 +235,12 @@ if __name__ == "__main__":
     scenario = Scenario(
         optimizee.configspace,
         output_directory=output_path,
-        n_trials=900,
+        n_trials=600,
         n_workers=1,
         deterministic=False,
     )
 
-    intensifier = HPOFacade.get_intensifier(scenario, max_config_calls=10)
+    intensifier = HPOFacade.get_intensifier(scenario, max_config_calls=5)
     # We want to run five random configurations before starting the optimization.
     initial_design = HPOFacade.get_initial_design(scenario, n_configs=5)
 
