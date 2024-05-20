@@ -8,8 +8,9 @@
 #SBATCH --mem 8GB
 
 AGENT=${1:-td3_bc}
-FIDELITY=${2:-10000}
-ID=${3:-0}
+RESULTS_DIR=${2:-data/data_hpo_10}
+FIDELITY=${3:-10000}
+ID=${4:-0}
 FUNCTIONS=(Ackley Rastrigin Rosenbrock Sphere)
 TEACHERS=(exponential_decay step_decay sgdr constant)
 NUM_RUNS=100
@@ -25,52 +26,52 @@ conda activate DACORL
 
 if [ ${SLURM_ARRAY_TASK_ID} -eq 1 ]
 then
-	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[0]}/$ID/${FUNCTIONS[0]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher
+	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[0]}/$ID/${FUNCTIONS[0]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher --reward
 elif [ ${SLURM_ARRAY_TASK_ID} -eq 2 ]
 then
-	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[0]}/$ID/${FUNCTIONS[1]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher
+	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[0]}/$ID/${FUNCTIONS[1]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher --reward
 elif [ ${SLURM_ARRAY_TASK_ID} -eq 3 ]
 then
-	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[0]}/$ID/${FUNCTIONS[2]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher
+	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[0]}/$ID/${FUNCTIONS[2]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher --reward
 elif [ ${SLURM_ARRAY_TASK_ID} -eq 4 ]
 then
-	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[0]}/$ID/${FUNCTIONS[3]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher
+	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[0]}/$ID/${FUNCTIONS[3]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher --reward
 elif [ ${SLURM_ARRAY_TASK_ID} -eq 5 ]
 then
-	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[1]}/$ID/${FUNCTIONS[0]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher
+	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[1]}/$ID/${FUNCTIONS[0]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher --reward
 elif [ ${SLURM_ARRAY_TASK_ID} -eq 6 ]
 then
-	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[1]}/$ID/${FUNCTIONS[1]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher
+	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[1]}/$ID/${FUNCTIONS[1]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher --reward
 elif [ ${SLURM_ARRAY_TASK_ID} -eq 7 ]
 then
-	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[1]}/$ID/${FUNCTIONS[2]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher
+	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[1]}/$ID/${FUNCTIONS[2]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher --reward
 elif [ ${SLURM_ARRAY_TASK_ID} -eq 8 ]
 then
-	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[1]}/$ID/${FUNCTIONS[3]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher
+	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[1]}/$ID/${FUNCTIONS[3]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher --reward
 elif [ ${SLURM_ARRAY_TASK_ID} -eq 9 ]
 then
-	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[2]}/$ID/${FUNCTIONS[0]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher
+	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[2]}/$ID/${FUNCTIONS[0]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher --reward
 elif [ ${SLURM_ARRAY_TASK_ID} -eq 10 ]
 then
-	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[2]}/$ID/${FUNCTIONS[1]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher
+	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[2]}/$ID/${FUNCTIONS[1]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher --reward
 elif [ ${SLURM_ARRAY_TASK_ID} -eq 11 ]
 then
-	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[2]}/$ID/${FUNCTIONS[2]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher
+	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[2]}/$ID/${FUNCTIONS[2]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher --reward
 elif [ ${SLURM_ARRAY_TASK_ID} -eq 12 ]
 then
-	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[2]}/$ID/${FUNCTIONS[3]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher
+	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[2]}/$ID/${FUNCTIONS[3]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher --reward
 elif [ ${SLURM_ARRAY_TASK_ID} -eq 13 ]
 then
-	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[3]}/$ID/${FUNCTIONS[0]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher
+	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[3]}/$ID/${FUNCTIONS[0]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher --reward
 elif [ ${SLURM_ARRAY_TASK_ID} -eq 14 ]
 then
-	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[3]}/$ID/${FUNCTIONS[1]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher
+	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[3]}/$ID/${FUNCTIONS[1]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher --reward
 elif [ ${SLURM_ARRAY_TASK_ID} -eq 15 ]
 then
-	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[3]}/$ID/${FUNCTIONS[2]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher
+	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[3]}/$ID/${FUNCTIONS[2]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher --reward
 elif [ ${SLURM_ARRAY_TASK_ID} -eq 16 ]
 then
-	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[3]}/$ID/${FUNCTIONS[3]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher
+	python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/${TEACHERS[3]}/$ID/${FUNCTIONS[3]}/ --agent $AGENT --fidelity $FIDELITY --action --num_runs 0 --teacher --reward
 fi
 
 # Print some Information about the end-time to STDOUT

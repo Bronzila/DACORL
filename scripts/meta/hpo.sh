@@ -8,15 +8,15 @@
 #SBATCH --mem 8GB
 
 AGENT=${1:-exponential_decay}
-RL_AGENT=${2:-td3_bc}
-ID=${3:-0}
+RESULTS_DIR=${2:-data/data_hpo_10}
+RL_AGENT=${3:-td3_bc}
+ID=${4:-0}
 FC1=Ackley
 FC2=Rastrigin
 FC3=Rosenbrock
 FC4=Sphere
 NUM_RUNS=100
 VERSION=extended_velocity
-RESULTS_DIR="data/data_hpo_10"
 
 start=`date +%s`
 
