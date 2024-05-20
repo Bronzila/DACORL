@@ -15,7 +15,8 @@ FUNCTIONS=(Ackley Rastrigin Rosenbrock Sphere)
 TEACHERS=(exponential_decay step_decay sgdr constant)
 NUM_RUNS=100
 VERSION=extended_velocity
-RESULTS_DIR="data/data_hpo_10"
+
+SEED=1478610112
 
 start=`date +%s`
 
