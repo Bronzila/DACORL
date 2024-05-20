@@ -26,6 +26,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--seed",
         default=None,
+        type=int,
         help="specifies a seed to get the plots from.",
     )
     parser.add_argument(

@@ -201,17 +201,12 @@ def plot_type(
         aggregated_df = pd.DataFrame()
         # if agent_name == "edac" or agent_name == "":
         for seed_path in agent_paths:
-            print(seed_path)
             # Read run data
             df = pd.read_csv(seed_path)
 
             df["action"] = df["action"].map(lambda x: 10**x)
 
             aggregated_df = pd.concat([aggregated_df, df], ignore_index=True)
-
-        print(f"Max {agent_name}: {aggregated_df['action'].max()}")
-        print(f"Is inf: {any(np.isinf(aggregated_df['action']))}")
-        print(f"Is nan: {any(np.isnan(aggregated_df['action']))}")
 
         sns.lineplot(
             data=aggregated_df,
@@ -259,7 +254,7 @@ def plot_actions(
             Path(dir_path)
             / "results"
             / agent_type
-            / seed
+            / f"{seed}"
             / fidelity
             / "eval_data.csv",
         )
@@ -299,7 +294,6 @@ def plot_actions(
     drawstyle = "default"
 
     for seed_path in run_data_path:
-        print(seed_path)
         # Read run data
         df = pd.read_csv(seed_path)
 

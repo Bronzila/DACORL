@@ -645,9 +645,6 @@ def combine_runs(agent_paths):
             }
         else:
             combined_buffer.merge(temp_buffer)
-            combined_run_info["starting_points"].extend(
-                run_info["starting_points"],
-            )
 
         df = pd.read_csv(run_data_path)
         df["run"] += idx * run_info["num_runs"]
