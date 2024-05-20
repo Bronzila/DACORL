@@ -33,6 +33,7 @@ def train_agent(
     hyperparameters: dict,
     eval_protocol: str,
     eval_seed: int,
+    tanh_scaling: bool,
 ) -> None:
     if debug:
         num_train_iter = 5
@@ -59,7 +60,7 @@ def train_agent(
             "action_space": run_info["environment"]["action_space"],
         },
     )
-    agent = get_agent(agent_type, agent_config, hyperparameters)
+    agent = get_agent(agent_type, agent_config, tanh_scaling, hyperparameters)
 
     if (not debug) and use_wandb:
         fct = run_info["environment"]["function"]
@@ -119,6 +120,10 @@ def train_agent(
                 eval_data.to_csv(
                     results_dir / str(seed) / f"{t + 1}" / "eval_data.csv",
                 )
+                with (
+                    results_dir / str(seed) / f"{t + 1}" / "config.json"
+                ).open("w") as f:
+                    json.dump(dict(hyperparameters), f, indent=2)
 
     save_agent(agent.state_dict(), results_dir, t, seed)
 

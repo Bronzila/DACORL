@@ -79,6 +79,7 @@ def get_teacher(
 def get_agent(
     agent_type: str,
     agent_config: dict[str, Any],
+    tanh_scaling: bool,
     hyperparameters: dict[str, Any] = {},
     device: str = "cpu",
 ) -> Any:
@@ -96,6 +97,9 @@ def get_agent(
             hidden_dim=hyperparameters["hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_actor"],
             activation=get_activation(hyperparameters["activation"]),
+            max_action=max_action,
+            min_action=min_action,
+            tanh_scaling=tanh_scaling,
         ).to(device)
         actor_optimizer = torch.optim.Adam(
             actor.parameters(),
@@ -156,6 +160,9 @@ def get_agent(
             hidden_dim=hyperparameters["hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_actor"],
             activation=get_activation(hyperparameters["activation"]),
+            max_action=max_action,
+            min_action=min_action,
+            tanh_scaling=tanh_scaling,
         ).to(device)
         actor_optimizer = torch.optim.Adam(
             actor.parameters(),
@@ -180,6 +187,7 @@ def get_agent(
             hidden_dim=hyperparameters["hidden_dim"],
             max_action=max_action,
             min_action=min_action,
+            tanh_scaling=tanh_scaling,
             n_hidden_layers=hyperparameters["hidden_layers_actor"],
             activation=get_activation(hyperparameters["activation"]),
             log_std_multiplier=config.policy_log_std_multiplier,
@@ -259,6 +267,7 @@ def get_agent(
             activation=get_activation(hyperparameters["activation"]),
             max_action=max_action,
             min_action=min_action,
+            tanh_scaling=tanh_scaling,
         ).to(device)
         actor_optimizer = torch.optim.Adam(
             actor.parameters(),
@@ -450,6 +459,7 @@ def get_agent(
                 action_dim,
                 max_action,
                 min_action,
+                tanh_scaling=tanh_scaling,
                 hidden_dim=hyperparameters["hidden_dim"],
                 n_hidden=hyperparameters["hidden_layers_actor"],
                 dropout=config.actor_dropout,
@@ -460,6 +470,7 @@ def get_agent(
                 action_dim,
                 max_action,
                 min_action,
+                tanh_scaling=tanh_scaling,
                 hidden_dim=hyperparameters["hidden_dim"],
                 n_hidden=hyperparameters["hidden_layers_actor"],
                 dropout=config.actor_dropout,
@@ -578,8 +589,13 @@ def save_agent(
         torch.save(s, filename / f"agent_{key}")
 
 
-def load_agent(agent_type: str, agent_config: dict, agent_path: Path) -> Any:
-    agent = get_agent(agent_type, agent_config)
+def load_agent(
+    agent_type: str,
+    agent_config: dict,
+    agent_path: Path,
+    tanh_scaling: bool = False,
+) -> Any:
+    agent = get_agent(agent_type, agent_config, tanh_scaling)
     state_dict = agent.state_dict()
     new_state_dict = {}
     for key, _ in state_dict.items():

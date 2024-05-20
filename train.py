@@ -61,6 +61,11 @@ if __name__ == "__main__":
         default="train",
         choices=["train", "interpolation"],
     )
+    parser.add_argument(
+        "--tanh_scaling",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+    )
     parser.add_argument("--eval_seed", type=int, default=123)
 
     args = parser.parse_args()
@@ -73,6 +78,7 @@ if __name__ == "__main__":
         budget=None,
         eval_protocol=args.eval_protocol,
         eval_seed=args.eval_seed,
+        tanh_scaling=args.tanh_scaling,
     )
     hyperparameters = cs.configspace.get_default_configuration()
 
@@ -92,6 +98,7 @@ if __name__ == "__main__":
         hyperparameters=hyperparameters,
         eval_protocol=args.eval_protocol,
         eval_seed=args.eval_seed,
+        tanh_scaling=args.tanh_scaling
     )
 
     end = time.time()

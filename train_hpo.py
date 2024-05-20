@@ -33,6 +33,7 @@ class Optimizee:
         budget: Optional[int],
         eval_protocol: str,
         eval_seed: int,
+        tanh_scaling: bool,
     ) -> None:
         self.data_dir = data_dir
         self.agent_type = agent_type
@@ -40,6 +41,7 @@ class Optimizee:
         self.budget = budget
         self.eval_protocol = eval_protocol
         self.eval_seed = eval_seed
+        self.tanh_scaling = tanh_scaling
 
         with Path(self.data_dir, "run_info.json").open(mode="rb") as f:
             self.run_info = json.load(f)
@@ -129,6 +131,7 @@ class Optimizee:
             use_wandb=False,
             eval_protocol=self.eval_protocol,
             eval_seed=self.eval_seed,
+            tanh_scaling=self.tanh_scaling,
         )
 
         print(f"Seed: {seed}")
@@ -208,6 +211,11 @@ if __name__ == "__main__":
         default="train",
         choices=["train", "interpolation"],
     )
+    parser.add_argument(
+        "--tanh_scaling",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+    )
     parser.add_argument("--eval_seed", type=int, default=123)
 
     args = parser.parse_args()
@@ -220,6 +228,7 @@ if __name__ == "__main__":
         budget=args.budget,
         eval_protocol=args.eval_protocol,
         eval_seed=args.eval_seed,
+        tanh_scaling=args.tanh_scaling,
     )
 
     output_path = Path(args.output_path)
