@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import numpy as np
 import torch
 import wandb
 
@@ -15,7 +16,6 @@ from src.utils.general import (
 )
 from src.utils.replay_buffer import ReplayBuffer
 from src.utils.test_agent import test_agent
-from typing import Optional
 
 
 def train_agent(
@@ -66,7 +66,7 @@ def train_agent(
         )
 
     logs = {"actor_loss": [], "critic_loss": []}
-
+    min_fbest = np.inf
     for t in range(int(num_train_iter)):
         batch = replay_buffer.sample(batch_size)
         log_dict = agent.train(batch)
@@ -104,11 +104,16 @@ def train_agent(
                 with (results_dir/ str(seed) / f"{t + 1}" / "config.json").open("w") as f:
                     json.dump(dict(hyperparameters), f, indent=2)
 
+                # Calculate mean performance for this checkpoint
+                final_evaluations = eval_data.groupby("run").last()
+                fbests = final_evaluations["f_cur"]
+                fbest_mean = fbests.mean()
+                print(f"Mean at iteration {t+1}: {fbest_mean}")
+                min_fbest = np.min([min_fbest, fbest_mean])
+
     save_agent(agent.state_dict(), results_dir, t, seed)
 
     if not debug:
         wandb.finish()  # type: ignore
 
-    final_evaluations = eval_data.groupby("run").last()
-    fbests = final_evaluations["f_cur"]
-    return logs, fbests.mean()
+    return logs, min_fbest

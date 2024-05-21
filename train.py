@@ -19,14 +19,14 @@ if __name__ == "__main__":
         default={},
         help="Not functional yet. Change configuration of the respective agent.",
     )
-    parser.add_argument("--num_train_iter", type=int, default=2000)
+    parser.add_argument("--num_train_iter", type=int, default=15000)
     parser.add_argument("--num_eval_runs", type=int, default=1000)
-    parser.add_argument("--batch_size", type=int, default=256)
+    parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument(
         "--val_freq",
         type=int,
         help="how many training steps until the next validation sequence runs",
-        default=2000,
+        default=15000,
     )
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument(
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     start = time.time()
 
-    train_agent(
+    _, mean =train_agent(
         data_dir=args.data_dir,
         agent_type=args.agent_type,
         agent_config=args.agent_config,
@@ -67,8 +67,9 @@ if __name__ == "__main__":
         timeout=args.timeout,
         debug=args.debug,
         eval_protocol=args.eval_protocol,
-        eval_seed=args.eval_seed
+        eval_seed=args.eval_seed,
+        hyperparameters={}
     )
-
+    print(mean)
     end = time.time()
     print(f"Took: {end-start}s to generate")
