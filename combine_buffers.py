@@ -26,7 +26,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
          "--combined_dir",
-         default="data_combined/ToySGD/combined",
+         default="data_combined/",
     )
     args = parser.parse_args()
 
@@ -35,11 +35,12 @@ if __name__ == "__main__":
     elif args.custom_paths:
         with Path(args.custom_paths).open("r") as f:
             paths = json.load(f)
-    Path(args.combined_dir).mkdir(parents=True, exist_ok=True)
+    output_path = Path(args.root_dir, "ToySGD", args.teacher, "combined", args.function)
+    output_path.mkdir(parents=True, exist_ok=True)
     combined_buffer, combined_run_info, combined_run_data = combine_runs(paths)
-    buffer_path = Path(args.combined_dir, "rep_buffer")
-    run_info_path = Path(args.combined_dir, "run_info.json")
-    run_data_path = Path(args.combined_dir, "aggregated_run_data.csv")
+    buffer_path = Path(output_path, "rep_buffer")
+    run_info_path = Path(output_path, "run_info.json")
+    run_data_path = Path(output_path, "aggregated_run_data.csv")
     combined_buffer.save(buffer_path)
     with run_info_path.open(mode="w") as f:
             json.dump(combined_run_info, f, indent=4)
