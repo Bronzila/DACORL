@@ -21,13 +21,17 @@ if __name__ == "__main__":
         help="function",
     )
     parser.add_argument(
+        "--teacher",
+        help="teacher",
+    )
+    parser.add_argument(
          "--combined_dir",
          default="data_combined/ToySGD/combined",
     )
     args = parser.parse_args()
 
     if args.root_dir:
-        paths = get_homogeneous_agent_paths(args.root_dir, args.function)
+        paths = get_homogeneous_agent_paths(args.root_dir, args.teacher, args.function)
     elif args.custom_paths:
         with Path(args.custom_paths).open("r") as f:
             paths = json.load(f)

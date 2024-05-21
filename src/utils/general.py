@@ -607,8 +607,10 @@ def load_agent(
     return agent
 
 
-def get_homogeneous_agent_paths(root_dir: str, function: str):
-    root_path = Path(root_dir)
+def get_homogeneous_agent_paths(
+    root_dir: str, teacher: str, function: str
+) -> list[str]:
+    root_path = Path(root_dir, "ToySGD", teacher)
     agent_dirs = [
         entry.name
         for entry in root_path.iterdir()
@@ -616,7 +618,7 @@ def get_homogeneous_agent_paths(root_dir: str, function: str):
     ]
     paths = []
     for dirname in agent_dirs:
-        agent_path = Path(root_dir, dirname, function)
+        agent_path = root_path / dirname / function
         paths.append(agent_path)
     return paths
 
