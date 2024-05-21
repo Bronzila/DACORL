@@ -10,7 +10,7 @@ from ConfigSpace import (
     ConfigurationSpace,
     Constant,
     Float,
-    Integer
+    Integer,
 )
 from matplotlib import pyplot as plt
 from smac import (
@@ -33,6 +33,7 @@ class TD3BC_Optimizee:
         budget: int,
         eval_protocol: str,
         eval_seed: int,
+        seed: int,
     ) -> None:
         self.data_dir = data_dir
         self.agent_type = agent_type
@@ -40,6 +41,8 @@ class TD3BC_Optimizee:
         self.eval_protocol = eval_protocol
         self.eval_seed = eval_seed
         self.budget = budget
+        self.rng = np.random.default_rng(seed)
+        self.seeds = self.rng.integers(0, 2**32 - 1, size=12)
 
         with Path(self.data_dir, "run_info.json").open(mode="rb") as f:
             self.run_info = json.load(f)
@@ -57,6 +60,9 @@ class TD3BC_Optimizee:
         activation = Constant(
             "activation", "ReLU"
         )
+        initialization = Categorical(
+            "initialization", ["xavier_uniform", "xavier_normal", "kaiming_uniform", "kaiming_normal", "orthogonal"]
+        )
         batch_size = Categorical(
             "batch_size", [2, 4, 8, 16, 32, 64, 128, 256], default=64
         )
@@ -69,6 +75,7 @@ class TD3BC_Optimizee:
                 lr_critic,
                 # hidden_layers_actor,
                 # hidden_layers_critic,
+                initialization,
                 activation,
                 batch_size,
                 # discount_factor,
@@ -93,6 +100,9 @@ class TD3BC_Optimizee:
         activation = Constant(
             "activation", "ReLU"
         )
+        initialization = Categorical(
+            "initialization", ["xavier_uniform", "xavier_normal", "kaiming_uniform", "kaiming_normal", "orthogonal"]
+        )
         batch_size = Categorical(
             "batch_size", [2, 4, 8, 16, 32, 64, 128, 256], default=64
         )
@@ -106,6 +116,7 @@ class TD3BC_Optimizee:
                 hidden_layers,
                 hidden_dim,
                 # hidden_layers_critic,
+                initialization,
                 activation,
                 batch_size,
                 # discount_factor,
@@ -118,8 +129,7 @@ class TD3BC_Optimizee:
         self, config: Configuration, seed: int = 0, budget: int = 25
     ) -> float:
         results = []
-        for _seed in range(int(round(budget))):
-            print(_seed)
+        for _seed in self.seeds[:int(round(budget))]:
             log_dict, eval_mean = train_agent(
                 data_dir=self.data_dir,
                 agent_type=self.agent_type,
@@ -216,6 +226,7 @@ if __name__ == "__main__":
         budget=args.budget,
         eval_protocol=args.eval_protocol,
         eval_seed=args.eval_seed,
+        seed=args.seed,
     )
     output_path = Path(args.output_path)
     cs = optimizee.configspace_arch if args.arch_cs else optimizee.configspace
