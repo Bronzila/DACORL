@@ -95,7 +95,7 @@ def get_agent(
         actor = td3_bc.Actor(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["hidden_dim"],
+            hidden_dim=hyperparameters["actor_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_actor"],
             activation=get_activation(hyperparameters["activation"]),
             max_action=max_action,
@@ -111,7 +111,7 @@ def get_agent(
             state_dim=state_dim,
             action_dim=action_dim,
             hidden_layers=hyperparameters["hidden_layers_critic"],
-            hidden_dim=hyperparameters["hidden_dim"],
+            hidden_dim=hyperparameters["critic_hidden_dim"],
             activation=get_activation(hyperparameters["activation"]),
         ).to(device)
         critic_1_optimizer = torch.optim.Adam(
@@ -123,7 +123,7 @@ def get_agent(
             state_dim=state_dim,
             action_dim=action_dim,
             hidden_layers=hyperparameters["hidden_layers_critic"],
-            hidden_dim=hyperparameters["hidden_dim"],
+            hidden_dim=hyperparameters["critic_hidden_dim"],
             activation=get_activation(hyperparameters["activation"]),
         ).to(device)
         critic_2_optimizer = torch.optim.Adam(
@@ -158,7 +158,7 @@ def get_agent(
         actor = bc.Actor(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["hidden_dim"],
+            hidden_dim=hyperparameters["actor_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_actor"],
             activation=get_activation(hyperparameters["activation"]),
             max_action=max_action,
@@ -185,7 +185,7 @@ def get_agent(
         actor = cql.TanhGaussianPolicy(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["hidden_dim"],
+            hidden_dim=hyperparameters["actor_hidden_dim"],
             max_action=max_action,
             min_action=min_action,
             tanh_scaling=tanh_scaling,
@@ -203,7 +203,7 @@ def get_agent(
         critic_1 = cql.FullyConnectedQFunction(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["hidden_dim"],
+            hidden_dim=hyperparameters["critic_hidden_dim"],
             activation=get_activation(hyperparameters["activation"]),
             orthogonal_init=config.orthogonal_init,
             n_hidden_layers=hyperparameters["hidden_layers_critic"],
@@ -216,7 +216,7 @@ def get_agent(
         critic_2 = cql.FullyConnectedQFunction(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["hidden_dim"],
+            hidden_dim=hyperparameters["critic_hidden_dim"],
             activation=get_activation(hyperparameters["activation"]),
             orthogonal_init=config.orthogonal_init,
             n_hidden_layers=hyperparameters["hidden_layers_critic"],
@@ -263,7 +263,7 @@ def get_agent(
         actor = awac.Actor(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["hidden_dim"],
+            hidden_dim=hyperparameters["actor_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_actor"],
             activation=get_activation(hyperparameters["activation"]),
             max_action=max_action,
@@ -278,7 +278,7 @@ def get_agent(
         critic_1 = awac.Critic(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["hidden_dim"],
+            hidden_dim=hyperparameters["critic_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_critic"],
             activation=get_activation(hyperparameters["activation"]),
         ).to(device)
@@ -290,7 +290,7 @@ def get_agent(
         critic_2 = awac.Critic(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["hidden_dim"],
+            hidden_dim=hyperparameters["critic_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_critic"],
             activation=get_activation(hyperparameters["activation"]),
         ).to(device)
@@ -317,7 +317,7 @@ def get_agent(
         actor = edac.Actor(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["hidden_dim"],
+            hidden_dim=hyperparameters["actor_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_actor"],
             activation=get_activation(hyperparameters["activation"]),
             max_action=max_action,
@@ -331,7 +331,7 @@ def get_agent(
         critic = edac.VectorizedCritic(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["hidden_dim"],
+            hidden_dim=hyperparameters["critic_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_critic"],
             activation=get_activation(hyperparameters["activation"]),
             num_critics=config.num_critics,
@@ -359,7 +359,7 @@ def get_agent(
         actor = sac_n.Actor(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["hidden_dim"],
+            hidden_dim=hyperparameters["actor_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_actor"],
             activation=get_activation(hyperparameters["activation"]),
             max_action=max_action,
@@ -373,7 +373,7 @@ def get_agent(
         critic = sac_n.VectorizedCritic(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["hidden_dim"],
+            hidden_dim=hyperparameters["critic_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_critic"],
             activation=get_activation(hyperparameters["activation"]),
             num_critics=config.num_critics,
@@ -401,7 +401,7 @@ def get_agent(
         actor = lb_sac.Actor(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["hidden_dim"],
+            hidden_dim=hyperparameters["actor_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_actor"],
             activation=get_activation(hyperparameters["activation"]),
             max_action=max_action,
@@ -416,7 +416,7 @@ def get_agent(
         critic = lb_sac.VectorizedCritic(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["hidden_dim"],
+            hidden_dim=hyperparameters["critic_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_critic"],
             activation=get_activation(hyperparameters["activation"]),
             num_critics=config.num_critics,
@@ -445,13 +445,13 @@ def get_agent(
         config = iql.TrainConfig
         v_network = iql.ValueFunction(
             state_dim=state_dim,
-            hidden_dim=hyperparameters["hidden_dim"],
+            hidden_dim=hyperparameters["critic_hidden_dim"],
             n_hidden=hyperparameters["hidden_layers_critic"],
         )
         q_network = iql.TwinQ(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["hidden_dim"],
+            hidden_dim=hyperparameters["critic_hidden_dim"],
             n_hidden=hyperparameters["hidden_layers_critic"],
         )
         actor = (
@@ -461,7 +461,7 @@ def get_agent(
                 max_action,
                 min_action,
                 tanh_scaling=tanh_scaling,
-                hidden_dim=hyperparameters["hidden_dim"],
+                hidden_dim=hyperparameters["actor_hidden_dim"],
                 n_hidden=hyperparameters["hidden_layers_actor"],
                 dropout=config.actor_dropout,
             )
@@ -472,7 +472,7 @@ def get_agent(
                 max_action,
                 min_action,
                 tanh_scaling=tanh_scaling,
-                hidden_dim=hyperparameters["hidden_dim"],
+                hidden_dim=hyperparameters["actor_hidden_dim"],
                 n_hidden=hyperparameters["hidden_layers_actor"],
                 dropout=config.actor_dropout,
             )
@@ -518,7 +518,7 @@ def get_agent(
             action_dim=action_dim,
             seq_len=config.seq_len,
             episode_len=config.episode_len,
-            embedding_dim=config.embedding_dim,  # hyperparameters["hidden_dim"],
+            embedding_dim=config.embedding_dim,  # hyperparameters["critic_hidden_dim"],
             num_layers=config.num_layers,  # hyperparameters["actor"],
             num_heads=config.num_heads,
             attention_dropout=config.attention_dropout,
@@ -608,7 +608,9 @@ def load_agent(
 
 
 def get_homogeneous_agent_paths(
-    root_dir: str, teacher: str, function: str
+    root_dir: str,
+    teacher: str,
+    function: str,
 ) -> list[str]:
     root_path = Path(root_dir, "ToySGD", teacher)
     agent_dirs = [

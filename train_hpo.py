@@ -93,7 +93,7 @@ class Optimizee:
         hidden_layers_critic = Integer(
             "hidden_layers_critic", (0, 5), default=1
         )
-        actor_hidden_dim = Constant("actor_hidden_dim", [2, 4, 8, 16, 32, 64, 128, 256], default=64)
+        actor_hidden_dim = Categorical("actor_hidden_dim", [2, 4, 8, 16, 32, 64, 128, 256], default=64)
         critic_hidden_dim = Categorical("critic_hidden_dim", [2, 4, 8, 16, 32, 64, 128, 256], default=64)
         activation = Constant("activation", "ReLU")
         batch_size = Categorical(
