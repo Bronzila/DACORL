@@ -1,0 +1,9 @@
+{
+    "params": {
+        "T_i": 1,
+        "T_mult": 1,
+        "batches_per_epoch": 6
+    },
+    "type": "sgdr",
+    "id": 6
+}
