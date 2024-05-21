@@ -1,6 +1,11 @@
 import argparse
 
-from src.utils.generate_plots import plot_actions, plot_optimization_trace
+from src.utils.generate_plots import (
+    plot_actions,
+    plot_optimization_trace,
+    plot_teacher_actions,
+    plot_type
+)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -11,8 +16,18 @@ if __name__ == "__main__":
         help="Path to the directory including the run information and run data",
     )
     parser.add_argument(
-        "--agent_path",
-        help="Relative path of the RL agents data based on data_dir.",
+        "--agent",
+        help="agent to plot the actions",
+    )
+    parser.add_argument(
+        "--fidelity",
+        default=15000,
+        help="which fidelity the agent was trained on",
+    )
+    parser.add_argument(
+        "--seed",
+        default=None,
+        help="specifies a seed to get the plots from.",
     )
     parser.add_argument(
         "--optim_trace",
@@ -25,6 +40,12 @@ if __name__ == "__main__":
         help="Generate plots for teacher-agent action comparison",
         default=False,
         action=argparse.BooleanOptionalAction,
+    )
+    parser.add_argument(
+        "--plot_type",
+        help="Generate plots for teacher-agent comparison for a specified type",
+        default=None,
+        type=str,
     )
     parser.add_argument(
         "--trajectory",
@@ -57,12 +78,51 @@ if __name__ == "__main__":
         action=argparse.BooleanOptionalAction,
         default=True,
     )
+    parser.add_argument(
+        "--action_teacher",
+        help="Plot teachers actions",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+    )
+    parser.add_argument(
+        "--reward",
+        help="Defines whether action plot should also include the reward",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+    )
     args = parser.parse_args()
 
     if args.optim_trace:
         plot_optimization_trace(
-            args.data_dir, args.agent_path, args.show, args.num_runs,
-    )
+            args.data_dir,
+            args.agent_path,
+            args.show,
+            args.num_runs,
+        )
     if args.action:
-        plot_actions(args.data_dir, args.agent_path, args.show, args.num_runs,
-                     args.aggregate, args.teacher)
+        plot_actions(
+            args.data_dir,
+            args.agent,
+            args.fidelity,
+            args.seed,
+            args.show,
+            args.num_runs,
+            args.aggregate,
+            args.teacher,
+            args.reward,
+        )
+    if args.plot_type:
+        plot_type(
+            args.plot_type,
+            args.data_dir,
+            args.fidelity,
+            args.seed,
+            args.show,
+            args.teacher,
+        )
+    if args.action_teacher:
+        plot_teacher_actions(
+            args.data_dir,
+            args.show,
+            args.reward,
+        )
