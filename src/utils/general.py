@@ -171,8 +171,6 @@ def get_agent(
         )
 
         kwargs = {
-            "max_action": max_action,
-            "min_action": min_action,
             "actor": actor,
             "actor_optimizer": actor_optimizer,
             "discount": hyperparameters["discount_factor"],
@@ -491,7 +489,6 @@ def get_agent(
         )
 
         kwargs = {
-            "max_action": max_action,
             "actor": actor,
             "actor_optimizer": actor_optimizer,
             "q_network": q_network,
