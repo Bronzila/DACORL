@@ -104,7 +104,8 @@ def get_agent(
 
         alpha = hyperparameters.get("alpha", config.alpha)
 
-        if hyperparameters.get("initialization", None):
+        initialization = hyperparameters.get("initialization", None)
+        if initialization:
             initialization = init_map[hyperparameters["initialization"]]
 
         actor = td3_bc.Actor(
@@ -328,7 +329,6 @@ def calculate_multi_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=1
         for eval_file in Path(path).rglob("eval_data.csv"):
             # Extract the seed directory
             seed_dir = eval_file.parents[1]
-            print(seed_dir)
             seed_dirs.add(seed_dir)
     else:
         seed_dirs.add(path)
@@ -337,7 +337,8 @@ def calculate_multi_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=1
     for seed_dir in seed_dirs:
         min_mean, min_std, _, _, _, min_path = calculate_single_seed_statistics(calc_mean, calc_lowest,
                                                                                 n_lowest, seed_dir, results, verbose)
-        print(f"Minimum mean {min_mean} +- {min_std} for path {min_path}")
+        if verbose:
+            print(f"Minimum mean {min_mean} +- {min_std} for path {min_path}")
         best_iterations_paths.append(min_path)
     combined_data = combine_run_data(best_iterations_paths, num_runs=num_runs)
     if calc_mean:
