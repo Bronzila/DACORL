@@ -80,7 +80,7 @@ if __name__ == "__main__":
         eval_seed=args.eval_seed,
         tanh_scaling=args.tanh_scaling,
     )
-    hyperparameters = cs.configspace.get_default_configuration()
+    hyperparameters = cs.configspace_reduced.get_default_configuration()
 
     train_agent(
         data_dir=args.data_dir,
