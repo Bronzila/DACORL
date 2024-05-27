@@ -9,8 +9,8 @@
 
 AGENT=${1:-td3_bc}
 RESULTS_DIR=${2:-data/data_hpo_10}
-FIDELITY=${3:-10000}
-ID=${4:-0}
+ID=${3:-0}
+FIDELITY=${4:-10000}
 FUNCTIONS=(Ackley Rastrigin Rosenbrock Sphere)
 TEACHERS=(exponential_decay step_decay sgdr constant)
 NUM_RUNS=100
