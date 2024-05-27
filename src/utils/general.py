@@ -747,6 +747,7 @@ def calculate_single_seed_statistics(
 def calculate_multi_seed_statistics(
     calc_mean: bool = True,
     calc_lowest: bool = True,
+    n_iterations: int = 15000,
     n_lowest: int = 1,
     path: str | None = None,
     results: bool = True,
@@ -757,7 +758,7 @@ def calculate_multi_seed_statistics(
     # folder and eval file in results/td3_bc/<seed>/
     paths = []
     if results:
-        for seed_path in Path(path).rglob(f"*{10000}/eval_data.csv"):
+        for seed_path in Path(path).rglob(f"*{n_iterations}/eval_data.csv"):
             paths.append(seed_path)
     else:
         paths.append(path)
@@ -783,19 +784,21 @@ def calculate_multi_seed_statistics(
 
 
 def calculate_statistics(
-    calc_mean=True,
-    calc_lowest=True,
-    n_lowest=1,
-    path=None,
-    results=True,
-    verbose=False,
-    multi_seed=False,
-    num_runs=100,
+    calc_mean: bool = True,
+    calc_lowest: bool = True,
+    n_iterations: int = 15000,
+    n_lowest: int = 1,
+    path: str = None,
+    results: bool = True,
+    verbose: bool = False,
+    multi_seed: bool = False,
+    num_runs: int = 100,
 ) -> tuple(float, float, float, float, float, Path):
     if multi_seed:
         return calculate_multi_seed_statistics(
             calc_mean,
             calc_lowest,
+            n_iterations,
             n_lowest,
             path,
             results,

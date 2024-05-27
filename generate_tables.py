@@ -3,14 +3,16 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from src.utils.general import calculate_multi_seed_statistics, calculate_single_seed_statistics
+from src.utils.general import (
+    calculate_multi_seed_statistics,
+    calculate_single_seed_statistics,
+)
 from markdown_table_generator import generate_markdown, table_from_string_list
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate tables")
     parser.add_argument(
-        "--path", type=str, help="Base path",
-        default="data/ToySGD"
+        "--path", type=str, help="Base path", default="data/ToySGD"
     )
     parser.add_argument(
         "--lowest",
@@ -30,19 +32,19 @@ if __name__ == "__main__":
     parser.add_argument(
         "--teacher",
         help="Specify which agents to generate the table for",
-        nargs='+',
+        nargs="+",
         default=["exponential_decay", "step_decay", "sgdr", "constant"],
     )
     parser.add_argument(
         "--agents",
         help="Specify which agents to generate the table for",
-        nargs='+',
+        nargs="+",
         default=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac", "iql"],
     )
     parser.add_argument(
         "--functions",
         help="Specify which functions to generate the table for",
-        nargs='+',
+        nargs="+",
         default=["Ackley", "Rastrigin", "Rosenbrock", "Sphere"],
     )
     parser.add_argument(
@@ -54,7 +56,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--ids",
         help="Specify which ids to generate tables for",
-        nargs='+', 
+        nargs="+",
         default=[0],
     )
     args = parser.parse_args()
@@ -74,11 +76,22 @@ if __name__ == "__main__":
                 row_lowest = [agent]
                 for j, teacher in enumerate(args.teacher):
                     if agent == "teacher":
-                        path = base_path / teacher/ str(agent_id) / function / "aggregated_run_data.csv"
-                        mean, std, lowest, iqm, iqm_std, min_path = calculate_single_seed_statistics(path=path, results=False, verbose=args.verbose)
+                        path = base_path / teacher / str(agent_id) / function / "aggregated_run_data.csv"
+                        mean, std, lowest, iqm, iqm_std, min_path = (
+                            calculate_single_seed_statistics(
+                                path=path, results=False, verbose=args.verbose
+                            )
+                        )
                     else:
                         path = base_path / teacher / str(agent_id) / function / "results" / agent
-                        mean, std, lowest, iqm, iqm_std, min_path = calculate_multi_seed_statistics(path=path, results=True, verbose=args.verbose)
+                        mean, std, lowest, iqm, iqm_std, min_path = (
+                            calculate_multi_seed_statistics(
+                                path=path,
+                                n_iterations=args.hpo_budget,
+                                results=True,
+                                verbose=args.verbose,
+                            )
+                        )
 
                     if args.mean:
                         if mean is None:
@@ -117,7 +130,9 @@ if __name__ == "__main__":
                 with table_result_path.open("w") as f:
                     f.write(markdown)
             if args.lowest:
-                table_result_path = table_dir / f"lowest_{function}_{agent_id}.md"
+                table_result_path = (
+                    table_dir / f"lowest_{function}_{agent_id}.md"
+                )
                 table = table_from_string_list(rows_lowest)
                 markdown = generate_markdown(table)
                 with table_result_path.open("w") as f:
