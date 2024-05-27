@@ -23,7 +23,7 @@ def main(experiments_path: str, id: str):
     }
 
     experiment_folder_name = experiments_path.name
-    output_file_path = experiments_path / f"{experiment_folder_name}.md"
+    output_file_path = experiments_path / f"{experiment_folder_name}_{id}.md"
 
     with output_file_path.open('w') as output_file:
         output_file.write(f"# {experiment_folder_name}\n")
