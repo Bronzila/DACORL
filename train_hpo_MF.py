@@ -153,8 +153,8 @@ if __name__ == "__main__":
         "--agent_type", type=str, default="td3_bc", choices=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac", "iql", "dt"]
     )
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--time_limit", type=int, default=30)
-    parser.add_argument("--budget", type=int, default=15000)
+    parser.add_argument("--time_limit", type=int, default=40)
+    parser.add_argument("--budget", type=int, default=20000)
     parser.add_argument(
         "--debug",
         action="store_true",
@@ -173,7 +173,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--tanh_scaling",
         action=argparse.BooleanOptionalAction,
-        default=True,
+        default=False,
     )
 
     args = parser.parse_args()
