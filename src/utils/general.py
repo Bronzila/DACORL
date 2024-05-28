@@ -84,6 +84,10 @@ def get_agent(
     hyperparameters: dict[str, Any] = {},
     device: str = "cpu",
 ) -> Any:
+    if hyperparameters.get("hidden_dim", None) is not None:
+        print("Warning! You are using the non reduced config space. Actor_hidden_dim and critic_hidden_dim will be equal.")
+        hyperparameters["actor_hidden_dim"] = hyperparameters["hidden_dim"]
+        hyperparameters["critic_hidden_dim"] = hyperparameters["hidden_dim"]
     state_dim = agent_config["state_dim"]
     action_dim = agent_config["action_dim"]
     max_action = agent_config["max_action"]
