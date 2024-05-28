@@ -99,7 +99,7 @@ class Optimizee:
         batch_size = Categorical(
             "batch_size", [2, 4, 8, 16, 32, 64, 128, 256], default=64
         )
-        discount_factor = Float("discount_factor", (0.75, 1), default=0.99)
+        discount_factor = Categorical("discount_factor", [0.9, 0.99, 0.999, 0.9999], default=0.99)
         target_update_rate = Float("target_update_rate", (0, 0.25), default=5e-3)
         # Add the parameters to configuration space
         cs.add_hyperparameters(
@@ -124,7 +124,6 @@ class Optimizee:
             agent_type=self.agent_type,
             agent_config={},
             num_train_iter=self.budget,
-            num_eval_runs=100,
             batch_size=config["batch_size"],
             val_freq=int(self.budget),
             seed=seed,
@@ -192,7 +191,7 @@ if __name__ == "__main__":
         choices=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac", "iql", "dt"],
     )
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--budget", type=int, default=10000)
+    parser.add_argument("--budget", type=int, default=20000)
     parser.add_argument(
         "--reduced",
         action="store_true",
