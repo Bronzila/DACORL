@@ -380,6 +380,7 @@ def plot_actions(
             save_path = Path(
                 dir_path.parents[2],  # PROJECT/ToySGD/
                 "figures",
+                dir_path.parents[0].name, # ID
                 dir_path.name,  # FUNCTION/
                 dir_path.parents[1].name,  # TEACHER/
             )
