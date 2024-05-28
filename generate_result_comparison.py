@@ -38,9 +38,7 @@ def calculate_percentage_change(val1, val2):
     return float("inf")
 
 
-def compare_experiments(
-    exp1_path: str, exp2_path: str, id1: str = "0", id2: str = "0"
-):
+def compare_experiments(exp1_path: str, exp2_path: str, id1: str, id2: str):
     experiments_paths = [Path(exp1_path), Path(exp2_path)]
     tables_path = "tables"
 
@@ -186,4 +184,4 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    compare_experiments(args.exp1_path, args.exp2_path)
+    compare_experiments(args.exp1_path, args.exp2_path, args.id1, args.id2)
