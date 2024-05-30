@@ -59,7 +59,7 @@ class Optimizee:
                 timeout=0,
                 hyperparameters=config,
                 debug=self.debug,
-                tanh=self.tanh_scaling,
+                tanh_scaling=self.tanh_scaling,
                 eval_protocol=self.eval_protocol,
                 eval_seed=self.eval_seed,
             )

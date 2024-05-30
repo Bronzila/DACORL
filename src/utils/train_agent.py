@@ -24,16 +24,16 @@ def train_agent(
     num_train_iter: int,
     batch_size: int,
     val_freq: int,
-    num_eval_runs: int | None,
     seed: int,
     wandb_group: str,
     timeout: int,
     debug: bool,
-    use_wandb: bool,
     hyperparameters: dict,
     eval_protocol: str,
     eval_seed: int,
     tanh_scaling: bool,
+    use_wandb: bool = False,
+    num_eval_runs: int | None = None,
 ) -> None:
     if debug:
         num_train_iter = 5
