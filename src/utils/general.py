@@ -7,6 +7,7 @@ import signal
 from pathlib import Path
 from typing import Any
 
+import ConfigSpace
 import numpy as np
 import pandas as pd
 import torch
@@ -34,7 +35,13 @@ from src.utils.agent_components import (
     ConfigurableCritic,
 )
 from src.utils.replay_buffer import ReplayBuffer
-
+from ConfigSpace import (
+    Categorical,
+    ConfigurationSpace,
+    Constant,
+    Float,
+    Integer,
+)
 
 # Time out related class and function
 class OutOfTimeError(Exception):
@@ -102,6 +109,7 @@ def get_agent(
             hidden_dim=hyperparameters["actor_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_actor"],
             activation=get_activation(hyperparameters["activation"]),
+            dropout_rate=hyperparameters["dropout_rate"],
             max_action=max_action,
             min_action=min_action,
             tanh_scaling=tanh_scaling,
@@ -168,6 +176,7 @@ def get_agent(
             max_action=max_action,
             min_action=min_action,
             tanh_scaling=tanh_scaling,
+            dropout_rate=hyperparameters["dropout_rate"],
         ).to(device)
         actor_optimizer = torch.optim.Adam(
             actor.parameters(),
@@ -188,6 +197,7 @@ def get_agent(
             state_dim=state_dim,
             action_dim=action_dim,
             hidden_dim=hyperparameters["actor_hidden_dim"],
+            dropout_rate=hyperparameters["dropout_rate"],
             max_action=max_action,
             min_action=min_action,
             tanh_scaling=tanh_scaling,
@@ -268,6 +278,7 @@ def get_agent(
             hidden_dim=hyperparameters["actor_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_actor"],
             activation=get_activation(hyperparameters["activation"]),
+            dropout_rate=hyperparameters["dropout_rate"],
             max_action=max_action,
             min_action=min_action,
             tanh_scaling=tanh_scaling,
@@ -322,6 +333,7 @@ def get_agent(
             hidden_dim=hyperparameters["actor_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_actor"],
             activation=get_activation(hyperparameters["activation"]),
+            dropout_rate=hyperparameters["dropout_rate"],
             max_action=max_action,
             min_action=min_action,
         ).to(device)
@@ -364,6 +376,7 @@ def get_agent(
             hidden_dim=hyperparameters["actor_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_actor"],
             activation=get_activation(hyperparameters["activation"]),
+            dropout_rate=hyperparameters["dropout_rate"],
             max_action=max_action,
             min_action=min_action,
         ).to(device)
@@ -406,6 +419,7 @@ def get_agent(
             hidden_dim=hyperparameters["actor_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_actor"],
             activation=get_activation(hyperparameters["activation"]),
+            dropout_rate=hyperparameters["dropout_rate"],
             max_action=max_action,
             min_action=min_action,
             edac_init=config.edac_init,
@@ -465,7 +479,7 @@ def get_agent(
                 tanh_scaling=tanh_scaling,
                 hidden_dim=hyperparameters["actor_hidden_dim"],
                 n_hidden=hyperparameters["hidden_layers_actor"],
-                dropout=config.actor_dropout,
+                dropout=hyperparameters["dropout_rate"],
             )
             if config.iql_deterministic
             else iql.GaussianPolicy(
@@ -476,7 +490,7 @@ def get_agent(
                 tanh_scaling=tanh_scaling,
                 hidden_dim=hyperparameters["actor_hidden_dim"],
                 n_hidden=hyperparameters["hidden_layers_actor"],
-                dropout=config.actor_dropout,
+                dropout_rate=hyperparameters["dropout_rate"],
             )
         ).to(device)
         v_optimizer = torch.optim.Adam(
