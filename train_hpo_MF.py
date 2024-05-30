@@ -4,21 +4,14 @@ import warnings
 from pathlib import Path
 
 import numpy as np
-from ConfigSpace import (
-    Categorical,
-    Configuration,
-    ConfigurationSpace,
-    Constant,
-    Float,
-    Integer,
-)
+from ConfigSpace import Configuration
 from matplotlib import pyplot as plt
 from smac import (
     MultiFidelityFacade as MFFacade,
     Scenario,
 )
 
-from src.utils.general import set_seeds
+from src.utils.general import set_seeds, get_config_space
 from src.utils.train_agent import train_agent
 
 warnings.filterwarnings("ignore")
@@ -48,41 +41,6 @@ class Optimizee:
 
         with Path(self.data_dir, "run_info.json").open(mode="rb") as f:
             self.run_info = json.load(f)
-
-    @property
-    def configspace(self) -> ConfigurationSpace:
-        cs = ConfigurationSpace()
-
-        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4)
-        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4)
-        hidden_layers_actor = Integer("hidden_layers_actor", (0, 5), default=1)
-        hidden_layers_critic = Integer(
-            "hidden_layers_critic", (0, 5), default=1
-        )
-        actor_hidden_dim = Categorical("actor_hidden_dim", [2, 4, 8, 16, 32, 64, 128, 256], default=64)
-        critic_hidden_dim = Categorical("critic_hidden_dim", [2, 4, 8, 16, 32, 64, 128, 256], default=64)
-        activation = Constant("activation", "ReLU")
-        batch_size = Categorical(
-            "batch_size", [2, 4, 8, 16, 32, 64, 128, 256], default=64
-        )
-        discount_factor = Categorical("discount_factor", [0.9, 0.99, 0.999, 0.9999], default=0.99)
-        target_update_rate = Float("target_update_rate", (0, 0.25), default=5e-3)
-        # Add the parameters to configuration space
-        cs.add_hyperparameters(
-            [
-                lr_actor,
-                lr_critic,
-                hidden_layers_actor,
-                hidden_layers_critic,
-                actor_hidden_dim,
-                critic_hidden_dim,
-                activation,
-                batch_size,
-                discount_factor,
-                target_update_rate,
-            ],
-        )
-        return cs
 
     def train(
         self, config: Configuration, seed: int = 0, budget: int = 25
@@ -175,6 +133,12 @@ if __name__ == "__main__":
         action=argparse.BooleanOptionalAction,
         default=False,
     )
+    parser.add_argument(
+        "--cs_type",
+        type=str,
+        help="Which config space to use",
+        default="reduced_dropout"
+    )
 
     args = parser.parse_args()
     set_seeds(args.seed)
@@ -191,7 +155,7 @@ if __name__ == "__main__":
     )
     output_path = Path(args.output_path)
     scenario = Scenario(
-        optimizee.configspace,
+        get_config_space(args.cs_type),
         output_directory=output_path,
         walltime_limit=60 * 60 * args.time_limit,  # convert hours into seconds
         n_trials=500,

@@ -1,6 +1,7 @@
 import argparse
 import time
 
+from src.utils.general import get_config_space
 from src.utils.train_agent import train_agent
 from train_hpo import Optimizee
 
@@ -67,6 +68,12 @@ if __name__ == "__main__":
         default=True,
     )
     parser.add_argument("--eval_seed", type=int, default=123)
+    parser.add_argument(
+        "--cs_type",
+        type=str,
+        help="Which config space to use",
+        default="reduced_dropout"
+    )
 
     args = parser.parse_args()
     start = time.time()
@@ -80,7 +87,7 @@ if __name__ == "__main__":
         eval_seed=args.eval_seed,
         tanh_scaling=args.tanh_scaling,
     )
-    hyperparameters = cs.configspace_reduced.get_default_configuration()
+    hyperparameters = get_config_space(args.cs_type).get_default_configuration()
 
     train_agent(
         data_dir=args.data_dir,

@@ -11,6 +11,13 @@ import ConfigSpace
 import numpy as np
 import pandas as pd
 import torch
+from ConfigSpace import (
+    Categorical,
+    ConfigurationSpace,
+    Constant,
+    Float,
+    Integer,
+)
 from CORL.algorithms.offline import (
     any_percent_bc as bc,
     awac,
@@ -35,13 +42,7 @@ from src.utils.agent_components import (
     ConfigurableCritic,
 )
 from src.utils.replay_buffer import ReplayBuffer
-from ConfigSpace import (
-    Categorical,
-    ConfigurationSpace,
-    Constant,
-    Float,
-    Integer,
-)
+
 
 # Time out related class and function
 class OutOfTimeError(Exception):
@@ -92,7 +93,9 @@ def get_agent(
     device: str = "cpu",
 ) -> Any:
     if hyperparameters.get("hidden_dim", None) is not None:
-        print("Warning! You are using the non reduced config space. Actor_hidden_dim and critic_hidden_dim will be equal.")
+        print(
+            "Warning! You are using the non reduced config space. Actor_hidden_dim and critic_hidden_dim will be equal.",
+        )
         hyperparameters["actor_hidden_dim"] = hyperparameters["hidden_dim"]
         hyperparameters["critic_hidden_dim"] = hyperparameters["hidden_dim"]
     state_dim = agent_config["state_dim"]
@@ -806,7 +809,7 @@ def calculate_statistics(
     calc_lowest: bool = True,
     n_iterations: int = 15000,
     n_lowest: int = 1,
-    path: str = None,
+    path: str | None = None,
     results: bool = True,
     verbose: bool = False,
     multi_seed: bool = False,
@@ -846,3 +849,215 @@ def compute_iqm(df):
     df_trimmed = df_sorted[num_to_remove:-num_to_remove]
     fbests = df_trimmed["f_cur"]
     return fbests.mean(), fbests.std()
+
+
+def get_config_space(config_type: str) -> ConfigSpace:
+    cs = ConfigurationSpace()
+
+    if config_type == "full":
+        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4)
+        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4)
+        discount_factor = Float("discount_factor", (0, 1), default=0.99)
+        target_update_rate = Float("target_update_rate", (0, 1), default=5e-3)
+        batch_size = Categorical(
+            "batch_size",
+            [2, 4, 8, 16, 32, 64, 128, 256],
+            default=64,
+        )
+        # Architecture
+        hidden_layers_actor = Integer("hidden_layers_actor", (0, 5), default=1)
+        hidden_layers_critic = Integer(
+            "hidden_layers_critic",
+            (0, 5),
+            default=1,
+        )
+        actor_hidden_dim = Categorical(
+            "actor_hidden_dim",
+            [2, 4, 8, 16, 32, 64, 128, 256],
+            default=256,
+        )
+        critic_hidden_dim = Categorical(
+            "critic_hidden_dim",
+            [2, 4, 8, 16, 32, 64, 128, 256],
+            default=256,
+        )
+        activation = Categorical(
+            "activation",
+            ["ReLU", "LeakyReLU"],
+            default="ReLU",
+        )
+        # Dropout
+        dropout_rate = Constant("dropout_rate", 0.0)
+
+        for value in actor_hidden_dim.choices:
+            condition = cs.EqualsCondition(
+                critic_hidden_dim,
+                actor_hidden_dim,
+                value,
+            )
+            cs.add_condition(condition)
+
+    elif config_type == "no_arch":
+        # General
+        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4)
+        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4)
+        discount_factor = Categorical(
+            "discount_factor",
+            [0.9, 0.99, 0.999, 0.9999],
+            default=0.99,
+        )
+        target_update_rate = Float(
+            "target_update_rate",
+            (0, 0.25),
+            default=5e-3,
+        )
+        batch_size = Categorical(
+            "batch_size",
+            [2, 4, 8, 16, 32, 64, 128, 256],
+            default=64,
+        )
+
+        # Arch
+        hidden_layers_actor = Constant("hidden_layers_actor", 1)
+        hidden_layers_critic = Constant("hidden_layers_critic", 1)
+        actor_hidden_dim = Constant("actor_hidden_dim", 64)
+        critic_hidden_dim = Constant("critic_hidden_dim", 64)
+        activation = Constant("activation", "ReLU")
+        # Dropout
+        dropout_rate = Constant("dropout_rate", 0.0)
+
+    elif config_type == "no_arch_dropout":
+        # General
+        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4)
+        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4)
+        discount_factor = Categorical(
+            "discount_factor",
+            [0.9, 0.99, 0.999, 0.9999],
+            default=0.99,
+        )
+        target_update_rate = Float(
+            "target_update_rate",
+            (0, 0.25),
+            default=5e-3,
+        )
+        batch_size = Categorical(
+            "batch_size",
+            [2, 4, 8, 16, 32, 64, 128, 256],
+            default=64,
+        )
+
+        # Arch
+        hidden_layers_actor = Constant("hidden_layers_actor", 1)
+        hidden_layers_critic = Constant("hidden_layers_critic", 1)
+        actor_hidden_dim = Constant("actor_hidden_dim", 64)
+        critic_hidden_dim = Constant("critic_hidden_dim", 64)
+        activation = Constant("activation", "ReLU")
+        # Dropout
+        dropout_rate = Categorical(
+            "dropout_rate",
+            [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4],
+            default=0.2,
+        )
+
+    elif config_type == "reduced":
+        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4)
+        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4)
+        discount_factor = Categorical(
+            "discount_factor",
+            [0.9, 0.99, 0.999, 0.9999],
+            default=0.99,
+        )
+        target_update_rate = Float(
+            "target_update_rate",
+            (0, 0.25),
+            default=5e-3,
+        )
+        batch_size = Categorical(
+            "batch_size",
+            [2, 4, 8, 16, 32, 64, 128, 256],
+            default=64,
+        )
+
+        # Architecture
+        hidden_layers_actor = Integer("hidden_layers_actor", (0, 5), default=1)
+        hidden_layers_critic = Integer(
+            "hidden_layers_critic",
+            (0, 5),
+            default=1,
+        )
+        actor_hidden_dim = Categorical(
+            "actor_hidden_dim",
+            [2, 4, 8, 16, 32, 64, 128, 256],
+            default=64,
+        )
+        critic_hidden_dim = Categorical(
+            "critic_hidden_dim",
+            [2, 4, 8, 16, 32, 64, 128, 256],
+            default=64,
+        )
+        activation = Constant("activation", "ReLU")
+
+        # Dropout
+        dropout_rate = Constant("dropout_rate", 0.0)
+
+    elif config_type == "reduced_dropout":
+        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4)
+        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4)
+        discount_factor = Categorical(
+            "discount_factor",
+            [0.9, 0.99, 0.999, 0.9999],
+            default=0.99,
+        )
+        target_update_rate = Float(
+            "target_update_rate",
+            (0, 0.25),
+            default=5e-3,
+        )
+        batch_size = Categorical(
+            "batch_size",
+            [2, 4, 8, 16, 32, 64, 128, 256],
+            default=64,
+        )
+
+        # Architecture
+        hidden_layers_actor = Integer("hidden_layers_actor", (0, 5), default=1)
+        hidden_layers_critic = Integer(
+            "hidden_layers_critic",
+            (0, 5),
+            default=1,
+        )
+        actor_hidden_dim = Categorical(
+            "actor_hidden_dim",
+            [2, 4, 8, 16, 32, 64, 128, 256],
+            default=64,
+        )
+        critic_hidden_dim = Categorical(
+            "critic_hidden_dim",
+            [2, 4, 8, 16, 32, 64, 128, 256],
+            default=64,
+        )
+        activation = Constant("activation", "ReLU")
+
+        # Dropout
+        dropout_rate = Categorical(
+            "dropout_rate",
+            [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4],
+            default=0.2,
+        )
+
+    cs.add_hyperparameters(
+        [
+            lr_actor,
+            lr_critic,
+            discount_factor,
+            target_update_rate,
+            batch_size,
+            hidden_layers_actor,
+            hidden_layers_critic,
+            actor_hidden_dim,
+            critic_hidden_dim,
+            activation,
+            dropout_rate,
+        ],
+    )
+    return cs

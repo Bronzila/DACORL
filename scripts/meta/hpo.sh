@@ -17,6 +17,7 @@ FC3=Rosenbrock
 FC4=Sphere
 NUM_RUNS=1000
 VERSION=extended_velocity
+CS_TYPE=reduced_dropout
 
 start=`date +%s`
 
@@ -29,19 +30,19 @@ echo "Running in directory ($RESULTS_DIR) using the data teacher ($TEACHER) on (
 if [ ${SLURM_ARRAY_TASK_ID} -eq 1 ]
 then
     python data_gen.py --save_run_data --save_rep_buffer --env $FC1\_$VERSION --agent $TEACHER --num_runs $NUM_RUNS --id $ID --results_dir $RESULTS_DIR
-    python train_hpo.py --data_dir $RESULTS_DIR/ToySGD/$TEACHER/$ID/$FC1 --agent_type $RL_AGENT --output_path $RESULTS_DIR/smac/smac_$TEACHER\_$FC1\_$RL_AGENT --no-tanh_scaling
+    python train_hpo.py --data_dir $RESULTS_DIR/ToySGD/$TEACHER/$ID/$FC1 --agent_type $RL_AGENT --output_path $RESULTS_DIR/smac/smac_$TEACHER\_$FC1\_$RL_AGENT --cs_type $CS_TYPE --no-tanh_scaling
 elif [ ${SLURM_ARRAY_TASK_ID} -eq 2 ]
 then
     python data_gen.py --save_run_data --save_rep_buffer --env $FC2\_$VERSION --agent $TEACHER --num_runs $NUM_RUNS --id $ID --results_dir $RESULTS_DIR
-    python train_hpo.py --data_dir $RESULTS_DIR/ToySGD/$TEACHER/$ID/$FC2 --agent_type $RL_AGENT --output_path $RESULTS_DIR/smac/smac_$TEACHER\_$FC2\_$RL_AGENT --no-tanh_scaling
+    python train_hpo.py --data_dir $RESULTS_DIR/ToySGD/$TEACHER/$ID/$FC2 --agent_type $RL_AGENT --output_path $RESULTS_DIR/smac/smac_$TEACHER\_$FC2\_$RL_AGENT --cs_type $CS_TYPE --no-tanh_scaling
 elif [ ${SLURM_ARRAY_TASK_ID} -eq 3 ]
 then
     python data_gen.py --save_run_data --save_rep_buffer --env $FC3\_$VERSION --agent $TEACHER --num_runs $NUM_RUNS --id $ID --results_dir $RESULTS_DIR
-    python train_hpo.py --data_dir $RESULTS_DIR/ToySGD/$TEACHER/$ID/$FC3 --agent_type $RL_AGENT --output_path $RESULTS_DIR/smac/smac_$TEACHER\_$FC3\_$RL_AGENT --no-tanh_scaling
+    python train_hpo.py --data_dir $RESULTS_DIR/ToySGD/$TEACHER/$ID/$FC3 --agent_type $RL_AGENT --output_path $RESULTS_DIR/smac/smac_$TEACHER\_$FC3\_$RL_AGENT --cs_type $CS_TYPE --no-tanh_scaling
 elif [ ${SLURM_ARRAY_TASK_ID} -eq 4 ]
 then
     python data_gen.py --save_run_data --save_rep_buffer --env $FC4\_$VERSION --agent $TEACHER --num_runs $NUM_RUNS --id $ID --results_dir $RESULTS_DIR
-    python train_hpo.py --data_dir $RESULTS_DIR/ToySGD/$TEACHER/$ID/$FC4 --agent_type $RL_AGENT --output_path $RESULTS_DIR/smac/smac_$TEACHER\_$FC4\_$RL_AGENT --no-tanh_scaling
+    python train_hpo.py --data_dir $RESULTS_DIR/ToySGD/$TEACHER/$ID/$FC4 --agent_type $RL_AGENT --output_path $RESULTS_DIR/smac/smac_$TEACHER\_$FC4\_$RL_AGENT --cs_type $CS_TYPE --no-tanh_scaling
 fi
 
 # Print some Information about the end-time to STDOUT

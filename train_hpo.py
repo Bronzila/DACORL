@@ -18,7 +18,7 @@ from smac import (
     Scenario,
 )
 
-from src.utils.general import set_seeds
+from src.utils.general import set_seeds, get_config_space
 from src.utils.train_agent import train_agent
 
 warnings.filterwarnings("ignore")
@@ -47,43 +47,6 @@ class Optimizee:
             self.run_info = json.load(f)
 
     @property
-    def configspace(self) -> ConfigurationSpace:
-        cs = ConfigurationSpace()
-
-        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4)
-        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4)
-        hidden_layers_actor = Integer("hidden_layers_actor", (0, 5), default=1)
-        hidden_layers_critic = Integer(
-            "hidden_layers_critic", (0, 5), default=1
-        )
-        hidden_dim = Categorical(
-            "hidden_dim", [32, 64, 128, 256, 512], default=256
-        )
-        activation = Categorical(
-            "activation", ["ReLU", "LeakyReLU"], default="ReLU"
-        )
-        batch_size = Categorical(
-            "batch_size", [2, 4, 8, 16, 32, 64, 128, 256], default=64
-        )
-        discount_factor = Float("discount_factor", (0, 1), default=0.99)
-        target_update_rate = Float("target_update_rate", (0, 1), default=5e-3)
-        # Add the parameters to configuration space
-        cs.add_hyperparameters(
-            [
-                lr_actor,
-                lr_critic,
-                hidden_layers_actor,
-                hidden_layers_critic,
-                hidden_dim,
-                activation,
-                batch_size,
-                discount_factor,
-                target_update_rate,
-            ]
-        )
-        return cs
-
-    @property
     def configspace_reduced(self) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
@@ -99,6 +62,7 @@ class Optimizee:
         batch_size = Categorical(
             "batch_size", [2, 4, 8, 16, 32, 64, 128, 256], default=64
         )
+        dropout_rate = Categorical("dropout_rate", [0., 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4], default=0.2)
         discount_factor = Categorical("discount_factor", [0.9, 0.99, 0.999, 0.9999], default=0.99)
         target_update_rate = Float("target_update_rate", (0, 0.25), default=5e-3)
         # Add the parameters to configuration space
@@ -112,6 +76,7 @@ class Optimizee:
                 critic_hidden_dim,
                 activation,
                 batch_size,
+                dropout_rate,
                 discount_factor,
                 target_update_rate,
             ],
@@ -220,6 +185,12 @@ if __name__ == "__main__":
         default=True,
     )
     parser.add_argument("--eval_seed", type=int, default=123)
+    parser.add_argument(
+        "--cs_type",
+        type=str,
+        help="Which config space to use",
+        default="reduced_dropout"
+    )
 
     args = parser.parse_args()
     set_seeds(args.seed)
@@ -236,7 +207,7 @@ if __name__ == "__main__":
 
     output_path = Path(args.output_path)
     scenario = Scenario(
-        optimizee.configspace_reduced,
+        get_config_space(args.cs_type),
         output_directory=output_path,
         n_trials=600,
         n_workers=1,
