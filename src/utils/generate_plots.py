@@ -397,56 +397,98 @@ def plot_teacher_actions(
     dir_path: str,
     show: bool = False,
     reward: bool = False,
+    single_plot: bool = False,
+    function: str = "Ackley",
 ) -> None:
     plt.clf()
-    run_info_path = Path(dir_path, "run_info.json")
-    # Get run info from file
-    with Path.open(run_info_path) as file:
-        run_info = json.load(file)
-        drawstyle = "default"
-        if run_info["agent"]["type"] == "step_decay":
-            drawstyle = "steps-post"
+    dfs = []
+    run_infos = []
+    if single_plot:
+        paths = Path(dir_path).rglob(f"*/{function}")
 
-    data_path = Path(dir_path, "aggregated_run_data.csv")
-    # Read run data
-    df = pd.read_csv(data_path)
+        for path in paths:
+            run_info_path = Path(path, "run_info.json")
+            # Get run info from file
+            with Path.open(run_info_path) as file:
+                run_info = json.load(file)
+                drawstyle = "default"
+                if run_info["agent"]["type"] == "step_decay":
+                    drawstyle = "steps-post"
 
-    df["action"] = df["action"].map(lambda x: 10**x)
+            data_path = Path(path, "aggregated_run_data.csv")
+            # Read run data
+            df = pd.read_csv(data_path)
 
-    ax = sns.lineplot(
-        data=df,
-        x="batch",
-        y="action",
-        drawstyle=drawstyle,
-        label=run_info["agent"]["type"],
-        legend=False,
-    )
-    if reward:
-        ax2 = ax.twinx()
-        sns.lineplot(
+            df["action"] = df["action"].map(lambda x: 10**x)
+
+            dfs.append(df)
+            run_infos.append(run_info)
+    else:
+        run_info_path = Path(dir_path, "run_info.json")
+        # Get run info from file
+        with Path.open(run_info_path) as file:
+            run_info = json.load(file)
+            drawstyle = "default"
+            if run_info["agent"]["type"] == "step_decay":
+                drawstyle = "steps-post"
+
+        data_path = Path(dir_path, "aggregated_run_data.csv")
+        # Read run data
+        df = pd.read_csv(data_path)
+
+        df["action"] = df["action"].map(lambda x: 10**x)
+
+        dfs.append(df)
+        run_infos.append(run_info)
+
+    for run_info, df in zip(run_infos, dfs):
+        ax = sns.lineplot(
             data=df,
             x="batch",
-            y="reward",
-            color="g",
-            label="Reward",
-            ax=ax2,
+            y="action",
+            drawstyle=drawstyle,
+            label=run_info["agent"]["id"],
             legend=False,
         )
+        if reward:
+            ax2 = ax.twinx()
+            sns.lineplot(
+                data=df,
+                x="batch",
+                y="reward",
+                color="g",
+                label="Reward",
+                ax=ax2,
+                legend=False,
+            )
 
     ax.figure.legend()
+    plt.title(f"Actions of {run_infos[0]['agent']['type']} agent")
     # Show or save the plot
     if show:
         plt.show()
     else:
         dir_path = Path(dir_path)
-        save_path = Path(
-            dir_path.parents[2],  # PROJECT/ToySGD/
-            "figures",
-            dir_path.name,  # FUNCTION/
-            dir_path.parents[1].name,  # TEACHER/
-        )
-        teach_id = dir_path.parents[0].name
-        if not save_path.exists():
-            save_path.mkdir(parents=True)
-        print(f"Saving figure to {save_path / f'action_teacher_{teach_id}_aggregate.svg'}")
-        plt.savefig(save_path / f"action_teacher_{teach_id}_aggregate.svg")
+        if single_plot:
+            save_path = Path(
+                dir_path.parents[0],  # PROJECT/ToySGD/
+                "figures",
+                function,  # FUNCTION/
+                dir_path.name,  # TEACHER/
+            )
+            if not save_path.exists():
+                save_path.mkdir(parents=True)
+            print(f"Saving figure to {save_path / 'action_teacher_single_plot.svg'}")
+            plt.savefig(save_path / "action_teacher_single_plot.svg")
+        else:
+            save_path = Path(
+                dir_path.parents[2],  # PROJECT/ToySGD/
+                "figures",
+                dir_path.name,  # FUNCTION/
+                dir_path.parents[1].name,  # TEACHER/
+            )
+            teach_id = dir_path.parents[0].name
+            if not save_path.exists():
+                save_path.mkdir(parents=True)
+            print(f"Saving figure to {save_path / f'action_teacher_{teach_id}_aggregate.svg'}")
+            plt.savefig(save_path / f"action_teacher_{teach_id}_aggregate.svg")

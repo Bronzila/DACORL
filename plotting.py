@@ -90,6 +90,18 @@ if __name__ == "__main__":
         action=argparse.BooleanOptionalAction,
         default=False,
     )
+    parser.add_argument(
+        "--single_plot",
+        help="Defines whether teacher action plot should feature all ids in one plot",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+    )
+    parser.add_argument(
+        "--function",
+        help="Which function to generate plots for. Used when single_plot is active.",
+        default=None,
+        type=str,
+    )
     args = parser.parse_args()
 
     if args.optim_trace:
@@ -125,4 +137,6 @@ if __name__ == "__main__":
             args.data_dir,
             args.show,
             args.reward,
+            args.single_plot,
+            args.function,
         )
