@@ -27,7 +27,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--seed",
         default=None,
-        help="specifies a seed to get the plots from.",
+        help="specifies a seed to get the plots from. If None, it aggregates over all seeds",
     )
     parser.add_argument(
         "--optim_trace",
@@ -61,9 +61,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--num_runs",
-        help="Path to the directory including the run information and run data",
+        help="Specifies how many individual runs should be plotted.",
         type=int,
-        default=1,
+        default=0,
     )
     parser.add_argument(
         "--aggregate",
@@ -76,13 +76,13 @@ if __name__ == "__main__":
         "--teacher",
         help="Defines whether action plot should also include teacher",
         action=argparse.BooleanOptionalAction,
-        default=True,
+        default=False,
     )
     parser.add_argument(
         "--action_teacher",
         help="Plot teachers actions",
         action=argparse.BooleanOptionalAction,
-        default=True,
+        default=False,
     )
     parser.add_argument(
         "--reward",
