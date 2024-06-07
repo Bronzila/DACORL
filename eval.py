@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 import torch
+import numpy as np
 from src.utils.general import get_agent, get_environment, load_agent
 from src.utils.test_agent import test_agent
 import time
@@ -27,7 +28,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--eval_protocol", type=str, default="train", choices=["train", "interpolation"]
     )
-    parser.add_argument("--eval_seed", type=int, default=123)
+    parser.add_argument("--gen_seed", type=int, default=123, help="This is just the seed used for generating a random seed")
 
     args = parser.parse_args()
 
@@ -56,12 +57,14 @@ if __name__ == "__main__":
             starting_points=run_info["starting_points"]
         )
     elif args.eval_protocol == "interpolation":
+        rng = np.random.default_rng(args.gen_seed)
+        random_eval_seed = int(rng.integers(0, 2**32 - 1, size=1)[0])
         eval_data = test_agent(
             actor=agent.actor,
             env=env,
             n_runs=args.num_runs,
             n_batches=run_info["environment"]["num_batches"],
-            seed=args.eval_seed,
+            seed=random_eval_seed,
         )
     # Save evaluation data
-    eval_data.to_csv(agent_path / "eval_data.csv")
+    eval_data.to_csv(agent_path / f"eval_data_{args.eval_protocol}.csv")

@@ -107,7 +107,6 @@ def get_agent(
         initialization = hyperparameters.get("initialization", None)
         if initialization:
             initialization = init_map[hyperparameters["initialization"]]
-
         actor = td3_bc.Actor(
             state_dim,
             action_dim,
@@ -117,6 +116,7 @@ def get_agent(
             hidden_layers=hyperparameters.get("hidden_layers", 1),
             initialization=initialization,
         ).to(device)
+        print(f"hidden_dim: {hyperparameters.get('hidden_dim', 64)}")
         actor_optimizer = torch.optim.Adam(
             actor.parameters(),
             lr=hyperparameters.get("lr_actor", 3e-4),
@@ -206,7 +206,11 @@ def save_agent(state_dicts: dict, results_dir: Path, iteration: int, seed: int=0
 
 
 def load_agent(agent_type: str, agent_config: dict, agent_path: Path) -> Any:
-    agent = get_agent(agent_type, agent_config)
+    hp_conf_path = agent_path / "config.json"
+    with hp_conf_path.open("r") as f:
+        hyperparameters = json.load(f)
+    print(hyperparameters)
+    agent = get_agent(agent_type, agent_config, hyperparameters)
     state_dict = agent.state_dict()
     new_state_dict = {}
     for key, _ in state_dict.items():

@@ -1,5 +1,7 @@
 import argparse
 import time
+import json
+from pathlib import Path
 
 from src.utils.train_agent import train_agent
 
@@ -50,9 +52,19 @@ if __name__ == "__main__":
         "--eval_protocol", type=str, default="train", choices=["train", "interpolation"]
     )
     parser.add_argument("--eval_seed", type=int, default=123)
+    parser.add_argument("--hp_path", type=str)
 
     args = parser.parse_args()
     start = time.time()
+
+    batch_size = args.batch_size
+    if args.hp_path:
+        with Path(args.hp_path).open("r") as f:
+            hyperparameters = json.load(f)
+        batch_size = hyperparameters["batch_size"]
+    else:
+        hyperparameters = {}
+    print(hyperparameters)
 
     _, mean =train_agent(
         data_dir=args.data_dir,
@@ -60,7 +72,7 @@ if __name__ == "__main__":
         agent_config=args.agent_config,
         num_train_iter=args.num_train_iter,
         num_eval_runs=args.num_eval_runs,
-        batch_size=args.batch_size,
+        batch_size=batch_size,
         val_freq=args.val_freq,
         seed=args.seed,
         wandb_group=args.wandb_group,
@@ -68,7 +80,7 @@ if __name__ == "__main__":
         debug=args.debug,
         eval_protocol=args.eval_protocol,
         eval_seed=args.eval_seed,
-        hyperparameters={}
+        hyperparameters=hyperparameters,
     )
     print(mean)
     end = time.time()

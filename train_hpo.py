@@ -35,6 +35,7 @@ class TD3BC_Optimizee:
         budget: int,
         eval_protocol: str,
         eval_seed: int,
+        hidden_dim: int,
     ) -> None:
         self.data_dir = data_dir
         self.agent_type = agent_type
@@ -42,6 +43,7 @@ class TD3BC_Optimizee:
         self.budget = budget
         self.eval_protocol = eval_protocol
         self.eval_seed = eval_seed
+        self.hidden_dim = hidden_dim
 
         with Path(self.data_dir, "run_info.json").open(mode="rb") as f:
             self.run_info = json.load(f)
@@ -104,6 +106,8 @@ class TD3BC_Optimizee:
         # return np.array(results).mean()
 
         print(seed)
+        config = dict(config)
+        config["hidden_dim"] = self.hidden_dim
         log_dict, eval_mean = train_agent(
             data_dir=self.data_dir,
             agent_type=self.agent_type,
@@ -222,6 +226,7 @@ if __name__ == "__main__":
         "--eval_protocol", type=str, default="train", choices=["train", "interpolation"]
     )
     parser.add_argument("--eval_seed", type=int, default=123)
+    parser.add_argument("--hidden_dim", type=int, default=64)
 
     args = parser.parse_args()
     set_seeds(args.seed)
@@ -233,6 +238,7 @@ if __name__ == "__main__":
         budget=args.budget,
         eval_protocol=args.eval_protocol,
         eval_seed=args.eval_seed,
+        hidden_dim=args.hidden_dim,
     )
     output_path = Path(args.output_path)
     cs = optimizee.configspace_arch if args.arch_cs else optimizee.configspace

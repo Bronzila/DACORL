@@ -6,7 +6,6 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import torch
-from tqdm import tqdm
 
 from src.utils.general import set_seeds
 
@@ -82,7 +81,7 @@ def test_agent(
             runs.extend(r_runs)
             batches.extend(r_b)
     else:
-        for run_id in tqdm(range(n_runs)):
+        for run_id in range(n_runs):
             env.reset()
             r_a, r_r, r_x, r_f, r_s, r_runs, r_b = run_batches(actor, env,
                                                             n_batches, run_id)

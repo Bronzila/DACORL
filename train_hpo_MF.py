@@ -34,6 +34,8 @@ class TD3BC_Optimizee:
         eval_protocol: str,
         eval_seed: int,
         seed: int,
+        val_freq: int,
+        hidden_dim: int,
     ) -> None:
         self.data_dir = data_dir
         self.agent_type = agent_type
@@ -41,6 +43,8 @@ class TD3BC_Optimizee:
         self.eval_protocol = eval_protocol
         self.eval_seed = eval_seed
         self.budget = budget
+        self.val_freq = val_freq
+        self.hidden_dim = hidden_dim
         self.rng = np.random.default_rng(seed)
         self.seeds = self.rng.integers(0, 2**32 - 1, size=12)
 
@@ -60,9 +64,9 @@ class TD3BC_Optimizee:
         activation = Constant(
             "activation", "ReLU"
         )
-        initialization = Categorical(
-            "initialization", ["xavier_uniform", "xavier_normal", "kaiming_uniform", "kaiming_normal", "orthogonal"]
-        )
+        # initialization = Categorical(
+        #     "initialization", ["xavier_uniform", "xavier_normal", "kaiming_uniform", "kaiming_normal", "orthogonal"]
+        # )
         batch_size = Categorical(
             "batch_size", [2, 4, 8, 16, 32, 64, 128, 256], default=64
         )
@@ -75,7 +79,7 @@ class TD3BC_Optimizee:
                 lr_critic,
                 # hidden_layers_actor,
                 # hidden_layers_critic,
-                initialization,
+                # initialization,
                 activation,
                 batch_size,
                 # discount_factor,
@@ -100,9 +104,9 @@ class TD3BC_Optimizee:
         activation = Constant(
             "activation", "ReLU"
         )
-        initialization = Categorical(
-            "initialization", ["xavier_uniform", "xavier_normal", "kaiming_uniform", "kaiming_normal", "orthogonal"]
-        )
+        # initialization = Categorical(
+        #     "initialization", ["xavier_uniform", "xavier_normal", "kaiming_uniform", "kaiming_normal", "orthogonal"]
+        # )
         batch_size = Categorical(
             "batch_size", [2, 4, 8, 16, 32, 64, 128, 256], default=64
         )
@@ -116,7 +120,7 @@ class TD3BC_Optimizee:
                 hidden_layers,
                 hidden_dim,
                 # hidden_layers_critic,
-                initialization,
+                # initialization,
                 activation,
                 batch_size,
                 # discount_factor,
@@ -129,6 +133,9 @@ class TD3BC_Optimizee:
         self, config: Configuration, seed: int = 0, budget: int = 25
     ) -> float:
         results = []
+        # for _seed in range(12):
+        config = dict(config)
+        config["hidden_dim"] = self.hidden_dim
         for _seed in self.seeds[:int(round(budget))]:
             log_dict, eval_mean = train_agent(
                 data_dir=self.data_dir,
@@ -136,7 +143,7 @@ class TD3BC_Optimizee:
                 agent_config={},
                 num_train_iter=self.budget,
                 batch_size=config["batch_size"],
-                val_freq=int(self.budget),
+                val_freq=int(self.val_freq),
                 seed=_seed,
                 wandb_group=None,
                 timeout=0,
@@ -195,6 +202,7 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--time_limit", type=int, default=30)
     parser.add_argument("--budget", type=int, default=15000)
+    parser.add_argument("--val_freq", type=int, default=15000)
     parser.add_argument(
         "--debug",
         action="store_true",
@@ -215,6 +223,7 @@ if __name__ == "__main__":
         "--eval_protocol", type=str, default="train", choices=["train", "interpolation"]
     )
     parser.add_argument("--eval_seed", type=int, default=123)
+    parser.add_argument("--hidden_dim", type=int, default=64)
 
     args = parser.parse_args()
     set_seeds(args.seed)
@@ -227,6 +236,8 @@ if __name__ == "__main__":
         eval_protocol=args.eval_protocol,
         eval_seed=args.eval_seed,
         seed=args.seed,
+        val_freq=args.val_freq,
+        hidden_dim=args.hidden_dim,
     )
     output_path = Path(args.output_path)
     cs = optimizee.configspace_arch if args.arch_cs else optimizee.configspace
@@ -234,7 +245,7 @@ if __name__ == "__main__":
         cs,
         output_directory=output_path,
         walltime_limit=60 * 60 * args.time_limit,  # convert 10 hours into seconds
-        n_trials=500,
+        n_trials=800,
         min_budget=3,
         max_budget=12,
         n_workers=1,
