@@ -229,8 +229,7 @@ def get_homogeneous_agent_paths(root_dir: str, function: str):
         paths.append(agent_path)
     return paths
 
-def combine_runs(agent_paths):
-    print(agent_paths)
+def concat_runs(agent_paths):
     combined_buffer = None
     combined_run_info = None
     combined_run_data = []
@@ -259,6 +258,91 @@ def combine_runs(agent_paths):
         df["run"] += idx * run_info["num_runs"]
         combined_run_data.append(df)
     return combined_buffer, combined_run_info, pd.concat(combined_run_data, ignore_index=True)
+
+def get_run_ids_by_agent_path(path_data_mapping, combination_strategy, total_size):
+    if combination_strategy == "perf_sampling":
+        performances = []
+        paths = []
+        n_runs = 0
+        for path, data in path_data_mapping.items():
+            final_run_values = data["run_data"].groupby("run").last()["f_cur"]
+            mean_final_score = np.mean(final_run_values)
+            path_data_mapping[path]["performance"] = mean_final_score
+            performances.append(mean_final_score)
+            paths.append(path)
+            n_runs = data["run_info"]["num_runs"]
+        # Get max score, invert scores and normalize them
+        performances = np.array(performances)
+        max_score = max(performances)
+        inverted_scores = max_score - performances
+        normalized_scores = inverted_scores / np.sum(inverted_scores)
+
+        # Power factor > 1 emphasizes well-performing heuristics over worse performing
+        power_factor = 1
+        emphasized_scores = normalized_scores ** power_factor
+
+        # Introduce baseline probability to also sample from worst policy
+        # NOTE: This does not mean, that the worst teacher has a final prob. of being sampled of  1 / len_agents
+        # It just adds a small baseline probability for samples
+        baseline_prob = 1 / len(emphasized_scores)
+        emph_base_probs = (1 - baseline_prob) * emphasized_scores + baseline_prob
+
+        final_normalized_scores = emph_base_probs / np.sum(emph_base_probs)
+
+        # Get sampling weights from scores
+        sampling_weights = final_normalized_scores.tolist()
+
+        # Always use same rng
+        rng = np.random.default_rng(seed=0)
+        for path, weight in zip(paths, sampling_weights):
+            num_samples = int(total_size * weight)
+            # Sample run_ids without replacement
+            run_ids = rng.choice(np.arange(n_runs), size=num_samples, replace=False)
+            path_data_mapping[path]["run_ids"] = run_ids
+        return path_data_mapping
+    elif combination_strategy == "perf_per_run":
+        # Get n_runs and initialize run_ids lists
+        for path, data in path_data_mapping.items():
+            path_data_mapping[path]["run_ids"] = []
+            n_runs = data["run_info"]["num_runs"]
+        for run_id in range(n_runs):
+            f_values = []
+            paths = []
+            for path, data in path_data_mapping.items():
+                final_run_values = data["run_data"].groupby("run").last()["f_cur"]
+                paths.append(path)
+                f_values.append(final_run_values[run_id])
+            path_id = np.argmin(np.array(f_values))
+            path = paths[path_id]
+            path_data_mapping[path]["run_ids"].append(run_id)
+
+        return path_data_mapping
+    else:
+        raise NotImplementedError()
+
+def combine_runs(agent_paths, combination_strategy="concat", total_size=3000):
+    if combination_strategy == "concat":
+        return concat_runs(agent_paths)
+    else:
+        path_data_mapping = {}
+        for root_path in agent_paths:
+            replay_path = Path(root_path, "rep_buffer")
+            run_info_path = Path(root_path, "run_info.json")
+            run_data_path = Path(root_path, "aggregated_run_data.csv")
+
+            with run_info_path.open(mode="rb") as f:
+                run_info = json.load(f)
+
+            buffer = ReplayBuffer.load(replay_path)
+
+            df_run_data = pd.read_csv(run_data_path)
+            path_data_mapping[root_path] = {
+                "buffer": buffer,
+                "run_data": df_run_data,
+                "run_info": run_info,
+            }
+        path_data_mapping = get_run_ids_by_agent_path(path_data_mapping, combination_strategy, total_size)
+        raise NotImplementedError()
 
 def combine_run_data(data_paths, num_runs=100):
     combined_run_data = []
