@@ -54,29 +54,26 @@ class TD3BC_Optimizee:
 
         lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4)
         lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4)
-        # hidden_layers_actor = Integer("hidden_layers_actor", (0, 5), default=1)
-        # hidden_layers_critic = Integer(
-        #     "hidden_layers_critic", (0, 5), default=1
-        # )
+        dropout_rate = Categorical(
+            "dropout_rate",
+            [0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5],
+            default=0.2,
+        )
         activation = Constant(
             "activation", "ReLU"
         )
         batch_size = Categorical(
             "batch_size", [2, 4, 8, 16, 32, 64, 128, 256], default=64
         )
-        # discount_factor = Float("discount_factor", (0, 1), default=0.99)
-        # target_update_rate = Float("target_update_rate", (0, 1), default=5e-3)
+
         # Add the parameters to configuration space
         cs.add_hyperparameters(
             [
                 lr_actor,
                 lr_critic,
-                # hidden_layers_actor,
-                # hidden_layers_critic,
+                dropout_rate,
                 activation,
                 batch_size,
-                # discount_factor,
-                # target_update_rate,
             ],
         )
         return cs
@@ -84,27 +81,6 @@ class TD3BC_Optimizee:
     def train(
         self, config: Configuration, seed: int = 0
     ) -> float:
-        # results = []
-        # for _seed in range(10)
-        #     log_dict, eval_mean = train_agent(
-        #         data_dir=self.data_dir,
-        #         agent_type=self.agent_type,
-        #         agent_config={},
-        #         num_train_iter=self.budget,
-        #         batch_size=config["batch_size"],
-        #         val_freq=int(self.budget),
-        #         seed=_seed,
-        #         wandb_group=None,
-        #         timeout=0,
-        #         hyperparameters=config,
-        #         debug=self.debug,
-        #         eval_protocol=self.eval_protocol,
-        #         eval_seed=self.eval_seed,
-        #     )
-        #     results.append(eval_mean)
-
-        # return np.array(results).mean()
-
         print(seed)
         config = dict(config)
         config["hidden_dim"] = self.hidden_dim
@@ -132,33 +108,31 @@ class TD3BC_Optimizee:
 
         lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4)
         lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4)
+        dropout_rate = Categorical(
+            "dropout_rate",
+            [0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5],
+            default=0.2,
+        )
         hidden_layers = Integer("hidden_layers", (0, 5), default=1)
         hidden_dim = Categorical(
             "hidden_dim", [16, 32, 64, 128, 256], default=64
         )
-        # hidden_layers_critic = Integer(
-        #     "hidden_layers_critic", (0, 5), default=1
-        # )
         activation = Constant(
             "activation", "ReLU"
         )
         batch_size = Categorical(
             "batch_size", [2, 4, 8, 16, 32, 64, 128, 256], default=64
         )
-        # discount_factor = Float("discount_factor", (0, 1), default=0.99)
-        # target_update_rate = Float("target_update_rate", (0, 1), default=5e-3)
         # Add the parameters to configuration space
         cs.add_hyperparameters(
             [
                 lr_actor,
                 lr_critic,
+                dropout_rate,
                 hidden_layers,
                 hidden_dim,
-                # hidden_layers_critic,
                 activation,
                 batch_size,
-                # discount_factor,
-                # target_update_rate,
             ],
         )
         return cs

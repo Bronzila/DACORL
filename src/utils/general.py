@@ -114,6 +114,7 @@ def get_agent(
             get_activation(hyperparameters.get("activation", "ReLU")),
             hidden_dim=hyperparameters.get("hidden_dim", 64),
             hidden_layers=hyperparameters.get("hidden_layers", 1),
+            dropout_rate=hyperparameters.get("dropout_rate", 0.2),
             initialization=initialization,
         ).to(device)
         print(f"hidden_dim: {hyperparameters.get('hidden_dim', 64)}")

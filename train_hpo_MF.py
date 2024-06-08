@@ -57,33 +57,25 @@ class TD3BC_Optimizee:
 
         lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4)
         lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4)
-        # hidden_layers_actor = Integer("hidden_layers_actor", (0, 5), default=1)
-        # hidden_layers_critic = Integer(
-        #     "hidden_layers_critic", (0, 5), default=1
-        # )
+        dropout_rate = Categorical(
+            "dropout_rate",
+            [0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5],
+            default=0.2,
+        )
         activation = Constant(
             "activation", "ReLU"
         )
-        # initialization = Categorical(
-        #     "initialization", ["xavier_uniform", "xavier_normal", "kaiming_uniform", "kaiming_normal", "orthogonal"]
-        # )
         batch_size = Categorical(
             "batch_size", [2, 4, 8, 16, 32, 64, 128, 256], default=64
         )
-        # discount_factor = Float("discount_factor", (0, 1), default=0.99)
-        # target_update_rate = Float("target_update_rate", (0, 1), default=5e-3)
         # Add the parameters to configuration space
         cs.add_hyperparameters(
             [
                 lr_actor,
                 lr_critic,
-                # hidden_layers_actor,
-                # hidden_layers_critic,
-                # initialization,
+                dropout_rate,
                 activation,
                 batch_size,
-                # discount_factor,
-                # target_update_rate,
             ],
         )
         return cs
@@ -94,37 +86,31 @@ class TD3BC_Optimizee:
 
         lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4)
         lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4)
+        dropout_rate = Categorical(
+            "dropout_rate",
+            [0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5],
+            default=0.2,
+        )
         hidden_layers = Integer("hidden_layers", (0, 5), default=1)
         hidden_dim = Categorical(
             "hidden_dim", [16, 32, 64, 128, 256], default=64
         )
-        # hidden_layers_critic = Integer(
-        #     "hidden_layers_critic", (0, 5), default=1
-        # )
         activation = Constant(
             "activation", "ReLU"
         )
-        # initialization = Categorical(
-        #     "initialization", ["xavier_uniform", "xavier_normal", "kaiming_uniform", "kaiming_normal", "orthogonal"]
-        # )
         batch_size = Categorical(
             "batch_size", [2, 4, 8, 16, 32, 64, 128, 256], default=64
         )
-        # discount_factor = Float("discount_factor", (0, 1), default=0.99)
-        # target_update_rate = Float("target_update_rate", (0, 1), default=5e-3)
         # Add the parameters to configuration space
         cs.add_hyperparameters(
             [
                 lr_actor,
                 lr_critic,
+                dropout_rate,
                 hidden_layers,
                 hidden_dim,
-                # hidden_layers_critic,
-                # initialization,
                 activation,
                 batch_size,
-                # discount_factor,
-                # target_update_rate,
             ],
         )
         return cs
