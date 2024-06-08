@@ -220,14 +220,16 @@ if __name__ == "__main__":
         cs,
         output_directory=output_path,
         walltime_limit=60 * 60 * args.time_limit,  # convert 10 hours into seconds
-        n_trials=800,
+        n_trials=500,
         n_workers=1,
         deterministic=False,
     )
 
     intensifier = HPOFacade.get_intensifier(scenario, max_config_calls=10)
     # We want to run five random configurations before starting the optimization.
-    initial_design = HPOFacade.get_initial_design(scenario, n_configs=5)
+    initial_design = HPOFacade.get_initial_design(scenario, n_configs=5, additional_configs=[
+        cs.get_default_configuration()
+    ])
 
     # Create our SMAC object and pass the scenario and the train method
     smac = HPOFacade(

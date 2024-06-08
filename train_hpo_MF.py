@@ -231,7 +231,7 @@ if __name__ == "__main__":
         cs,
         output_directory=output_path,
         walltime_limit=60 * 60 * args.time_limit,  # convert 10 hours into seconds
-        n_trials=800,
+        n_trials=500,
         min_budget=3,
         max_budget=12,
         n_workers=1,
@@ -239,7 +239,9 @@ if __name__ == "__main__":
     )
 
     # We want to run five random configurations before starting the optimization.
-    initial_design = MFFacade.get_initial_design(scenario, n_configs=5)
+    initial_design = MFFacade.get_initial_design(scenario, n_configs=5, additional_configs=[
+        cs.get_default_configuration()
+    ])
 
     # Use eta=2 to get brackets with [3, 6, 12] seeds
     intensifier = MFFacade.get_intensifier(scenario, eta=2, incumbent_selection="highest_budget")
