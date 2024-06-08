@@ -296,7 +296,7 @@ def get_run_ids_by_agent_path(path_data_mapping, combination_strategy, total_siz
         # Always use same rng
         rng = np.random.default_rng(seed=0)
         for path, weight in zip(paths, sampling_weights):
-            num_samples = int(total_size * weight)
+            num_samples = int(round(total_size * weight))
             # Sample run_ids without replacement
             run_ids = rng.choice(np.arange(n_runs), size=num_samples, replace=False)
             path_data_mapping[path]["run_ids"] = run_ids
@@ -321,6 +321,55 @@ def get_run_ids_by_agent_path(path_data_mapping, combination_strategy, total_siz
     else:
         raise NotImplementedError()
 
+def filter_buffer(data):
+    device = torch.device("cpu")
+    # Turn states etc. into pandas dataframe fo easier access
+    states_np = data["buffer"]._states.cpu().numpy()
+    actions_np = data["buffer"]._actions.cpu().numpy()
+    rewards_np = data["buffer"]._rewards.cpu().numpy()
+    next_states_np = data["buffer"]._next_states.cpu().numpy()
+    dones_np = data["buffer"]._dones.cpu().numpy()
+
+    transitions_df = pd.DataFrame({
+        "state": list(states_np),
+        "action": list(actions_np),
+        "reward": rewards_np.flatten(),
+        "next_state": list(next_states_np),
+        "done": dones_np.flatten(),
+    })
+
+    # Filter out rows where states are all zeros --> empty rows in replay_buffer
+    transitions_df = transitions_df[~(transitions_df["state"].apply(lambda x: np.all(np.array(x) == 0)))]
+
+    # Assign run IDs based on the first state value being 1
+    run_id = -1
+    run_ids = []
+    for state in transitions_df["state"]:
+        if state[0] == 1:
+            run_id += 1
+        run_ids.append(run_id)
+
+    transitions_df["run_id"] = run_ids
+
+    # Filter the DataFrame to only keep specific run IDs
+    filtered_df = transitions_df[transitions_df["run_id"].isin(data["run_ids"])]
+
+    # Convert the filtered DataFrame back to numpy arrays
+    filtered_states = np.array(filtered_df["state"].tolist())
+    filtered_actions = np.array(filtered_df["action"].tolist())
+    filtered_rewards = filtered_df["reward"].to_numpy().reshape(-1, 1)
+    filtered_next_states = np.array(filtered_df["next_state"].tolist())
+    filtered_dones = filtered_df["done"].to_numpy().reshape(-1, 1)
+
+    data["buffer"]._size = len(filtered_df)
+    data["buffer"]._pointer = len(filtered_df)
+
+    data["buffer"]._states = torch.tensor(filtered_states, dtype=torch.float32, device=device)
+    data["buffer"]._actions = torch.tensor(filtered_actions, dtype=torch.float32, device=device)
+    data["buffer"]._rewards = torch.tensor(filtered_rewards, dtype=torch.float32, device=device)
+    data["buffer"]._next_states = torch.tensor(filtered_next_states, dtype=torch.float32, device=device)
+    data["buffer"]._dones = torch.tensor(filtered_dones, dtype=torch.float32, device=device)
+
 def create_buffer_from_ids(path_data_mapping):
     # For each buffer
     # Group states etc. by run (use first state, optim budget as criterion when new run begins)
@@ -328,9 +377,25 @@ def create_buffer_from_ids(path_data_mapping):
     # Merge remaining buffer into combined one
     # Same for run data but there its a lot easier
     combined_buffer = None
-    for path, data in path_data_mapping.items():
-        # Turn states etc. into pandas dataframe fo easier access
-        
+    combined_run_data = None
+    run_info = None
+    for _path, data in path_data_mapping.items():
+        # Filter buffer for run_ids
+        filter_buffer(data)
+
+        # Filter run data
+        data["run_data"] = data["run_data"][data["run_data"]["run"].isin(data["run_ids"])]
+
+        if combined_buffer is None:
+            combined_buffer = data["buffer"]
+            combined_run_data = data["run_data"]
+            run_info = data["run_info"]
+        else:
+            combined_buffer.merge(data["buffer"])
+            data["run_data"]["run"] += data["run_info"]["num_runs"]
+            combined_run_data = pd.concat([combined_run_data, data["run_data"]], ignore_index=True)
+
+    return combined_buffer, run_info, combined_run_data
 
 def combine_runs(agent_paths, combination_strategy="concat", total_size=3000):
     if combination_strategy == "concat":
