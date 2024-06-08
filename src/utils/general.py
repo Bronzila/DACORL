@@ -320,6 +320,17 @@ def get_run_ids_by_agent_path(path_data_mapping, combination_strategy, total_siz
     else:
         raise NotImplementedError()
 
+def create_buffer_from_ids(path_data_mapping):
+    # For each buffer
+    # Group states etc. by run (use first state, optim budget as criterion when new run begins)
+    # Remove all runs that are not in run_ids
+    # Merge remaining buffer into combined one
+    # Same for run data but there its a lot easier
+    combined_buffer = None
+    for path, data in path_data_mapping.items():
+        # Turn states etc. into pandas dataframe fo easier access
+        
+
 def combine_runs(agent_paths, combination_strategy="concat", total_size=3000):
     if combination_strategy == "concat":
         return concat_runs(agent_paths)
@@ -342,7 +353,8 @@ def combine_runs(agent_paths, combination_strategy="concat", total_size=3000):
                 "run_info": run_info,
             }
         path_data_mapping = get_run_ids_by_agent_path(path_data_mapping, combination_strategy, total_size)
-        raise NotImplementedError()
+
+        return create_buffer_from_ids(path_data_mapping)
 
 def combine_run_data(data_paths, num_runs=100):
     combined_run_data = []
