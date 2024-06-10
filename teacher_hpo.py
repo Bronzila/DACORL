@@ -172,3 +172,16 @@ if __name__ == "__main__":
 
     with (output_path / "inc.json").open("w") as f:
         json.dump(dict(incumbent), f)
+
+    lowest_val_confs = smac.runhistory.get_configs(sort_by="cost")[:15]
+    lowest_val_path = output_path / "lowest"
+    lowest_val_path.mkdir(exist_ok=True)
+    for id, config in enumerate(lowest_val_confs):
+        with (lowest_val_path / f"{id}.json").open("w") as f:
+            json.dump(dict(config), f)
+
+    rejected_path = output_path / "rejected_incs"
+    rejected_path.mkdir(exist_ok=True)
+    for id, config in enumerate(smac.intensifier.get_rejected_configs()):
+        with (rejected_path / f"{id + 1}.json").open("w") as f:
+            json.dump(dict(config), f)
