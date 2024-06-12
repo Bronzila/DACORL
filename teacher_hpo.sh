@@ -8,14 +8,16 @@
 #SBATCH --mem 8GB
 
 cd /work/dlclarge1/fixj-thesis/MTORL-DAC
-source activate MTORL-DAC
+source ~/.bashrc
+conda activate MTORL-DAC
 
+AGENT=${1:-exponential_decay}
 FC1=Ackley
 FC2=Rastrigin
 FC3=Rosenbrock
 FC4=Sphere
 NUM_RUNS=1000
-BUDGET=15000
+BUDGET=30000
 VERSION=extended_vel
 RESULTS_DIR="data_teacher_hpo"
 
@@ -27,28 +29,16 @@ echo "Running job $SLURM_JOB_NAME using $SLURM_JOB_CPUS_PER_NODE cpus per node w
 
 if [ 1 -eq $SLURM_ARRAY_TASK_ID ]
 then
-    python3.10 teacher_hpo.py --data_dir $RESULTS_DIR --agent_type exponential_decay --output_path teach_hpo_exp_Ackley --env Ackley_$VERSION
-    python3.10 teacher_hpo.py --data_dir $RESULTS_DIR --agent_type exponential_decay --output_path teach_hpo_exp_Rastrigin --env Rastrigin_$VERSION
-    python3.10 teacher_hpo.py --data_dir $RESULTS_DIR --agent_type exponential_decay --output_path teach_hpo_exp_Rosenbrock --env Rosenbrock_$VERSION
-    python3.10 teacher_hpo.py --data_dir $RESULTS_DIR --agent_type exponential_decay --output_path teach_hpo_exp_Sphere --env Sphere_$VERSION
+    python3.10 teacher_hpo.py --data_dir $RESULTS_DIR --agent_type $AGENT --output_path teach_hpo_$AGENT\_Ackley --env Ackley_$VERSION
 elif [ 2 -eq $SLURM_ARRAY_TASK_ID  ]
 then
-    python3.10 teacher_hpo.py --data_dir $RESULTS_DIR --agent_type step_decay --output_path teach_hpo_step_Ackley --env Ackley_$VERSION
-    python3.10 teacher_hpo.py --data_dir $RESULTS_DIR --agent_type step_decay --output_path teach_hpo_step_Rastrigin --env Rastrigin_$VERSION
-    python3.10 teacher_hpo.py --data_dir $RESULTS_DIR --agent_type step_decay --output_path teach_hpo_step_Rosenbrock --env Rosenbrock_$VERSION
-    python3.10 teacher_hpo.py --data_dir $RESULTS_DIR --agent_type step_decay --output_path teach_hpo_step_Sphere --env Sphere_$VERSION
+    python3.10 teacher_hpo.py --data_dir $RESULTS_DIR --agent_type $AGENT --output_path teach_hpo_$AGENT\_Rastrigin --env Rastrigin_$VERSION
 elif [ 3 -eq $SLURM_ARRAY_TASK_ID ]
 then
-    python3.10 teacher_hpo.py --data_dir $RESULTS_DIR --agent_type sgdr --output_path teach_hpo_sgdr_Ackley --env Ackley_$VERSION
-    python3.10 teacher_hpo.py --data_dir $RESULTS_DIR --agent_type sgdr --output_path teach_hpo_sgdr_Rastrigin --env Rastrigin_$VERSION
-    python3.10 teacher_hpo.py --data_dir $RESULTS_DIR --agent_type sgdr --output_path teach_hpo_sgdr_Rosenbrock --env Rosenbrock_$VERSION
-    python3.10 teacher_hpo.py --data_dir $RESULTS_DIR --agent_type sgdr --output_path teach_hpo_sgdr_Sphere --env Sphere_$VERSION
+    python3.10 teacher_hpo.py --data_dir $RESULTS_DIR --agent_type $AGENT --output_path teach_hpo_$AGENT\_Rosenbrock --env Rosenbrock_$VERSION
 elif [ 4 -eq $SLURM_ARRAY_TASK_ID ]
 then
-    python3.10 teacher_hpo.py --data_dir $RESULTS_DIR --agent_type constant --output_path teach_hpo_const_Ackley --env Ackley_$VERSION
-    python3.10 teacher_hpo.py --data_dir $RESULTS_DIR --agent_type constant --output_path teach_hpo_const_Rastrigin --env Rastrigin_$VERSION
-    python3.10 teacher_hpo.py --data_dir $RESULTS_DIR --agent_type constant --output_path teach_hpo_const_Rosenbrock --env Rosenbrock_$VERSION
-    python3.10 teacher_hpo.py --data_dir $RESULTS_DIR --agent_type constant --output_path teach_hpo_const_Sphere --env Sphere_$VERSION
+    python3.10 teacher_hpo.py --data_dir $RESULTS_DIR --agent_type $AGENT --output_path teach_hpo_$AGENT\_Sphere --env Sphere_$VERSION
 fi
 
 # Print some Information about the end-time to STDOUT

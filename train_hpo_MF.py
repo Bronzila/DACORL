@@ -55,8 +55,8 @@ class TD3BC_Optimizee:
     def configspace(self) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
-        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4)
-        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4)
+        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4, log=True)
+        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4, log=True)
         dropout_rate = Categorical(
             "dropout_rate",
             [0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5],
@@ -84,8 +84,8 @@ class TD3BC_Optimizee:
     def configspace_arch(self) -> ConfigurationSpace:
         cs = ConfigurationSpace()
 
-        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4)
-        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4)
+        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4, log=True)
+        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4, log=True)
         dropout_rate = Categorical(
             "dropout_rate",
             [0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5],
@@ -231,7 +231,7 @@ if __name__ == "__main__":
         cs,
         output_directory=output_path,
         walltime_limit=60 * 60 * args.time_limit,  # convert 10 hours into seconds
-        n_trials=500,
+        n_trials=400,
         min_budget=3,
         max_budget=12,
         n_workers=1,
