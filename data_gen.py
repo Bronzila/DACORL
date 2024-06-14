@@ -7,21 +7,22 @@ from src.utils.generate_data import generate_dataset
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Run any agent on the ToySGD benchmark"
+        description="Run any agent on benchmarks"
     )
-    parser.add_argument("--num_runs", type=int, default=1)
+    parser.add_argument("--benchmark", type=str, default="SGD")
+    parser.add_argument(
+        "--env",
+        type=str,
+        help="Config file to define the benchmark env",
+        default="default",
+    )
+    parser.add_argument("--num_runs", type=int, default=1000)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument(
         "--agent",
         type=str,
         help="Agent for data generation",
         default="step_decay",
-    )
-    parser.add_argument(
-        "--env",
-        type=str,
-        help="Environment function for data generation",
-        default="Rosenbrock_default",
     )
     parser.add_argument(
         "--results_dir",
@@ -64,7 +65,7 @@ if __name__ == "__main__":
         agent_config = json.load(file)
 
     # Read environment config from file
-    env_config_path = Path("configs", "environment", f"{args.env}.json")
+    env_config_path = Path("configs", "environment", f"{args.benchmark}", f"{args.env}.json")
     with env_config_path.open() as file:
         env_config = json.load(file)
 
