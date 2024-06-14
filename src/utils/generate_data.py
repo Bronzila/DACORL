@@ -118,7 +118,7 @@ def generate_dataset(
                 if env_config["type"] == "ToySGD":
                     f_curs = []
                     x_curs = []
-                
+
             state, meta_info = env.reset()
             if env_config["type"] == "ToySGD":
                 starting_points.append(meta_info["start"])
@@ -132,7 +132,7 @@ def generate_dataset(
                 if env_config["type"] == "ToySGD":
                     x_curs.append(env.x_cur.tolist())
                     f_curs.append(env.objective_function(env.x_cur).numpy())
-                
+
             for batch in range(1, num_batches):
                 print(
                     f"Starting batch {batch}/{num_batches} of run {run}. \
@@ -157,7 +157,7 @@ def generate_dataset(
                     if env_config["type"] == "ToySGD":
                         x_curs.append(env.x_cur.tolist())
                         f_curs.append(env.objective_function(env.x_cur).numpy())
-                    
+
                 state = next_state
                 if done:
                     break
@@ -171,10 +171,12 @@ def generate_dataset(
                     "run": run_indeces,
                 }
                 if env_config["type"] == "ToySGD":
-                    data.update({
-                        "f_cur": f_curs,
-                        "x_cur": x_curs,
-                    })
+                    data.update(
+                        {
+                            "f_cur": f_curs,
+                            "x_cur": x_curs,
+                        }
+                    )
                 run_data = pd.DataFrame(data)
                 aggregated_run_data.append(run_data)
     except OutOfTimeError:
