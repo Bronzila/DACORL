@@ -150,7 +150,6 @@ def generate_dataset(
                 )
                 if save_run_data:
                     actions.append(action)
-                    print(reward)
                     rewards.append(reward.numpy())
                     states.append(state.numpy())
                     batch_indeces.append(batch)
