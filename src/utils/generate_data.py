@@ -63,12 +63,11 @@ def generate_dataset(
     agent_type = agent_config["type"]
 
     if results_dir == "":
-        results_dir = Path(
+        results_dir: Path = Path(
             "data",
             environment_type,
             agent_type,
             str(agent_config["id"]),
-            env_config["function"],
         )
     else:
         results_dir = Path(
@@ -76,8 +75,9 @@ def generate_dataset(
             environment_type,
             agent_type,
             str(agent_config["id"]),
-            env_config["function"],
         )
+    if environment_type == "ToySGD":
+        results_dir = results_dir / env_config["function"]
 
     if results_dir.exists():
         print(f"Data already exists: {results_dir}")
@@ -112,23 +112,27 @@ def generate_dataset(
             if save_run_data:
                 actions = []
                 rewards = []
-                f_curs = []
-                x_curs = []
                 states = []
                 batch_indeces = []
                 run_indeces = []
+                if env_config["type"] == "ToySGD":
+                    f_curs = []
+                    x_curs = []
+                
             state, meta_info = env.reset()
-            starting_points.append(meta_info["start"])
+            if env_config["type"] == "ToySGD":
+                starting_points.append(meta_info["start"])
             agent.reset()
             if save_run_data:
                 actions.append(math.log10(env.learning_rate))
                 rewards.append(np.NaN)
-                x_curs.append(env.x_cur.tolist())
-                f_curs.append(env.objective_function(env.x_cur).numpy())
                 states.append(state.numpy())
                 batch_indeces.append(0)
                 run_indeces.append(run)
-
+                if env_config["type"] == "ToySGD":
+                    x_curs.append(env.x_cur.tolist())
+                    f_curs.append(env.objective_function(env.x_cur).numpy())
+                
             for batch in range(1, num_batches):
                 print(
                     f"Starting batch {batch}/{num_batches} of run {run}. \
@@ -146,28 +150,33 @@ def generate_dataset(
                 )
                 if save_run_data:
                     actions.append(action)
+                    print(reward)
                     rewards.append(reward.numpy())
-                    x_curs.append(env.x_cur.tolist())
-                    f_curs.append(env.objective_function(env.x_cur).numpy())
                     states.append(state.numpy())
                     batch_indeces.append(batch)
                     run_indeces.append(run)
+                    if env_config["type"] == "ToySGD":
+                        x_curs.append(env.x_cur.tolist())
+                        f_curs.append(env.objective_function(env.x_cur).numpy())
+                    
                 state = next_state
                 if done:
                     break
 
             if save_run_data:
-                run_data = pd.DataFrame(
-                    {
-                        "action": actions,
-                        "reward": rewards,
+                data = {
+                    "action": actions,
+                    "reward": rewards,
+                    "state": states,
+                    "batch": batch_indeces,
+                    "run": run_indeces,
+                }
+                if env_config["type"] == "ToySGD":
+                    data.update({
                         "f_cur": f_curs,
                         "x_cur": x_curs,
-                        "state": states,
-                        "batch": batch_indeces,
-                        "run": run_indeces,
-                    },
-                )
+                    })
+                run_data = pd.DataFrame(data)
                 aggregated_run_data.append(run_data)
     except OutOfTimeError:
         save_data(
