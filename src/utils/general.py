@@ -29,7 +29,7 @@ from CORL.algorithms.offline import (
     sac_n,
     td3_bc,
 )
-from dacbench.benchmarks import ToySGD2DBenchmark
+from dacbench.benchmarks import ToySGD2DBenchmark, SGDBenchmark, CMAESBenchmark, FastDownwardBenchmark
 from torch import nn
 
 from src.agents import (
@@ -578,11 +578,19 @@ def get_environment(env_config: dict) -> Any:
         bench.config.boundary_termination = env_config["boundary_termination"]
         bench.config.seed = env_config["seed"]
         return bench.get_environment()
+    elif env_config["type"] == "SGD":
+        bench = SGDBenchmark()
+        return bench.get_benchmark(seed=env_config["seed"])
+    elif env_config["type"] == "CMAES":
+        bench = CMAESBenchmark()
+        return bench.get_environment()
+    elif env_config["type"] == "FastDownward":
+        bench = FastDownwardBenchmark
+        return bench.get_environment()
     else:
         raise NotImplementedError(
             f"No environment of type {env_config['type']} found.",
         )
-
 
 def get_activation(activation: str) -> nn.Module:
     if activation == "ReLU":
@@ -896,6 +904,30 @@ def get_config_space(config_type: str) -> ConfigSpace:
                 value,
             )
             cs.add_condition(condition)
+    
+    elif config_type == "no_arch_no_reduce_dropout":
+        # General
+        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4)
+        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4)
+        discount_factor = Float("discount_factor", (0, 1), default=0.99)
+        target_update_rate = Float("target_update_rate", (0, 1), default=5e-3)
+        batch_size = Categorical(
+            "batch_size",
+            [2, 4, 8, 16, 32, 64, 128, 256],
+            default=64,
+        )
+        # Arch
+        hidden_layers_actor = Constant("hidden_layers_actor", 1)
+        hidden_layers_critic = Constant("hidden_layers_critic", 1)
+        actor_hidden_dim = Constant("actor_hidden_dim", 64)
+        critic_hidden_dim = Constant("critic_hidden_dim", 64)
+        activation = Constant("activation", "ReLU")
+        # Dropout
+        dropout_rate = Categorical(
+            "dropout_rate",
+            [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4],
+            default=0.2,
+        )
 
     elif config_type == "no_arch":
         # General

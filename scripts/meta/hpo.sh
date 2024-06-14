@@ -17,7 +17,7 @@ FC3=Rosenbrock
 FC4=Sphere
 NUM_RUNS=1000
 VERSION=extended_velocity
-CS_TYPE=reduced_dropout
+CS_TYPE=no_arch
 
 start=`date +%s`
 
