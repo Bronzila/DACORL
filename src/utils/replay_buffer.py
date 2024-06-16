@@ -88,6 +88,20 @@ class ReplayBuffer:
             print("Buffer full. Transitions will now start to be overwritten.")
 
     def save(self, filename: Path) -> None:
+        # Only save actual collected data, not zeros
+        self._states = self._states[:(self._pointer - 1)]
+        self._actions = self._actions[:(self._pointer - 1)]
+        self._next_states = self._next_states[:(self._pointer - 1)]
+        self._rewards = self._rewards[:(self._pointer - 1)]
+        self._dones = self._dones[:(self._pointer - 1)]
+        self._buffer_size = self._size
+        self._pointer = self._size
+
+        # Check if any state is entirely zero
+        states_zero_mask = (self._states == 0).all(dim=1)
+        num_zero_states = states_zero_mask.sum().item()
+        assert num_zero_states == 0
+
         try:
             with filename.open(mode="wb") as f:
                 pickle.dump(self, f)

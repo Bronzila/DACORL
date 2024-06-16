@@ -126,7 +126,7 @@ def generate_dataset(
                 batch_indeces.append(0)
                 run_indeces.append(run)
 
-            for batch in range(1, num_batches):
+            for batch in range(1, num_batches + 1):
                 if verbose:
                     print(
                         f"Starting batch {batch}/{num_batches} of run {run}. \
