@@ -223,7 +223,8 @@ def load_agent(agent_type: str, agent_config: dict, agent_path: Path) -> Any:
 
 def get_homogeneous_agent_paths(root_dir: str, function: str):
     root_path = Path(root_dir)
-    agent_dirs = [entry.name for entry in root_path.iterdir() if entry.is_dir() and entry.name != "combined"]
+    # Sort directories to ensure same sequence for reproducibility
+    agent_dirs = sorted([entry.name for entry in root_path.iterdir() if entry.is_dir() and entry.name != "combined"])
     paths = []
     for dirname in agent_dirs:
         agent_path = Path(root_dir, dirname, function)
