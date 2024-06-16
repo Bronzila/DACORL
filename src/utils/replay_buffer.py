@@ -57,7 +57,7 @@ class ReplayBuffer:
     def sample(self, batch_size: int) -> list[torch.tensor]:
         indices = self.rng.integers(
             0,
-            min(self._size, self._pointer),
+            self._size,
             size=batch_size,
         )
         states = self._states[indices]
@@ -89,13 +89,13 @@ class ReplayBuffer:
 
     def save(self, filename: Path) -> None:
         # Only save actual collected data, not zeros
-        self._states = self._states[:(self._pointer - 1)]
-        self._actions = self._actions[:(self._pointer - 1)]
-        self._next_states = self._next_states[:(self._pointer - 1)]
-        self._rewards = self._rewards[:(self._pointer - 1)]
-        self._dones = self._dones[:(self._pointer - 1)]
+        self._states = self._states[:(self._size)]
+        self._actions = self._actions[:(self._size)]
+        self._next_states = self._next_states[:(self._size)]
+        self._rewards = self._rewards[:(self._size)]
+        self._dones = self._dones[:(self._size)]
         self._buffer_size = self._size
-        self._pointer = self._size
+        self._pointer = self._pointer % self._buffer_size
 
         # Check if any state is entirely zero
         states_zero_mask = (self._states == 0).all(dim=1)
