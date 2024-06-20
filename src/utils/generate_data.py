@@ -118,7 +118,10 @@ def generate_dataset(
                 if env_config["type"] == "ToySGD":
                     f_curs = []
                     x_curs = []
-
+                if env_config["type"] == "SGD":
+                    train_loss = []
+                    valid_loss = []
+                    test_loss = []
             state, meta_info = env.reset()
             if env_config["type"] == "ToySGD":
                 starting_points.append(meta_info["start"])
@@ -132,6 +135,10 @@ def generate_dataset(
                 if env_config["type"] == "ToySGD":
                     x_curs.append(env.x_cur.tolist())
                     f_curs.append(env.objective_function(env.x_cur).numpy())
+                if env_config["type"] == "SGD":
+                    train_loss.append(env.loss)
+                    valid_loss.append(env.validation_loss)
+                    test_loss.append(env.test_loss)
 
             for batch in range(1, num_batches):
                 print(
@@ -157,6 +164,10 @@ def generate_dataset(
                     if env_config["type"] == "ToySGD":
                         x_curs.append(env.x_cur.tolist())
                         f_curs.append(env.objective_function(env.x_cur).numpy())
+                if env_config["type"] == "SGD":
+                    train_loss.append(env.loss)
+                    valid_loss.append(env.validation_loss)
+                    test_loss.append(env.test_loss)
 
                 state = next_state
                 if done:
@@ -175,7 +186,15 @@ def generate_dataset(
                         {
                             "f_cur": f_curs,
                             "x_cur": x_curs,
-                        }
+                        },
+                    )
+                if env_config["type"] == "ToySGD":
+                    data.update(
+                        {
+                            "train_loss": train_loss,
+                            "valid_loss": valid_loss,
+                            "test_loss": test_loss,
+                        },
                     )
                 run_data = pd.DataFrame(data)
                 aggregated_run_data.append(run_data)
