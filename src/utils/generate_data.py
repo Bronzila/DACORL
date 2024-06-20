@@ -164,10 +164,12 @@ def generate_dataset(
                     if env_config["type"] == "ToySGD":
                         x_curs.append(env.x_cur.tolist())
                         f_curs.append(env.objective_function(env.x_cur).numpy())
-                if env_config["type"] == "SGD":
-                    train_loss.append(env.loss)
-                    valid_loss.append(env.validation_loss)
-                    test_loss.append(env.test_loss)
+                    if env_config["type"] == "SGD":
+                        train_loss.append(env.loss.mean().detach().numpy())
+                        valid_loss.append(
+                            env.validation_loss.mean().detach().numpy(),
+                        )
+                        test_loss.append(env.test_loss.mean().detach().numpy())
 
                 state = next_state
                 if done:
@@ -188,7 +190,7 @@ def generate_dataset(
                             "x_cur": x_curs,
                         },
                     )
-                if env_config["type"] == "ToySGD":
+                if env_config["type"] == "SGD":
                     data.update(
                         {
                             "train_loss": train_loss,
