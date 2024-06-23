@@ -148,8 +148,8 @@ def generate_dataset(
 
             for batch in range(1, num_batches * batches_per_epoch):
                 print(
-                    f"Starting batch {batch}/{num_batches} of run {run}. \
-                    Total {batch + run * num_batches}/{num_runs * num_batches}",
+                    f"Starting batch {batch}/{num_batches * batches_per_epoch} of run {run}. \
+                    Total {batch + run * num_batches}/{num_runs * num_batches * batches_per_epoch}",
                 )
 
                 action = agent.act(state)
