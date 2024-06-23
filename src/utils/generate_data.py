@@ -95,7 +95,13 @@ def generate_dataset(
         buffer_size=buffer_size,
         seed=seed,
     )
+    
+    if environment_type == "SGD":
+        batches_per_epoch = round(len(env.train_loader) / env.batch_size)
+    else:
+        batches_per_epoch = 1
 
+    print(f"batches_per_epoch {batches_per_epoch}")
     agent = get_teacher(agent_type, agent_config)
 
     aggregated_run_data = []
@@ -140,7 +146,7 @@ def generate_dataset(
                     valid_loss.append(env.validation_loss)
                     test_loss.append(env.test_loss)
 
-            for batch in range(1, num_batches):
+            for batch in range(1, num_batches * batches_per_epoch):
                 print(
                     f"Starting batch {batch}/{num_batches} of run {run}. \
                     Total {batch + run * num_batches}/{num_runs * num_batches}",
