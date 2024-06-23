@@ -144,7 +144,7 @@ def generate_dataset(
                 if env_config["type"] == "SGD":
                     train_loss.append(env.loss)
                     valid_loss.append(env.validation_loss)
-                    test_loss.append(env.test_loss)
+                    test_loss.append(env.test_losses / len(env.test_loader))
 
             for batch in range(1, num_batches * batches_per_epoch):
                 print(
@@ -171,11 +171,11 @@ def generate_dataset(
                         x_curs.append(env.x_cur.tolist())
                         f_curs.append(env.objective_function(env.x_cur).numpy())
                     if env_config["type"] == "SGD":
-                        train_loss.append(env.loss.mean().detach().numpy())
+                        train_loss.append(env.loss)
                         valid_loss.append(
-                            env.validation_loss.mean().detach().numpy(),
+                            env.validation_loss,
                         )
-                        test_loss.append(env.test_loss.mean().detach().numpy())
+                        test_loss.append(env.test_losses / len(env.test_loader))
 
                 state = next_state
                 if done:
