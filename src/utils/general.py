@@ -29,12 +29,7 @@ from CORL.algorithms.offline import (
     sac_n,
     td3_bc,
 )
-from dacbench.benchmarks import (
-    ToySGD2DBenchmark,
-    SGDBenchmark,
-    CMAESBenchmark,
-    FastDownwardBenchmark,
-)
+
 from torch import nn
 
 from src.agents import (
@@ -42,6 +37,7 @@ from src.agents import (
     ExponentialDecayAgent,
     SGDRAgent,
     StepDecayAgent,
+    CSA,
 )
 from src.utils.agent_components import (
     ConfigurableCritic,
@@ -84,6 +80,8 @@ def get_teacher(
         return SGDRAgent(**teacher_config["params"])
     if teacher_type == "constant":
         return ConstantAgent()
+    if teacher_type == "csa":
+        return CSA(**teacher_config["params"])
 
     raise NotImplementedError(
         f"No agent with type {teacher_type} implemented.",
@@ -570,6 +568,12 @@ def get_agent(
 
 
 def get_environment(env_config: dict) -> Any:
+    from dacbench.benchmarks import (
+        ToySGD2DBenchmark,
+        SGDBenchmark,
+        CMAESBenchmark,
+        FastDownwardBenchmark,
+    )
     if env_config["type"] == "ToySGD":
         # setup benchmark
         bench = ToySGD2DBenchmark()
@@ -587,7 +591,7 @@ def get_environment(env_config: dict) -> Any:
         bench = SGDBenchmark(config=env_config)
         return bench.get_benchmark()
     elif env_config["type"] == "CMAES":
-        bench = CMAESBenchmark()
+        bench = CMAESBenchmark(config=env_config)
         return bench.get_environment()
     elif env_config["type"] == "FastDownward":
         bench = FastDownwardBenchmark

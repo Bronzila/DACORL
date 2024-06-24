@@ -128,30 +128,36 @@ def generate_dataset(
                 states = []
                 batch_indeces = []
                 run_indeces = []
-                if env_config["type"] == "ToySGD":
+                if environment_type == "ToySGD":
                     f_curs = []
                     x_curs = []
-                if env_config["type"] == "SGD":
+                if environment_type == "SGD":
                     train_loss = []
                     valid_loss = []
                     test_loss = []
+                if environment_type == "CMAES":
+                    lambdas = []
             state, meta_info = env.reset()
-            if env_config["type"] == "ToySGD":
+            if environment_type == "ToySGD":
                 starting_points.append(meta_info["start"])
             agent.reset()
             if save_run_data:
-                actions.append(math.log10(env.learning_rate))
                 rewards.append(np.NaN)
                 states.append(state.numpy())
                 batch_indeces.append(0)
                 run_indeces.append(run)
-                if env_config["type"] == "ToySGD":
+                if environment_type == "ToySGD":
+                    actions.append(math.log10(env.learning_rate))
                     x_curs.append(env.x_cur.tolist())
                     f_curs.append(env.objective_function(env.x_cur).numpy())
-                if env_config["type"] == "SGD":
+                if environment_type == "SGD":
+                    actions.append(math.log10(env.learning_rate))
                     train_loss.append(env.loss)
                     valid_loss.append(env.validation_loss)
                     test_loss.append(env.test_losses / len(env.test_loader))
+                if environment_type == "CMAES":
+                    actions.append(env.es.parameters.sigma)
+                    actions.append(env.es.parameters.lambda_)
 
             for batch in range(1, (num_batches + batches_per_epoch)):
                 print(
@@ -159,7 +165,10 @@ def generate_dataset(
                     Total {batch + run * num_batches}/{num_runs * num_batches}",
                 )
 
-                action = agent.act(state)
+                if environment_type == "CMAES":
+                    action = agent.act(env)
+                else:
+                    action = agent.act(state)
                 next_state, reward, done, truncated, info = env.step(action)
                 replay_buffer.add_transition(
                     state,
@@ -174,15 +183,17 @@ def generate_dataset(
                     states.append(state.numpy())
                     batch_indeces.append(batch)
                     run_indeces.append(run)
-                    if env_config["type"] == "ToySGD":
+                    if environment_type == "ToySGD":
                         x_curs.append(env.x_cur.tolist())
                         f_curs.append(env.objective_function(env.x_cur).numpy())
-                    if env_config["type"] == "SGD":
+                    if environment_type == "SGD":
                         train_loss.append(env.loss)
                         valid_loss.append(
                             env.validation_loss,
                         )
                         test_loss.append(env.test_losses / len(env.test_loader))
+                    if environment_type == "CMAES":
+                        lambdas.append(env.es.parameters.lambda_)
 
                 state = next_state
                 if done:
@@ -196,19 +207,25 @@ def generate_dataset(
                     "batch": batch_indeces,
                     "run": run_indeces,
                 }
-                if env_config["type"] == "ToySGD":
+                if environment_type == "ToySGD":
                     data.update(
                         {
                             "f_cur": f_curs,
                             "x_cur": x_curs,
                         },
                     )
-                if env_config["type"] == "SGD":
+                if environment_type == "SGD":
                     data.update(
                         {
                             "train_loss": train_loss,
                             "valid_loss": valid_loss,
                             "test_loss": test_loss,
+                        },
+                    )
+                if environment_type == "CMAES":
+                    data.update(
+                        {
+                            "lambdas": lambdas,
                         },
                     )
                 run_data = pd.DataFrame(data)

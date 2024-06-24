@@ -1,8 +1,8 @@
 {
     "type": "SGD",
     "initial_learning_rate": 0.01,
-    "num_batches": 100,
     "state_version": "basic",
+    "num_batches": 10,
     "dataset_name": "CIFAR10",
     "layer_specification": [
         ["CONV2D", {"in_channels": 3, "out_channels": 32, "kernel_size": 3}],
