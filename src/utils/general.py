@@ -29,7 +29,12 @@ from CORL.algorithms.offline import (
     sac_n,
     td3_bc,
 )
-from dacbench.benchmarks import ToySGD2DBenchmark, SGDBenchmark, CMAESBenchmark, FastDownwardBenchmark
+from dacbench.benchmarks import (
+    ToySGD2DBenchmark,
+    SGDBenchmark,
+    CMAESBenchmark,
+    FastDownwardBenchmark,
+)
 from torch import nn
 
 from src.agents import (
@@ -595,6 +600,7 @@ def get_environment(env_config: dict) -> Any:
             f"No environment of type {env_config['type']} found.",
         )
 
+
 def get_activation(activation: str) -> nn.Module:
     if activation == "ReLU":
         return nn.ReLU
@@ -642,11 +648,14 @@ def get_homogeneous_agent_paths(
     function: str,
 ) -> list[str]:
     root_path = Path(root_dir, "ToySGD", teacher)
-    agent_dirs = [
-        entry.name
-        for entry in root_path.iterdir()
-        if entry.is_dir() and entry.name != "combined"
-    ]
+    # Sort directories to ensure same sequence for reproducibility
+    agent_dirs = sorted(
+        [
+            entry.name
+            for entry in root_path.iterdir()
+            if entry.is_dir() and entry.name != "combined"
+        ]
+    )
     paths = []
     for dirname in agent_dirs:
         agent_path = root_path / dirname / function
@@ -907,7 +916,7 @@ def get_config_space(config_type: str) -> ConfigSpace:
                 value,
             )
             cs.add_condition(condition)
-    
+
     elif config_type == "no_arch_no_reduce_dropout":
         # General
         lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4)
