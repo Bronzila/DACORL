@@ -872,8 +872,8 @@ def get_config_space(config_type: str) -> ConfigSpace:
     cs = ConfigurationSpace()
 
     if config_type == "full":
-        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4)
-        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4)
+        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4, log=True)
+        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4, log=True)
         discount_factor = Float("discount_factor", (0, 1), default=0.99)
         target_update_rate = Float("target_update_rate", (0, 1), default=5e-3)
         batch_size = Categorical(
@@ -916,8 +916,8 @@ def get_config_space(config_type: str) -> ConfigSpace:
 
     elif config_type == "no_arch_no_reduce_dropout":
         # General
-        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4)
-        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4)
+        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4, log=True)
+        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4, log=True)
         discount_factor = Float("discount_factor", (0, 1), default=0.99)
         target_update_rate = Float("target_update_rate", (0, 1), default=5e-3)
         batch_size = Categorical(
@@ -940,8 +940,8 @@ def get_config_space(config_type: str) -> ConfigSpace:
 
     elif config_type == "no_arch":
         # General
-        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4)
-        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4)
+        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4, log=True)
+        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4, log=True)
         discount_factor = Categorical(
             "discount_factor",
             [0.9, 0.99, 0.999, 0.9999],
@@ -969,8 +969,8 @@ def get_config_space(config_type: str) -> ConfigSpace:
 
     elif config_type == "no_arch_dropout":
         # General
-        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4)
-        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4)
+        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4, log=True)
+        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4, log=True)
         discount_factor = Categorical(
             "discount_factor",
             [0.9, 0.99, 0.999, 0.9999],
@@ -1001,8 +1001,8 @@ def get_config_space(config_type: str) -> ConfigSpace:
         )
 
     elif config_type == "reduced":
-        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4)
-        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4)
+        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4, log=True)
+        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4, log=True)
         discount_factor = Categorical(
             "discount_factor",
             [0.9, 0.99, 0.999, 0.9999],
@@ -1042,8 +1042,8 @@ def get_config_space(config_type: str) -> ConfigSpace:
         dropout_rate = Constant("dropout_rate", 0.0)
 
     elif config_type == "reduced_dropout":
-        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4)
-        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4)
+        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4, log=True)
+        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4, log=True)
         discount_factor = Categorical(
             "discount_factor",
             [0.9, 0.99, 0.999, 0.9999],
