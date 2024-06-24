@@ -52,6 +52,7 @@ if __name__ == "__main__":
         "--eval_protocol", type=str, default="train", choices=["train", "interpolation"]
     )
     parser.add_argument("--eval_seed", type=int, default=123)
+    parser.add_argument("--hidden_dim", type=int, default=256)
     parser.add_argument("--hp_path", type=str)
 
     args = parser.parse_args()
@@ -64,9 +65,10 @@ if __name__ == "__main__":
         batch_size = hyperparameters["batch_size"]
     else:
         hyperparameters = {}
+    hyperparameters["hidden_dim"] = args.hidden_dim
     print(hyperparameters)
 
-    _, mean =train_agent(
+    _, mean = train_agent(
         data_dir=args.data_dir,
         agent_type=args.agent_type,
         agent_config=args.agent_config,

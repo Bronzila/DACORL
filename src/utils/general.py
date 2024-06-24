@@ -296,11 +296,28 @@ def get_run_ids_by_agent_path(path_data_mapping, combination_strategy, total_siz
 
         # Always use same rng
         rng = np.random.default_rng(seed=0)
-        for path, weight in zip(paths, sampling_weights):
-            num_samples = int(round(total_size * weight))
-            # Sample run_ids without replacement
-            run_ids = rng.choice(np.arange(n_runs), size=num_samples, replace=False)
+        zipped_paths_and_weights = zip(paths, sampling_weights)
+        # Sort by performance in order to pass overflow samples
+        sorted_paths_and_weights = sorted(zipped_paths_and_weights, key=lambda x: x[1], reverse=True)
+        # only needed if runs overflow
+        runs_to_distribute = 0
+        remaining_teachers = len(sorted_paths_and_weights)
+        for i, (path, weight) in enumerate(sorted_paths_and_weights):
+            num_samples = int(round(total_size * weight + (1 / remaining_teachers) * runs_to_distribute))
+
+            # If number of samples which should be taken from this teacher is higher than runs available
+            # Add all runs to final buffer and distribute overflow runs to other teachers
+            if num_samples > n_runs:
+                run_ids = np.arange(n_runs)
+                runs_to_distribute = num_samples - n_runs
+                remaining_teachers = len(sorted_paths_and_weights) - i - 1 # - 1 since we need to subtract current teacher as well
+            else:
+                # Sample run_ids without replacement
+                run_ids = rng.choice(np.arange(n_runs), size=num_samples, replace=False)
+            
             path_data_mapping[path]["run_ids"] = run_ids
+            # assert that there are no duplicated transitions
+            assert len(run_ids) == len(set(run_ids))
         return path_data_mapping
     elif combination_strategy == "perf_per_run":
         # Get n_runs and initialize run_ids lists
@@ -318,6 +335,9 @@ def get_run_ids_by_agent_path(path_data_mapping, combination_strategy, total_siz
             path = paths[path_id]
             path_data_mapping[path]["run_ids"].append(run_id)
 
+        for path, data in path_data_mapping.items():
+            print(path)
+            print(len(data["run_ids"]) / n_runs)
         return path_data_mapping
     else:
         raise NotImplementedError()
@@ -467,7 +487,8 @@ def calculate_single_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=
         df = pd.read_csv(path)
         if verbose:
             print(f"Calculating for path {path}")
-
+        print(f"Calculating for path {path}")
+        print(np.max(df["reward"]))
         if calc_mean:
             mean, std = calc_mean_and_std_dev(df)
             mean = float(f"{mean:.3e}")
@@ -501,6 +522,7 @@ def calculate_multi_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=1
         seed_dirs.add(path)
 
     best_iterations_paths = []
+    # This is only used if there are multiple checkpoints in the seed directory --> choose the best one
     for seed_dir in seed_dirs:
         min_mean, min_std, _, _, _, min_path = calculate_single_seed_statistics(calc_mean, calc_lowest,
                                                                                 n_lowest, seed_dir, results, verbose)
