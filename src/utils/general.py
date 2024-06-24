@@ -584,10 +584,7 @@ def get_environment(env_config: dict) -> Any:
         bench.config.seed = env_config["seed"]
         return bench.get_environment()
     elif env_config["type"] == "SGD":
-        bench = SGDBenchmark()
-        bench.config.initial_learning_rate = env_config["initial_learning_rate"]
-        bench.config.seed = env_config["seed"]
-        bench.config.state_version = env_config["state_version"]
+        bench = SGDBenchmark(config=env_config)
         return bench.get_benchmark()
     elif env_config["type"] == "CMAES":
         bench = CMAESBenchmark()
