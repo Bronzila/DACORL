@@ -82,9 +82,22 @@ def generate_dataset(
     if results_dir.exists():
         print(f"Data already exists: {results_dir}")
         return
-
-    num_batches = env_config["num_batches"]
+    
     env = get_environment(env_config)
+    num_batches = env_config["num_batches"]
+
+    phase = "batch"
+    batches_per_epoch = 1
+    if environment_type == "SGD":
+        if env.epoch_mode is False:
+            # if SGD env, translates num_batches to num_epochs
+            batches_per_epoch = len(env.train_loader)
+            print(f"One epoch consists of {batches_per_epoch} batches.")
+            num_batches *= batches_per_epoch
+        else:
+            phase = "epoch"
+            print("Currently running in epoch mode.")
+
     env_config["action_space"] = env.action_space.shape
     state = env.reset()[0]
     state_dim = state.shape[0]
@@ -95,13 +108,7 @@ def generate_dataset(
         buffer_size=buffer_size,
         seed=seed,
     )
-    
-    if environment_type == "SGD":
-        batches_per_epoch = round(len(env.train_loader) / env.batch_size)
-    else:
-        batches_per_epoch = 1
 
-    print(f"batches_per_epoch {batches_per_epoch}")
     agent = get_teacher(agent_type, agent_config)
 
     aggregated_run_data = []
@@ -146,10 +153,10 @@ def generate_dataset(
                     valid_loss.append(env.validation_loss)
                     test_loss.append(env.test_losses / len(env.test_loader))
 
-            for batch in range(1, num_batches * batches_per_epoch):
+            for batch in range(1, (num_batches + batches_per_epoch)):
                 print(
-                    f"Starting batch {batch}/{num_batches * batches_per_epoch} of run {run}. \
-                    Total {batch + run * num_batches}/{num_runs * num_batches * batches_per_epoch}",
+                    f"Starting {phase} {batch}/{num_batches} of run {run}. \
+                    Total {batch + run * num_batches}/{num_runs * num_batches}",
                 )
 
                 action = agent.act(state)
