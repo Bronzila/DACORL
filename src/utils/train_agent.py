@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import numpy as np
 import torch
 import wandb
 
@@ -76,7 +77,7 @@ def train_agent(
         )
 
     logs: dict = {}
-
+    min_fbest = np.inf
     for t in range(int(num_train_iter)):
         batch = replay_buffer.sample(batch_size)
         log_dict = agent.train(batch)
@@ -87,7 +88,7 @@ def train_agent(
                 logs[k].append(v)
 
         if (not debug) and use_wandb:
-            wandb.log(log_dict)
+            wandb.log(log_dict, agent.total_it)
 
         if val_freq != 0 and (t + 1) % val_freq == 0:
             with torch.random.fork_rng():
@@ -125,11 +126,16 @@ def train_agent(
                 ).open("w") as f:
                     json.dump(dict(hyperparameters), f, indent=2)
 
+                # Calculate mean performance for this checkpoint
+                final_evaluations = eval_data.groupby("run").last()
+                fbests = final_evaluations["f_cur"]
+                fbest_mean = fbests.mean()
+                print(f"Mean at iteration {t+1}: {fbest_mean}")
+                min_fbest = np.min([min_fbest, fbest_mean])
+
     save_agent(agent.state_dict(), results_dir, t, seed)
 
     if (not debug) and use_wandb:
         wandb.finish()  # type: ignore
 
-    final_evaluations = eval_data.groupby("run").last()
-    fbests = final_evaluations["f_cur"]
-    return logs, fbests.mean()
+    return logs, min_fbest
