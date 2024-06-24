@@ -48,13 +48,16 @@ class ReplayBuffer:
         self._device = device
         self.rng = np.random.default_rng(seed)
 
+    def seed(self, seed: int) -> None:
+        self.rng = np.random.default_rng(seed)
+
     def _to_tensor(self, data: np.ndarray) -> torch.Tensor:
         return torch.tensor(data, dtype=torch.float32, device=self._device)
 
     def sample(self, batch_size: int) -> list[torch.tensor]:
         indices = self.rng.integers(
             0,
-            min(self._size, self._pointer),
+            self._size,
             size=batch_size,
         )
         states = self._states[indices]
@@ -85,6 +88,20 @@ class ReplayBuffer:
             print("Buffer full. Transitions will now start to be overwritten.")
 
     def save(self, filename: Path) -> None:
+        # Only save actual collected data, not zeros
+        self._states = self._states[:(self._size)]
+        self._actions = self._actions[:(self._size)]
+        self._next_states = self._next_states[:(self._size)]
+        self._rewards = self._rewards[:(self._size)]
+        self._dones = self._dones[:(self._size)]
+        self._buffer_size = self._size
+        self._pointer = self._pointer % self._buffer_size
+
+        # Check if any state is entirely zero
+        states_zero_mask = (self._states == 0).all(dim=1)
+        num_zero_states = states_zero_mask.sum().item()
+        assert num_zero_states == 0
+
         try:
             with filename.open(mode="wb") as f:
                 pickle.dump(self, f)
@@ -109,6 +126,3 @@ class ReplayBuffer:
     def load(cls, filename: Path) -> ReplayBuffer:
         with filename.open(mode="rb") as f:
             return pickle.load(f)
-
-    def set_seed(self, seed: int) -> None:
-        self.rng = np.random.default_rng(seed)
