@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -p bosch_cpu-cascadelake #gki_cpu-caskadelake # relea_gpu-rtx2080 mlhiwidlc_gpu-rtx2080     # partition (queue)
-#SBATCH -t 0-6:00:00
+#SBATCH -t 0-10:00:00
 #SBATCH -o logs/%A.%N.o       # STDOUT  (the folder log has to exist) %A will be replaced by the SLURM_ARRAY_JOB_ID value
 #SBATCH -e logs/%A.%N.e       # STDERR  (the folder log has to exist) %A will be replaced by the SLURM_ARRAY_JOB_ID value
 #SBATCH -J data_gen # sets the job name. 
@@ -15,7 +15,7 @@ RESULTS_DIR=${1:-data}
 TEACHER=${2:-exponential_decay}
 BENCH=${3:-SGD}
 ID=${4:-0}
-NUM_RUNS=1000
+NUM_RUNS=50
 FC1=Ackley
 FC2=Rastrigin
 FC3=Rosenbrock

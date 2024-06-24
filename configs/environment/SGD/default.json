@@ -18,5 +18,5 @@
         ["LINEAR", {"in_features": 128, "out_features": 10}],
         ["LOGSOFTMAX", {"dim": 1}]
     ],
-    "epoch_mode": true
+    "epoch_mode": false
 }

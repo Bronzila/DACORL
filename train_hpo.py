@@ -156,7 +156,7 @@ if __name__ == "__main__":
         choices=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac", "iql", "dt"],
     )
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--budget", type=int, default=20000)
+    parser.add_argument("--budget", type=int, default=30000)
     parser.add_argument(
         "--reduced",
         action="store_true",
@@ -206,17 +206,20 @@ if __name__ == "__main__":
     )
 
     output_path = Path(args.output_path)
+    cs = get_config_space(args.cs_type)
     scenario = Scenario(
-        get_config_space(args.cs_type),
+        cs,
         output_directory=output_path,
-        n_trials=600,
+        n_trials=400,
         n_workers=1,
         deterministic=False,
     )
 
     intensifier = HPOFacade.get_intensifier(scenario, max_config_calls=5)
     # We want to run five random configurations before starting the optimization.
-    initial_design = HPOFacade.get_initial_design(scenario, n_configs=5)
+    initial_design = HPOFacade.get_initial_design(scenario, n_configs=5, additional_configs=[
+        cs.get_default_configuration()
+    ])
 
     # Create our SMAC object and pass the scenario and the train method
     smac = HPOFacade(
