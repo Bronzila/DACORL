@@ -468,11 +468,12 @@ def calc_mean_and_std_dev(df):
     return fbests.mean(), fbests.std()
 
 def calculate_single_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=1, path=None,
-                                    results=True, verbose=False):
+                                    results=True, verbose=False, interpolation=False):
     paths = []
+    filename = "eval_data_interpolation.csv" if interpolation else "eval_data.csv"
     if results:
         for folder_path, _, _ in os.walk(path):
-            paths.extend(Path(folder_path).glob("*/eval_data.csv"))
+            paths.extend(Path(folder_path).glob(f"*/{filename}"))
     else:
         paths.append(path)
     # Load data
@@ -487,8 +488,6 @@ def calculate_single_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=
         df = pd.read_csv(path)
         if verbose:
             print(f"Calculating for path {path}")
-        print(f"Calculating for path {path}")
-        print(np.max(df["reward"]))
         if calc_mean:
             mean, std = calc_mean_and_std_dev(df)
             mean = float(f"{mean:.3e}")
@@ -511,10 +510,12 @@ def calculate_single_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=
     return min_mean, min_std, lowest_vals_of_min_mean, min_iqm, min_iqm_std, min_path
 
 def calculate_multi_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=1, path=None,
-                                    results=True, verbose=False, num_runs=100):
+                                    results=True, verbose=False, num_runs=100, interpolation=False):
     seed_dirs = set()
+    filename = "eval_data_interpolation.csv" if interpolation else "eval_data.csv"
     if results:
-        for eval_file in Path(path).rglob("eval_data.csv"):
+        for eval_file in Path(path).rglob(filename):
+            print(eval_file)
             # Extract the seed directory
             seed_dir = eval_file.parents[1]
             seed_dirs.add(seed_dir)
@@ -525,7 +526,8 @@ def calculate_multi_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=1
     # This is only used if there are multiple checkpoints in the seed directory --> choose the best one
     for seed_dir in seed_dirs:
         min_mean, min_std, _, _, _, min_path = calculate_single_seed_statistics(calc_mean, calc_lowest,
-                                                                                n_lowest, seed_dir, results, verbose)
+                                                                                n_lowest, seed_dir, results, verbose,
+                                                                                interpolation)
         if verbose:
             print(f"Minimum mean {min_mean} +- {min_std} for path {min_path}")
         best_iterations_paths.append(min_path)
@@ -540,13 +542,15 @@ def calculate_multi_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=1
     return mean, std, lowest_vals, iqm, iqm_std, 0 # path doesnt really matter here
 
 def calculate_statistics(calc_mean=True, calc_lowest=True, n_lowest=1, path=None,
-                         results=True, verbose=False, multi_seed=False, num_runs=100):
+                         results=True, verbose=False, multi_seed=False, num_runs=100,
+                         interpolation=False):
     if multi_seed:
         return calculate_multi_seed_statistics(calc_mean, calc_lowest,
-                                               n_lowest, path, results, verbose, num_runs)
+                                               n_lowest, path, results, verbose, num_runs,
+                                               interpolation)
     else:
         return calculate_single_seed_statistics(calc_mean, calc_lowest, n_lowest,
-                                                path, results, verbose)
+                                                path, results, verbose, interpolation)
 
 def compute_IQM(df):
     final_evaluations = df.groupby("run").last()

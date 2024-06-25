@@ -67,6 +67,11 @@ if __name__ == "__main__":
         type=int,
         default=100
     )
+    parser.add_argument(
+        "--interpolation",
+        help="Whether interpolation protocol has been used to evaluate agents",
+        action=argparse.BooleanOptionalAction,
+    )
     args = parser.parse_args()
 
     base_path = Path(args.path)
@@ -90,7 +95,7 @@ if __name__ == "__main__":
                 if args.custom_path:                    
                     # run_data_path = base_path / agent / function / "results" if args.results else base_path / agent / function / "aggregated_run_data.csv"
                     run_data_path = base_path / function / "results" if args.results else base_path / function / "aggregated_run_data.csv"
-                mean, std, lowest, iqm, iqm_std, min_path = calculate_statistics(path=run_data_path, results=args.results, verbose=args.verbose, multi_seed=args.multi_seed, num_runs=args.num_runs)
+                mean, std, lowest, iqm, iqm_std, min_path = calculate_statistics(path=run_data_path, results=args.results, verbose=args.verbose, multi_seed=args.multi_seed, num_runs=args.num_runs, interpolation=args.interpolation)
                 pattern = r"(\d+)"
                 train_steps = int(re.findall(pattern, str(min_path))[-1]) if args.results else 0
                 if args.mean:
@@ -104,8 +109,9 @@ if __name__ == "__main__":
                 rows_iqm.append(row_iqm)
             if args.lowest:
                 rows_lowest.append(row_lowest)
-
-        table_dir = base_path / "tables"
+        
+        table_name = "tables_interpolation" if args.interpolation else "tables"
+        table_dir = base_path / table_name
         table_dir.mkdir(exist_ok=True)
         agent_or_teacher = "agent" if args.results else "teacher"
         if args.mean:
