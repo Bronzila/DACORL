@@ -15,7 +15,29 @@ from dacbench.envs.env_utils.function_definitions import (
     Rosenbrock,
     Sphere,
 )
+from matplotlib import rc
 
+rc("text", usetex=True)
+rc("font", **{"family": "serif", "serif": ["Computer Modern Roman"]})
+
+TINY_SIZE = 14
+SMALL_SIZE = 14
+MEDIUM_SIZE = 16
+BIGGER_SIZE = 20
+
+plt.rc("font", size=SMALL_SIZE)  # controls default text sizes
+plt.rc("axes", labelsize=MEDIUM_SIZE)  # fontsize of the x and y labels
+plt.rc("xtick", labelsize=TINY_SIZE)  # fontsize of the tick labels
+plt.rc("ytick", labelsize=TINY_SIZE)  # fontsize of the tick labels
+plt.rc("legend", fontsize=TINY_SIZE)  # legend fontsize
+plt.rc("figure", titlesize=BIGGER_SIZE)  # fontsize of the figure title
+
+teacher_name_mapping = {
+    "exponential_decay": "Exponential Decay",
+    "step_decay": "Step Decay",
+    "sgdr": "SGDR",
+    "constant": "Constant",
+}
 
 def get_problem_from_name(function_name) -> Any:
     if function_name == "Rosenbrock":
@@ -27,6 +49,17 @@ def get_problem_from_name(function_name) -> Any:
     elif function_name == "Sphere":
         problem = Sphere()
     return problem
+
+def load_data(paths: list):
+    aggregated_df = pd.DataFrame()
+    for path in paths:
+        # Read run data
+        df = pd.read_csv(path)
+
+        df["action"] = df["action"].map(lambda x: 10**x)
+
+        aggregated_df = pd.concat([aggregated_df, df], ignore_index=True)
+    return aggregated_df
 
 
 def plot_optimization_trace(
@@ -134,7 +167,7 @@ def plot_optimization_trace(
         if not save_path.exists():
             save_path.mkdir(parents=True)
 
-        plt.savefig(save_path / f"point_traj_{idx}.svg")
+        plt.savefig(save_path / f"point_traj_{idx}.svg", bbox_inches="tight")
 
 
 def plot_type(
@@ -198,16 +231,7 @@ def plot_type(
             label=dir_path.parents[1].name,
         )
     for agent_name, agent_paths in zip(agent_names, run_data_path):
-        aggregated_df = pd.DataFrame()
-        # if agent_name == "edac" or agent_name == "":
-        for seed_path in agent_paths:
-            print(seed_path)
-            # Read run data
-            df = pd.read_csv(seed_path)
-
-            df["action"] = df["action"].map(lambda x: 10**x)
-
-            aggregated_df = pd.concat([aggregated_df, df], ignore_index=True)
+        aggregated_df = load_data(agent_paths)
 
         print(f"Max {agent_name}: {aggregated_df['action'].max()}")
         print(f"Is inf: {any(np.isinf(aggregated_df['action']))}")
@@ -238,7 +262,7 @@ def plot_type(
         if not save_path.exists():
             save_path.mkdir(parents=True)
         print(f"Saving figure to {save_path / f'{filename}_aggregate.svg'}")
-        plt.savefig(save_path / f"{filename}_aggregate.svg")
+        plt.savefig(save_path / f"{filename}_aggregate.svg", bbox_inches="tight")
 
 
 def plot_actions(
@@ -295,53 +319,37 @@ def plot_actions(
             if run_info["agent"]["type"] == "step_decay":
                 teacher_drawstyle = "steps-post"
 
-    aggregated_df = pd.DataFrame()
     drawstyle = "default"
-    for seed_path in run_data_path:
-        # Read run data
-        df = pd.read_csv(seed_path)
+    aggregated_df = load_data(run_data_path)
 
-        df["action"] = df["action"].map(lambda x: 10**x)
-
-        aggregated_df = pd.concat([aggregated_df, df], ignore_index=True)
-
-        if num_runs > 0:
-            for data in list(df.groupby("run")):
-                # Adjust action value from the DataFrame
-                plt.clf()
-                ax = sns.lineplot(
+    if num_runs > 0:
+        for data in list(aggregated_df.groupby("run")):
+            plt.clf()
+            ax = sns.lineplot(
+                data=data,
+                x="batch",
+                y="action",
+                drawstyle=drawstyle,
+                label=agent_type.upper(),
+            )
+            if reward:
+                ax2 = ax.twinx()
+                sns.lineplot(
                     data=data,
                     x="batch",
-                    y="action",
+                    y="reward",
                     drawstyle=drawstyle,
-                    label=agent_type.upper(),
+                    label="Reward",
+                    ax=ax2,
                 )
-                if reward:
-                    ax2 = ax.twinx()
-                    sns.lineplot(
-                        data=data,
-                        x="batch",
-                        y="reward",
-                        drawstyle=drawstyle,
-                        label="Reward",
-                        ax=ax2,
-                    )
-                if teacher:
-                    sns.lineplot(
-                        data=single_teacher_run,
-                        x="batch",
-                        y="action",
-                        drawstyle=teacher_drawstyle,
-                        label="Teacher",
-                    )
-
-                # # Show or save the plot
-                # if show:
-                #         dir_path,
-                #         "figures",
-                #         "action",
-
-                #     if not save_path.exists():
+            if teacher:
+                sns.lineplot(
+                    data=single_teacher_run,
+                    x="batch",
+                    y="action",
+                    drawstyle=teacher_drawstyle,
+                    label="Teacher",
+                )
 
     if aggregate:
         plt.clf()
@@ -391,7 +399,115 @@ def plot_actions(
             if not save_path.exists():
                 save_path.mkdir(parents=True)
             print(f"Saving figure to {save_path / f'{filename}_aggregate.svg'}")
-            plt.savefig(save_path / f"{filename}_aggregate.svg")
+            plt.savefig(save_path / f"{filename}_aggregate.svg", bbox_inches="tight")
+
+def plot_comparison(
+    dir_paths: list,
+    agent_labels: list,
+    teacher: bool = False,
+    show: bool = False,
+) -> None:
+    for dir_path, agent_label in zip(dir_paths, agent_labels):
+        dir_path = Path(dir_path)
+        teacher_name = dir_path.parents[1].name
+        func_name = dir_path.name
+        teacher_data = None
+        agent_data = None
+        if teacher:
+            teacher_path = dir_path / "aggregated_run_data.csv"
+            teacher_data = load_data([teacher_path])
+
+        result_paths = dir_path.rglob("*/eval_data.csv")
+        agent_data = load_data(result_paths)
+
+        if teacher_data is not None:
+            ax = sns.lineplot(teacher_data,
+                              x="batch",
+                              y="f_cur",
+                              label=teacher_name_mapping[teacher_name])
+        if agent_data is not None:
+            ax = sns.lineplot(
+                agent_data,
+                x="batch",
+                y="f_cur",
+                label=agent_label,
+            )
+    if func_name in ["Rosenbrock", "Sphere"]:
+        ax.set_yscale("log")
+    else:
+        plt.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
+    ax.set_xlabel("Step $i$")
+    ax.set_ylabel("$f(\\theta_i)$")
+
+    if show:
+        plt.show()
+    else:
+        dir_path = Path(dir_paths[0])
+        save_path = Path(
+            dir_path.parents[2],  # PROJECT/ToySGD/
+            "figures",
+            "comparison",
+            dir_path.name
+        )
+        if not save_path.exists():
+            save_path.mkdir(parents=True)
+        file_name = f"trajectory_comparison_agent_teacher_{teacher_name}.pdf" if len(dir_paths) == 1 else "trajectory_comparison_agents.pdf"
+        print(f"Saving figure to {save_path / file_name}")
+        plt.savefig(save_path / file_name, bbox_inches="tight")
+
+def plot_comparison(
+    dir_paths: list,
+    agent_labels: list,
+    teacher: bool = False,
+    show: bool = False,
+) -> None:
+    for dir_path, agent_label in zip(dir_paths, agent_labels):
+        dir_path = Path(dir_path)
+        teacher_name = dir_path.parents[1].name
+        func_name = dir_path.name
+        teacher_data = None
+        agent_data = None
+        if teacher:
+            teacher_path = dir_path / "aggregated_run_data.csv"
+            teacher_data = load_data([teacher_path])
+
+        result_paths = dir_path.rglob("*/eval_data.csv")
+        agent_data = load_data(result_paths)
+
+        if teacher_data is not None:
+            ax = sns.lineplot(teacher_data,
+                              x="batch",
+                              y="f_cur",
+                              label=teacher_name_mapping[teacher_name])
+        if agent_data is not None:
+            ax = sns.lineplot(
+                agent_data,
+                x="batch",
+                y="f_cur",
+                label=agent_label,
+            )
+    if func_name in ["Rosenbrock", "Sphere"]:
+        ax.set_yscale("log")
+    else:
+        plt.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
+    ax.set_xlabel("Step $i$")
+    ax.set_ylabel("$f(\\theta_i)$")
+
+    if show:
+        plt.show()
+    else:
+        dir_path = Path(dir_paths[0])
+        save_path = Path(
+            dir_path.parents[2],  # PROJECT/ToySGD/
+            "figures",
+            "comparison",
+            dir_path.name
+        )
+        if not save_path.exists():
+            save_path.mkdir(parents=True)
+        file_name = f"trajectory_comparison_agent_teacher_{teacher_name}.pdf" if len(dir_paths) == 1 else "trajectory_comparison_agents.pdf"
+        print(f"Saving figure to {save_path / file_name}")
+        plt.savefig(save_path / file_name, bbox_inches="tight")
 
 def plot_teacher_actions(
     dir_path: str,
@@ -479,7 +595,7 @@ def plot_teacher_actions(
             if not save_path.exists():
                 save_path.mkdir(parents=True)
             print(f"Saving figure to {save_path / 'action_teacher_single_plot.svg'}")
-            plt.savefig(save_path / "action_teacher_single_plot.svg")
+            plt.savefig(save_path / "action_teacher_single_plot.svg", bbox_inches="tight")
         else:
             save_path = Path(
                 dir_path.parents[2],  # PROJECT/ToySGD/
@@ -491,4 +607,34 @@ def plot_teacher_actions(
             if not save_path.exists():
                 save_path.mkdir(parents=True)
             print(f"Saving figure to {save_path / f'action_teacher_{teach_id}_aggregate.svg'}")
-            plt.savefig(save_path / f"action_teacher_{teach_id}_aggregate.svg")
+            plt.savefig(save_path / f"action_teacher_{teach_id}_aggregate.svg", bbox_inches="tight")
+
+
+##############################
+# PLEASE IGNORE
+##############################
+# I only used this for my thesis - in case I need to recreate the plot again :D
+
+def plot_methodology():
+    rast_path = "data_single_64/ToySGD/exponential_decay/0/Rastrigin/aggregated_run_data.csv"
+    data = load_data([rast_path])
+
+    last_steps = data[data["batch"] == 100]
+    best_run_id = last_steps.loc[last_steps["f_cur"].idxmax()]["run"]
+    worst_run_id = last_steps.loc[last_steps["f_cur"].idxmin()]["run"]
+
+    run_1 = data[data["run"] == best_run_id]
+    run_2 = data[data["run"] == worst_run_id]
+
+    ax = sns.lineplot(run_1,
+                        x="batch",
+                        y="f_cur",
+                        label="Best starting point")
+    ax = sns.lineplot(run_2,
+                              x="batch",
+                              y="f_cur",
+                              label="Worst starting point")
+    plt.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
+    ax.set_xlabel("Step $i$")
+    ax.set_ylabel("$f(\\theta_i)$")
+    plt.savefig(Path("best_vs_worst.pdf"), bbox_inches="tight")

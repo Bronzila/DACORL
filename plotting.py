@@ -1,10 +1,13 @@
 import argparse
+import json
+from pathlib import Path
 
 from src.utils.generate_plots import (
     plot_actions,
+    plot_comparison,
     plot_optimization_trace,
     plot_teacher_actions,
-    plot_type
+    plot_type,
 )
 
 if __name__ == "__main__":
@@ -102,6 +105,18 @@ if __name__ == "__main__":
         default=None,
         type=str,
     )
+    parser.add_argument(
+        "--custom_paths", type=str, help="Path to json file containing all base paths to plot for",
+    )
+    parser.add_argument(
+        "--agent_labels", type=str, nargs="*", help="Data labels for the agents, have to be sorted according to the specified custom paths",
+    )
+    parser.add_argument(
+        "--comparison",
+        help="Plot f_cur comparison",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+    )
     args = parser.parse_args()
 
     if args.optim_trace:
@@ -140,3 +155,16 @@ if __name__ == "__main__":
             args.single_plot,
             args.function,
         )
+    if args.comparison:
+        if args.data_dir:
+            plot_comparison([args.data_dir],
+                            args.agent_labels,
+                            args.teacher,
+                            args.show)
+        elif args.custom_paths:
+            with Path(args.custom_paths).open("r") as f:
+                custom_paths = json.load(f)
+            plot_comparison(custom_paths,
+                            args.agent_labels,
+                            args.teacher,
+                            args.show)
