@@ -86,6 +86,10 @@ def generate_dataset(
     env = get_environment(env_config)
     num_batches = env_config["num_batches"]
 
+    env_config["action_space"] = env.action_space.shape
+    state = env.reset()[0]
+    state_dim = state.shape[0]
+
     phase = "batch"
     batches_per_epoch = 1
     if environment_type == "SGD":
@@ -98,9 +102,6 @@ def generate_dataset(
             phase = "epoch"
             print("Currently running in epoch mode.")
 
-    env_config["action_space"] = env.action_space.shape
-    state = env.reset()[0]
-    state_dim = state.shape[0]
     buffer_size = num_runs * num_batches
     replay_buffer = ReplayBuffer(
         state_dim=state_dim,
