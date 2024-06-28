@@ -384,6 +384,7 @@ def plot_actions(
             )
 
         ax.figure.legend()
+        ax.set(xlabel="Step", ylabel="Learning Rate")
         # Show or save the plot
         if show:
             plt.show()
@@ -522,31 +523,49 @@ def plot_teacher_actions(
     if single_plot:
         paths = Path(dir_path).rglob(f"*/{function}")
 
-        for path in paths:
+        for path in sorted(paths):
             run_info_path = Path(path, "run_info.json")
             # Get run info from file
             with Path.open(run_info_path) as file:
                 run_info = json.load(file)
-                drawstyle = "default"
+                run_info["draw_style"] = "default"
                 if run_info["agent"]["type"] == "step_decay":
-                    drawstyle = "steps-post"
+                    run_info["draw_style"] = "steps-post"
 
-            data_path = Path(path, "aggregated_run_data.csv")
-            # Read run data
-            df = pd.read_csv(data_path)
+            if path.parents[0].name == "x_learned":
+                run_data_path = []
+                for path in (path / "results" / "td3_bc").rglob(
+                    "*/eval_data.csv",
+                ):
+                    run_data_path.append(path)
+                aggregated_df = pd.DataFrame()
+                for seed_path in run_data_path:
+                    # Read run data
+                    df = pd.read_csv(seed_path)
 
-            df["action"] = df["action"].map(lambda x: 10**x)
+                    df["action"] = df["action"].map(lambda x: 10**x)
 
-            dfs.append(df)
-            run_infos.append(run_info)
+                    aggregated_df = pd.concat([aggregated_df, df], ignore_index=True)
+                run_info["draw_style"] = "default"
+                dfs.append(aggregated_df)
+                run_infos.append(run_info)
+            else:
+                data_path = Path(path, "aggregated_run_data.csv")
+                # Read run data
+                df = pd.read_csv(data_path)
+
+                df["action"] = df["action"].map(lambda x: 10**x)
+
+                dfs.append(df)
+                run_infos.append(run_info)
     else:
         run_info_path = Path(dir_path, "run_info.json")
         # Get run info from file
         with Path.open(run_info_path) as file:
             run_info = json.load(file)
-            drawstyle = "default"
+            run_info["draw_style"] = "default"
             if run_info["agent"]["type"] == "step_decay":
-                drawstyle = "steps-post"
+                run_info["draw_style"] = "steps-post"
 
         data_path = Path(dir_path, "aggregated_run_data.csv")
         # Read run data
@@ -558,11 +577,12 @@ def plot_teacher_actions(
         run_infos.append(run_info)
 
     for run_info, df in zip(run_infos, dfs):
+        print(run_info["agent"]["id"])
         ax = sns.lineplot(
             data=df,
             x="batch",
             y="action",
-            drawstyle=drawstyle,
+            drawstyle=run_info["draw_style"],
             label=run_info["agent"]["id"],
             legend=False,
         )
@@ -578,8 +598,10 @@ def plot_teacher_actions(
                 legend=False,
             )
 
-    ax.figure.legend()
-    plt.title(f"Actions of {run_infos[0]['agent']['type']} agent")
+    ax.set_xlabel("Step")
+    ax.set_ylabel("Learning Rate")
+    ax.legend(prop={"size": 12})
+    plt.ticklabel_format(axis="y", style="sci")
     # Show or save the plot
     if show:
         plt.show()
@@ -594,8 +616,8 @@ def plot_teacher_actions(
             )
             if not save_path.exists():
                 save_path.mkdir(parents=True)
-            print(f"Saving figure to {save_path / 'action_teacher_single_plot.svg'}")
-            plt.savefig(save_path / "action_teacher_single_plot.svg", bbox_inches="tight")
+            print(f"Saving figure to {save_path / 'action_teacher_single_plot.pdf'}")
+            plt.savefig(save_path / "action_teacher_single_plot.pdf", bbox_inches="tight")
         else:
             save_path = Path(
                 dir_path.parents[2],  # PROJECT/ToySGD/
