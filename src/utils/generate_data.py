@@ -82,7 +82,7 @@ def generate_dataset(
     if results_dir.exists():
         print(f"Data already exists: {results_dir}")
         return
-    
+
     env = get_environment(env_config)
     num_batches = env_config["num_batches"]
 
@@ -153,7 +153,7 @@ def generate_dataset(
                     f_curs.append(env.objective_function(env.x_cur).numpy())
                 if environment_type == "SGD":
                     actions.append(math.log10(env.learning_rate))
-                    train_loss.append(env.loss)
+                    train_loss.append(env.train_loss)
                     valid_loss.append(env.validation_loss)
                     test_loss.append(env.test_losses / len(env.test_loader))
                 if environment_type == "CMAES":
@@ -188,7 +188,7 @@ def generate_dataset(
                         x_curs.append(env.x_cur.tolist())
                         f_curs.append(env.objective_function(env.x_cur).numpy())
                     if environment_type == "SGD":
-                        train_loss.append(env.loss)
+                        train_loss.append(env.train_loss)
                         valid_loss.append(
                             env.validation_loss,
                         )
