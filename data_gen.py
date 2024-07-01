@@ -31,6 +31,12 @@ if __name__ == "__main__":
         help="path to the directory where replay_buffer and info about the replay_buffer are stored",
     )
     parser.add_argument(
+        "--instance_mode",
+        type=str,
+        default="",
+        help="Select the instance mode for SGD Benchmark.",
+    )
+    parser.add_argument(
         "--save_run_data",
         action=argparse.BooleanOptionalAction,
         default=False,
@@ -72,6 +78,9 @@ if __name__ == "__main__":
     # Add initial learning rate to agent config for SGDR
     if agent_config["type"] == "sgdr":
         agent_config["params"]["initial_learning_rate"] = env_config["initial_learning_rate"]
+    
+    if env_config["type"] == "SGD":
+        env_config["instance_mode"] = args.instance_mode
 
     generate_dataset(
         agent_config=agent_config,
