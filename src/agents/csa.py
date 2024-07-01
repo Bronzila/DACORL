@@ -1,22 +1,25 @@
 from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 
-class CSA:
-    def __init__(self):
-        pass
-        # self.dim = dim
-        # self.sigma = sigma0
-        # self.cs = cs
-        # self.damping = damping
-        # self.ps = np.zeros(dim)
+if TYPE_CHECKING:
+    from DACBench.dacbench.abstract_env import AbstractMADACEnv
 
-    def act(self, env):
-        u = env.es.parameters.sigma
-        hsig = env.es.parameters.adapt_sigma.hsig(env.es)
-        env.es.hsig = hsig
-        delta = env.es.adapt_sigma.update2(env.es, function_values=env.cur_obj_val)
-        u *= delta
-        return u
-    
+
+class CSA:
+    def __init__(self) -> None:
+        pass
+
+    def act(self, env: AbstractMADACEnv) -> None:
+        env.es.parameters.sigma *= np.exp(
+            (env.es.parameters.cs / env.es.parameters.damps)
+            * (
+                (np.linalg.norm(env.es.parameters.ps) / env.es.parameters.chiN)
+                - 1
+            ),
+        )
+
     def reset(self):
         pass
