@@ -5,13 +5,12 @@ import os
 import random
 import signal
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 import pandas as pd
 import torch
 from CORL.algorithms.offline import td3_bc
-from dacbench.benchmarks import ToySGD2DBenchmark
 from torch import nn
 
 from src.agents import (
@@ -168,6 +167,7 @@ def get_agent(
 
 
 def get_environment(env_config: dict) -> Any:
+    from dacbench.benchmarks import SGDBenchmark, ToySGD2DBenchmark
     if env_config["type"] == "ToySGD":
         # setup benchmark
         bench = ToySGD2DBenchmark()
@@ -180,6 +180,9 @@ def get_environment(env_config: dict) -> Any:
         bench.config.reward_version = env_config["reward_version"]
         bench.config.boundary_termination = env_config["boundary_termination"]
         bench.config.seed = env_config["seed"]
+        return bench.get_environment()
+    elif env_config["type"] == "SGD":
+        bench = SGDBenchmark(config=env_config)
         return bench.get_environment()
     else:
         raise NotImplementedError(
