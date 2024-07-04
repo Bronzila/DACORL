@@ -6,6 +6,7 @@ import random
 import signal
 from pathlib import Path
 from typing import Any
+import warnings
 
 import ConfigSpace
 import numpy as np
@@ -707,7 +708,11 @@ def combine_run_data(
     combined_run_data = []
     for idx, root_path in enumerate(data_paths):
         run_data_path = Path(root_path)
-        df = pd.read_csv(run_data_path)
+        try:
+            df = pd.read_csv(run_data_path)
+        except pd.errors.EmptyDataError:
+            warnings.warn(f"The following data is corrupted and could not be loaded: {run_data_path}")
+            continue
         df["run"] += idx * num_runs
         combined_run_data.append(df)
     return pd.concat(combined_run_data, ignore_index=True)
