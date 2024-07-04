@@ -215,7 +215,7 @@ if __name__ == "__main__":
         deterministic=False,
     )
 
-    intensifier = HPOFacade.get_intensifier(scenario, max_config_calls=5)
+    intensifier = HPOFacade.get_intensifier(scenario, max_config_calls=10)
     # We want to run five random configurations before starting the optimization.
     initial_design = HPOFacade.get_initial_design(scenario, n_configs=5, additional_configs=[
         cs.get_default_configuration()
