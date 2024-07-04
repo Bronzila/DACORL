@@ -9,7 +9,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Run any agent on benchmarks"
     )
-    parser.add_argument("--benchmark", type=str, default="SGD")
+    parser.add_argument("--benchmark", type=str, default="ToySGD")
     parser.add_argument(
         "--env",
         type=str,
