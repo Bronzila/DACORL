@@ -7,9 +7,16 @@ from src.utils.generate_data import generate_dataset
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Run any agent on the ToySGD benchmark"
+        description="Run any agent on benchmarks"
     )
-    parser.add_argument("--num_runs", type=int, default=1)
+    parser.add_argument("--benchmark", type=str, default="SGD")
+    parser.add_argument(
+        "--env",
+        type=str,
+        help="Config file to define the benchmark env",
+        default="default",
+    )
+    parser.add_argument("--num_runs", type=int, default=1000)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument(
         "--agent",
@@ -18,16 +25,16 @@ if __name__ == "__main__":
         default="step_decay",
     )
     parser.add_argument(
-        "--env",
-        type=str,
-        help="Environment function for data generation",
-        default="Rosenbrock_default",
-    )
-    parser.add_argument(
         "--results_dir",
         type=str,
         default="",
         help="path to the directory where replay_buffer and info about the replay_buffer are stored",
+    )
+    parser.add_argument(
+        "--instance_mode",
+        type=str,
+        default="",
+        help="Select the instance mode for SGD Benchmark.",
     )
     parser.add_argument(
         "--save_run_data",
@@ -43,8 +50,8 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--id",
-        type=str,
-        default="0",
+        type=int,
+        default=0,
         help="Agent ID",
     )
     parser.add_argument(
@@ -57,14 +64,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
     start = time.time()
 
-    agent_name = "default" if args.id == "0" else str(args.id)
+    agent_name = "default" if args.id == 0 else str(args.id)
     # Read agent config from file
     agent_config_path = Path("configs", "agents", args.agent, f"{agent_name}.json")
     with agent_config_path.open() as file:
         agent_config = json.load(file)
 
     # Read environment config from file
-    env_config_path = Path("configs", "environment", f"{args.env}.json")
+    env_config_path = Path("configs", "environment", f"{args.benchmark}", f"{args.env}.json")
     with env_config_path.open() as file:
         env_config = json.load(file)
 
@@ -76,6 +83,9 @@ if __name__ == "__main__":
         agent_config["params"]["learning_rate"] = env_config["initial_learning_rate"]
     elif agent_config["type"] == "constant":
         env_config["initial_learning_rate"] = agent_config["params"]["learning_rate"]
+
+    if env_config["type"] == "SGD":
+        env_config["instance_mode"] = args.instance_mode
 
     generate_dataset(
         agent_config=agent_config,

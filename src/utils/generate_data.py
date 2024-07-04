@@ -50,7 +50,7 @@ def generate_dataset(
     timeout: int,
     save_run_data: bool,
     save_rep_buffer: bool,
-    verbose: bool=True,
+    verbose: bool= False,
 ) -> None:
     set_timeout(timeout)
     set_seeds(seed)
@@ -64,12 +64,11 @@ def generate_dataset(
     agent_type = agent_config["type"]
 
     if results_dir == "":
-        results_dir = Path(
+        results_dir: Path = Path(
             "data",
             environment_type,
             agent_type,
             str(agent_config["id"]),
-            env_config["function"],
         )
     else:
         results_dir = Path(
@@ -77,14 +76,35 @@ def generate_dataset(
             environment_type,
             agent_type,
             str(agent_config["id"]),
-            env_config["function"],
         )
+    if environment_type == "ToySGD":
+        results_dir = results_dir / env_config["function"]
 
-    num_batches = env_config["num_batches"]
+    if results_dir.exists():
+        print(f"Data already exists: {results_dir}")
+        return
+
+    env = get_environment(env_config.copy())
+    env.reset()
+    phase = "batch"
+    batches_per_epoch = 1
+    if environment_type == "SGD":
+        if env.epoch_mode is False:
+            num_epochs = env_config["num_epochs"]
+            # if SGD env, translates num_batches to num_epochs
+            batches_per_epoch = len(env.train_loader)
+            print(f"One epoch consists of {batches_per_epoch} batches.")
+            num_batches = num_epochs * batches_per_epoch
+            env_config["cutoff"] = num_batches
+        else:
+            phase = "epoch"
+            print("Currently running in epoch mode.")
+
     env = get_environment(env_config)
     state = env.reset()[0]
     env.seed(seed) # Reseed environment here to allow for proper starting point generation
     state_dim = state.shape[0]
+
     buffer_size = num_runs * num_batches
     replay_buffer = ReplayBuffer(
         state_dim=state_dim,
@@ -93,7 +113,7 @@ def generate_dataset(
         seed=seed,
     )
 
-    agent = get_agent(agent_type, agent_config, device="cpu")
+    agent = get_agent(agent_type, agent_config)
 
     aggregated_run_data = []
     run_info = {
@@ -109,27 +129,39 @@ def generate_dataset(
             if save_run_data:
                 actions = []
                 rewards = []
-                f_curs = []
-                x_curs = []
                 states = []
                 batch_indeces = []
                 run_indeces = []
+                if environment_type == "ToySGD":
+                    f_curs = []
+                    x_curs = []
+                if environment_type == "SGD":
+                    train_loss = []
+                    valid_loss = []
+                    test_loss = []
             state, meta_info = env.reset()
-            starting_points.append(meta_info["start"])
+            if environment_type == "ToySGD":
+                starting_points.append(meta_info["start"])
             agent.reset()
             if save_run_data:
-                actions.append(math.log10(env.learning_rate))
                 rewards.append(np.NaN)
-                x_curs.append(env.x_cur.tolist())
-                f_curs.append(env.objective_function(env.x_cur).numpy())
                 states.append(state.numpy())
                 batch_indeces.append(0)
                 run_indeces.append(run)
+                if environment_type == "ToySGD":
+                    actions.append(math.log10(env.learning_rate))
+                    x_curs.append(env.x_cur.tolist())
+                    f_curs.append(env.objective_function(env.x_cur).numpy())
+                if environment_type == "SGD":
+                    actions.append(math.log10(env.learning_rate))
+                    train_loss.append(env.train_loss)
+                    valid_loss.append(env.validation_loss)
+                    test_loss.append(env.test_losses / len(env.test_loader))
 
-            for batch in range(1, num_batches + 1):
+            for batch in range(1, (num_batches + batches_per_epoch)):
                 if verbose:
                     print(
-                        f"Starting batch {batch}/{num_batches} of run {run}. \
+                        f"Starting {phase} {batch}/{num_batches} of run {run}. \
                         Total {batch + run * num_batches}/{num_runs * num_batches}",
                     )
 
@@ -145,27 +177,47 @@ def generate_dataset(
                 if save_run_data:
                     actions.append(action)
                     rewards.append(reward.numpy())
-                    x_curs.append(env.x_cur.tolist())
-                    f_curs.append(env.objective_function(env.x_cur).numpy())
                     states.append(state.numpy())
                     batch_indeces.append(batch)
                     run_indeces.append(run)
+                    if environment_type == "ToySGD":
+                        x_curs.append(env.x_cur.tolist())
+                        f_curs.append(env.objective_function(env.x_cur).numpy())
+                    if environment_type == "SGD":
+                        train_loss.append(env.train_loss)
+                        valid_loss.append(
+                            env.validation_loss,
+                        )
+                        test_loss.append(env.test_losses / len(env.test_loader))
+
                 state = next_state
                 if done:
                     break
 
             if save_run_data:
-                run_data = pd.DataFrame(
-                    {
-                        "action": actions,
-                        "reward": rewards,
-                        "f_cur": f_curs,
-                        "x_cur": x_curs,
-                        "state": states,
-                        "batch": batch_indeces,
-                        "run": run_indeces,
-                    },
-                )
+                data = {
+                    "action": actions,
+                    "reward": rewards,
+                    "state": states,
+                    "batch": batch_indeces,
+                    "run": run_indeces,
+                }
+                if environment_type == "ToySGD":
+                    data.update(
+                        {
+                            "f_cur": f_curs,
+                            "x_cur": x_curs,
+                        },
+                    )
+                if environment_type == "SGD":
+                    data.update(
+                        {
+                            "train_loss": train_loss,
+                            "valid_loss": valid_loss,
+                            "test_loss": test_loss,
+                        },
+                    )
+                run_data = pd.DataFrame(data)
                 aggregated_run_data.append(run_data)
     except OutOfTimeError:
         save_data(
@@ -194,5 +246,3 @@ def generate_dataset(
         msg += "rep_buffer " if save_rep_buffer else ""
         msg += "run_data " if save_run_data else ""
         print(f"{msg}to {results_dir}")
-
-    return pd.concat(aggregated_run_data)
