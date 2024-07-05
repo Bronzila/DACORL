@@ -4,9 +4,9 @@ import json
 import os
 import random
 import signal
+import warnings
 from pathlib import Path
 from typing import Any
-import warnings
 
 import ConfigSpace
 import numpy as np
@@ -23,22 +23,21 @@ from CORL.algorithms.offline import (
     any_percent_bc as bc,
     awac,
     cql,
-    dt,
     edac,
     iql,
     lb_sac,
     sac_n,
     td3_bc,
 )
-
 from torch import nn
 
 from src.agents import (
+    CSA,
     ConstantAgent,
     ExponentialDecayAgent,
     SGDRAgent,
     StepDecayAgent,
-    CSA,
+    td3,
 )
 from src.utils.agent_components import (
     ConfigurableCritic,
@@ -533,35 +532,54 @@ def get_agent(
         return iql.ImplicitQLearning(**kwargs)
     # if agent_type == "rebrac":
 
-    if agent_type == "dt":
-        config = dt.TrainConfig()
-        model = dt.DecisionTransformer(
+    if agent_type == "td3":
+        actor = td3.Actor(
             state_dim=state_dim,
             action_dim=action_dim,
-            seq_len=config.seq_len,
-            episode_len=config.episode_len,
-            embedding_dim=config.embedding_dim,  # hyperparameters["critic_hidden_dim"],
-            num_layers=config.num_layers,  # hyperparameters["actor"],
-            num_heads=config.num_heads,
-            attention_dropout=config.attention_dropout,
-            residual_dropout=config.residual_dropout,
-            embedding_dropout=config.embedding_dropout,
             max_action=max_action,
             min_action=min_action,
+        ).to(device)
+        actor_optimizer = torch.optim.Adam(
+            actor.parameters(),
+            lr=hyperparameters["lr_actor"],
         )
 
-        optimizer = torch.optim.AdamW(
-            model.parameters(),
-            lr=config.learning_rate,
-            weight_decay=config.weight_decay,
-            betas=config.betas,
-        )
-        scheduler = torch.optim.lr_scheduler.LambdaLR(
-            optimizer,
-            lambda steps: min((steps + 1) / config.warmup_steps, 1),
+        critic_1 = td3.Critic(
+            state_dim=state_dim,
+            action_dim=action_dim,
+        ).to(device)
+        critic_1_optimizer = torch.optim.Adam(
+            critic_1.parameters(),
+            lr=hyperparameters["lr_critic"],
         )
 
-        return dt.DTWrapper(model, optimizer, scheduler, config.clip_grad)
+        critic_2 = td3.Critic(
+            state_dim=state_dim,
+            action_dim=action_dim,
+        ).to(device)
+        critic_2_optimizer = torch.optim.Adam(
+            critic_2.parameters(),
+            lr=hyperparameters["lr_critic"],
+        )
+
+        kwargs = {
+            "max_action": max_action,
+            "min_action": min_action,
+            "actor": actor,
+            "actor_optimizer": actor_optimizer,
+            "critic_1": critic_1,
+            "critic_1_optimizer": critic_1_optimizer,
+            "critic_2": critic_2,
+            "critic_2_optimizer": critic_2_optimizer,
+            "discount": hyperparameters["discount_factor"],
+            "tau": hyperparameters["target_update_rate"],
+            # TD3
+            "policy_noise": 0.2,
+            "noise_clip": 0.5,
+            "policy_freq": 2,
+            "device": device,
+        }
+        return td3.TD3(**kwargs)
 
     raise NotImplementedError(
         f"No agent with type {agent_type} implemented.",
@@ -570,11 +588,12 @@ def get_agent(
 
 def get_environment(env_config: dict) -> Any:
     from dacbench.benchmarks import (
-        ToySGD2DBenchmark,
-        SGDBenchmark,
         CMAESBenchmark,
         FastDownwardBenchmark,
+        SGDBenchmark,
+        ToySGD2DBenchmark,
     )
+
     if env_config["type"] == "ToySGD":
         # setup benchmark
         bench = ToySGD2DBenchmark()
@@ -656,7 +675,7 @@ def get_homogeneous_agent_paths(
             entry.name
             for entry in root_path.iterdir()
             if entry.is_dir() and entry.name != "combined"
-        ]
+        ],
     )
     paths = []
     for dirname in agent_dirs:
@@ -711,7 +730,9 @@ def combine_run_data(
         try:
             df = pd.read_csv(run_data_path)
         except pd.errors.EmptyDataError:
-            warnings.warn(f"The following data is corrupted and could not be loaded: {run_data_path}")
+            warnings.warn(
+                f"The following data is corrupted and could not be loaded: {run_data_path}",
+            )
             continue
         df["run"] += idx * num_runs
         combined_run_data.append(df)
@@ -946,7 +967,7 @@ def get_config_space(config_type: str) -> ConfigSpace:
             [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4],
             default=0.2,
         )
-        
+
     elif config_type == "reduced":
         lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4, log=True)
         lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4, log=True)
