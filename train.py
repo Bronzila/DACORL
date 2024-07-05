@@ -2,7 +2,8 @@ import argparse
 import time
 
 from src.utils.general import get_config_space
-from src.utils.train_agent import train_agent
+from src.utils.train_agent import train_agent as train_offline
+from src.utils.train_agent_online import train_agent as train_online
 from train_hpo import Optimizee
 
 if __name__ == "__main__":
@@ -17,7 +18,7 @@ if __name__ == "__main__":
         "--agent_type",
         type=str,
         default="td3_bc",
-        choices=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac", "iql", "dt"],
+        choices=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac", "iql", "td3"],
     )
     parser.add_argument(
         "--agent_config",
@@ -88,6 +89,11 @@ if __name__ == "__main__":
         tanh_scaling=args.tanh_scaling,
     )
     hyperparameters = get_config_space(args.cs_type).get_default_configuration()
+
+    if args.agent_type == "td3":
+        train_agent = train_online
+    else:
+        train_agent = train_offline
 
     train_agent(
         data_dir=args.data_dir,

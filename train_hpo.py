@@ -19,7 +19,8 @@ from smac import (
 )
 
 from src.utils.general import set_seeds, get_config_space
-from src.utils.train_agent import train_agent
+from src.utils.train_agent import train_agent as train_offline
+from src.utils.train_agent_online import train_agent as train_online
 
 warnings.filterwarnings("ignore")
 
@@ -43,6 +44,10 @@ class Optimizee:
         self.eval_seed = eval_seed
         self.tanh_scaling = tanh_scaling
 
+        if agent_type == "td3":
+            self.train_agent = train_online
+        else:
+            self.train_agent = train_offline
         with Path(self.data_dir, "run_info.json").open(mode="rb") as f:
             self.run_info = json.load(f)
 
@@ -84,7 +89,7 @@ class Optimizee:
         return cs
 
     def train(self, config: Configuration, seed: int = 0) -> float:
-        log_dict, eval_mean = train_agent(
+        log_dict, eval_mean = self.train_agent(
             data_dir=self.data_dir,
             agent_type=self.agent_type,
             agent_config={},
