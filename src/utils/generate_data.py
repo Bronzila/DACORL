@@ -132,11 +132,11 @@ def generate_dataset(
                 if environment_type == "ToySGD":
                     f_curs = []
                     x_curs = []
-                if environment_type == "SGD":
+                elif environment_type == "SGD":
                     train_loss = []
                     valid_loss = []
                     test_loss = []
-                if environment_type == "CMAES":
+                elif environment_type == "CMAES":
                     lambdas = []
             state, meta_info = env.reset()
             if environment_type == "ToySGD":
