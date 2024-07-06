@@ -84,6 +84,8 @@ def generate_dataset(
         print(f"Data already exists: {results_dir}")
         return
 
+    num_batches = env_config["num_batches"]
+
     env = get_environment(env_config.copy())
     env.reset()
     phase = "batch"
