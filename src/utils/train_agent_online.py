@@ -116,9 +116,8 @@ def train_agent(
         if t < start_timesteps:
             action = env.action_space.sample()
         else:
-            action = agent.select_action(state)
             action = (
-                action
+                agent.select_action(state)
                 + np.random.normal(
                     0,
                     max_action * 0.1,
@@ -126,7 +125,7 @@ def train_agent(
                 ).astype(np.float32)
             ).clip(min_action, max_action)
 
-        action = torch.from_numpy(action)  # .to(DEVICE)
+        action = torch.from_numpy(action)
 
         # Perform action
         next_state, reward, done, _, _ = env.step(action)
@@ -164,12 +163,12 @@ def train_agent(
         # Evaluate episode
         if val_freq != 0 and (t + 1) % val_freq == 0:
             with torch.random.fork_rng():
-                get_environment(run_info["environment"])
+                val_env = get_environment(run_info["environment"])
                 eval_runs = num_eval_runs
                 if eval_protocol == "train":
                     eval_data = test_agent(
                         actor=agent.actor,
-                        env=env,
+                        env=val_env,
                         n_runs=eval_runs,
                         starting_points=run_info["starting_points"],
                         n_batches=run_info["environment"]["num_batches"],
@@ -178,7 +177,7 @@ def train_agent(
                 elif eval_protocol == "interpolation":
                     eval_data = test_agent(
                         actor=agent.actor,
-                        env=env,
+                        env=val_env,
                         n_runs=eval_runs,
                         n_batches=run_info["environment"]["num_batches"],
                         seed=eval_seed,
