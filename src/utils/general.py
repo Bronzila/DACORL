@@ -609,7 +609,7 @@ def get_environment(env_config: dict) -> Any:
         return bench.get_environment()
     elif env_config["type"] == "SGD":
         bench = SGDBenchmark(config=env_config)
-        return bench.get_benchmark()
+        return bench.get_environment()
     elif env_config["type"] == "CMAES":
         bench = CMAESBenchmark(config=env_config)
         return bench.get_environment()
