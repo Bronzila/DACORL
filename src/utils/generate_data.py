@@ -84,12 +84,12 @@ def generate_dataset(
         print(f"Data already exists: {results_dir}")
         return
 
-    num_batches = env_config["num_batches"]
+    if environment_type == "ToySGD":
+        num_batches = env_config["num_batches"]
 
     env = get_environment(env_config.copy())
     env.reset()
     phase = "batch"
-    batches_per_epoch = 1
     if environment_type == "SGD":
         if env.epoch_mode is False:
             num_epochs = env_config["num_epochs"]
@@ -160,7 +160,7 @@ def generate_dataset(
                     valid_loss.append(env.validation_loss)
                     test_loss.append(env.test_losses / len(env.test_loader))
 
-            for batch in range(1, (num_batches + batches_per_epoch)):
+            for batch in range(1, num_batches + 1): # As we start with batch 1 and not 0, add 1
                 if verbose:
                     print(
                         f"Starting {phase} {batch}/{num_batches} of run {run}. \
