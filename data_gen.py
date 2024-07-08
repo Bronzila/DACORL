@@ -50,8 +50,8 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--id",
-        type=int,
-        default=0,
+        type=str,
+        default="0",
         help="Agent ID",
     )
     parser.add_argument(
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     start = time.time()
 
-    agent_name = "default" if args.id == 0 else str(args.id)
+    agent_name = "default" if args.id == "0" else str(args.id)
     # Read agent config from file
     agent_config_path = Path("configs", "agents", args.agent, f"{agent_name}.json")
     with agent_config_path.open() as file:
