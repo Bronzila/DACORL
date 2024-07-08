@@ -456,59 +456,6 @@ def plot_comparison(
         print(f"Saving figure to {save_path / file_name}")
         plt.savefig(save_path / file_name, bbox_inches="tight")
 
-def plot_comparison(
-    dir_paths: list,
-    agent_labels: list,
-    teacher: bool = False,
-    show: bool = False,
-) -> None:
-    for dir_path, agent_label in zip(dir_paths, agent_labels):
-        dir_path = Path(dir_path)
-        teacher_name = dir_path.parents[1].name
-        func_name = dir_path.name
-        teacher_data = None
-        agent_data = None
-        if teacher:
-            teacher_path = dir_path / "aggregated_run_data.csv"
-            teacher_data = load_data([teacher_path])
-
-        result_paths = dir_path.rglob("*/eval_data.csv")
-        agent_data = load_data(result_paths)
-
-        if teacher_data is not None:
-            ax = sns.lineplot(teacher_data,
-                              x="batch",
-                              y="f_cur",
-                              label=teacher_name_mapping[teacher_name])
-        if agent_data is not None:
-            ax = sns.lineplot(
-                agent_data,
-                x="batch",
-                y="f_cur",
-                label=agent_label,
-            )
-    if func_name in ["Rosenbrock", "Sphere"]:
-        ax.set_yscale("log")
-    else:
-        plt.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
-    ax.set_xlabel("Step $i$")
-    ax.set_ylabel("$f(\\theta_i)$")
-
-    if show:
-        plt.show()
-    else:
-        dir_path = Path(dir_paths[0])
-        save_path = Path(
-            dir_path.parents[2],  # PROJECT/ToySGD/
-            "figures",
-            "comparison",
-            dir_path.name
-        )
-        if not save_path.exists():
-            save_path.mkdir(parents=True)
-        file_name = f"trajectory_comparison_agent_teacher_{teacher_name}.pdf" if len(dir_paths) == 1 else "trajectory_comparison_agents.pdf"
-        print(f"Saving figure to {save_path / file_name}")
-        plt.savefig(save_path / file_name, bbox_inches="tight")
 
 def plot_teacher_actions(
     dir_path: str,
