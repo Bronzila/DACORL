@@ -51,43 +51,6 @@ class Optimizee:
         with Path(self.data_dir, "run_info.json").open(mode="rb") as f:
             self.run_info = json.load(f)
 
-    @property
-    def configspace_reduced(self) -> ConfigurationSpace:
-        cs = ConfigurationSpace()
-
-        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4)
-        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4)
-        hidden_layers_actor = Integer("hidden_layers_actor", (0, 5), default=1)
-        hidden_layers_critic = Integer(
-            "hidden_layers_critic", (0, 5), default=1
-        )
-        actor_hidden_dim = Categorical("actor_hidden_dim", [2, 4, 8, 16, 32, 64, 128, 256], default=64)
-        critic_hidden_dim = Categorical("critic_hidden_dim", [2, 4, 8, 16, 32, 64, 128, 256], default=64)
-        activation = Constant("activation", "ReLU")
-        batch_size = Categorical(
-            "batch_size", [2, 4, 8, 16, 32, 64, 128, 256], default=64
-        )
-        dropout_rate = Categorical("dropout_rate", [0., 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4], default=0.2)
-        discount_factor = Categorical("discount_factor", [0.9, 0.99, 0.999, 0.9999], default=0.99)
-        target_update_rate = Float("target_update_rate", (0, 0.25), default=5e-3)
-        # Add the parameters to configuration space
-        cs.add_hyperparameters(
-            [
-                lr_actor,
-                lr_critic,
-                hidden_layers_actor,
-                hidden_layers_critic,
-                actor_hidden_dim,
-                critic_hidden_dim,
-                activation,
-                batch_size,
-                dropout_rate,
-                discount_factor,
-                target_update_rate,
-            ],
-        )
-        return cs
-
     def train(self, config: Configuration, seed: int = 0) -> float:
         log_dict, eval_mean = self.train_agent(
             data_dir=self.data_dir,
@@ -158,7 +121,7 @@ if __name__ == "__main__":
         "--agent_type",
         type=str,
         default="td3_bc",
-        choices=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac", "iql", "dt"],
+        choices=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac", "iql", "td3"],
     )
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--budget", type=int, default=30000)
