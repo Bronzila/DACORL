@@ -51,13 +51,19 @@ if __name__ == "__main__":
         "--hpo_budget",
         help="HPO budget used",
         type=int,
-        default=10000,
+        default=30000,
     )
     parser.add_argument(
         "--ids",
         help="Specify which ids to generate tables for",
         nargs="+",
         default=[0],
+    )
+    parser.add_argument(
+        "--num_runs",
+        help="Number of runs used for evaluation. Needed for multi-seed results in order to adjust indeces correctly",
+        type=int,
+        default=1000
     )
     args = parser.parse_args()
 
@@ -90,6 +96,7 @@ if __name__ == "__main__":
                                 n_iterations=args.hpo_budget,
                                 results=True,
                                 verbose=args.verbose,
+                                num_runs=args.num_runs,
                             )
                         )
 
