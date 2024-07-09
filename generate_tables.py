@@ -9,6 +9,31 @@ from src.utils.general import (
 )
 from markdown_table_generator import generate_markdown, table_from_string_list
 
+def generate_table(rows: list, format: str):
+    if format == "markdown":
+        table = table_from_string_list(rows)
+        return generate_markdown(table)
+    elif format == "latex":
+        df = pd.DataFrame(rows[1:], columns=rows[0])
+        filepath = Path('folder/subfolder/out.csv') 
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+        df.to_csv(filepath)  
+        return df.style.to_latex(index=False, escape=False)
+
+def generate_file_path(base_path: Path, metric: str, function: str, agent_id: str | int, format: str):
+    if format == "markdown":
+        suffix = "md"
+    elif format == "latex":
+        suffix = "tex"
+
+    table_dir = base_path / "tables"
+    table_dir.mkdir(exist_ok=True)
+
+    return table_dir / f"mean_{function}_{agent_id}.{suffix}"
+
+def calculate_percentage_change(reference, current):
+    return ((current - reference) / abs(reference)) * 100
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate tables")
     parser.add_argument(
@@ -58,6 +83,12 @@ if __name__ == "__main__":
         help="Specify which ids to generate tables for",
         nargs="+",
         default=[0],
+    )
+    parser.add_argument(
+        "--format",
+        help="Output format: markdown or latex",
+        choices=["markdown", "latex"],
+        default="markdown",
     )
     parser.add_argument(
         "--num_runs",
@@ -121,26 +152,20 @@ if __name__ == "__main__":
                 if args.lowest:
                     rows_lowest.append(row_lowest)
 
-            table_dir = base_path / "tables"
-            table_dir.mkdir(exist_ok=True)
+            
             if args.mean:
                 # Regular mean
-                table_result_path = table_dir / f"mean_{function}_{agent_id}.md"
-                table = table_from_string_list(rows_mean)
-                markdown = generate_markdown(table)
+                table_result_path = generate_file_path(base_path, "mean", function, agent_id, args.format)
+                table_content = generate_table(rows_mean, args.format)
                 with table_result_path.open("w") as f:
-                    f.write(markdown)
+                    f.write(table_content)
                 # IQM
-                table_result_path = table_dir / f"iqm_{function}_{agent_id}.md"
-                table = table_from_string_list(rows_iqm)
-                markdown = generate_markdown(table)
+                table_result_path = generate_file_path(base_path, "iqm", function, agent_id, args.format)
+                table_content = generate_table(rows_iqm, args.format)
                 with table_result_path.open("w") as f:
-                    f.write(markdown)
+                    f.write(table_content)
             if args.lowest:
-                table_result_path = (
-                    table_dir / f"lowest_{function}_{agent_id}.md"
-                )
-                table = table_from_string_list(rows_lowest)
-                markdown = generate_markdown(table)
+                table_result_path = generate_file_path(base_path, "lowest", function, agent_id, args.format)
+                table_content = generate_table(rows_lowest, args.format)
                 with table_result_path.open("w") as f:
-                    f.write(markdown)
+                    f.write(table_content)
