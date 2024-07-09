@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH -p bosch_cpu-cascadelake # partition (queue)
-#SBATCH -t 0-30:00:00
-#SBATCH -o logs/%A.%N.o       # STDOUT  (the folder log has to exist) %A will be replaced by the SLURM_ARRAY_JOB_ID value
-#SBATCH -e logs/%A.%N.e       # STDERR  (the folder log has to exist) %A will be replaced by the SLURM_ARRAY_JOB_ID value
+#SBATCH -t 0-60:00:00
+#SBATCH -o logs/%A[%a].%N.o       # STDOUT  (the folder log has to exist) %A will be replaced by the SLURM_ARRAY_JOB_ID value
+#SBATCH -e logs/%A[%a].%N.e       # STDERR  (the folder log has to exist) %A will be replaced by the SLURM_ARRAY_JOB_ID value
 #SBATCH -J HPO # sets the job name. 
 #SBATCH -a 1-4 # array size
 #SBATCH --mem 8GB
