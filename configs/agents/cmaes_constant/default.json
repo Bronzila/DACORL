@@ -1,0 +1,7 @@
+{
+    "params": {
+        "learning_rate": 2
+    },
+    "type": "constant",
+    "id": 1
+}

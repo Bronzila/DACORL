@@ -1,6 +1,6 @@
 {
     "type": "CMAES",
     "initial_learning_rate": 0.01,
-    "num_batches": 10,
+    "num_batches": 100,
     "state_version": "basic"
 }
