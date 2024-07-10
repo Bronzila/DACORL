@@ -143,7 +143,7 @@ def generate_dataset(
                 # Start with instance 0
                 env.instance_index = -1
             state, meta_info = env.reset()
-            if environment_type == "ToySGD" or "CMAES":
+            if environment_type == ("ToySGD" or "CMAES"):
                 starting_points.append(meta_info["start"])
             agent.reset()
             if save_run_data:
