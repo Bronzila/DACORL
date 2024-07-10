@@ -13,7 +13,7 @@ class CSA:
         pass
 
     def act(self, env: AbstractMADACEnv) -> None:
-        sigma = env.es.parameters.sigma 
+        sigma = env.es.parameters.sigma
         sigma *= np.exp(
             (env.es.parameters.cs / env.es.parameters.damps)
             * (

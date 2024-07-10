@@ -138,8 +138,12 @@ def generate_dataset(
                     test_loss = []
                 elif environment_type == "CMAES":
                     lambdas = []
+                    f_curs = []
+            if environment_type == "CMAES":
+                # Start with instance 0
+                env.instance_index = -1
             state, meta_info = env.reset()
-            if environment_type == "ToySGD":
+            if environment_type == "ToySGD" or "CMAES":
                 starting_points.append(meta_info["start"])
             agent.reset()
             if save_run_data:
@@ -158,7 +162,8 @@ def generate_dataset(
                     test_loss.append(env.test_losses / len(env.test_loader))
                 if environment_type == "CMAES":
                     actions.append(env.es.parameters.sigma)
-                    actions.append(env.es.parameters.lambda_)
+                    lambdas.append(env.es.parameters.lambda_)
+                    f_curs.append(env.es.parameters.population.f)
 
             for batch in range(1, (num_batches + batches_per_epoch)):
                 print(
@@ -166,7 +171,7 @@ def generate_dataset(
                     Total {batch + run * num_batches}/{num_runs * num_batches}",
                 )
 
-                if environment_type == "CMAES":
+                if agent_type == "csa":
                     action = agent.act(env)
                 else:
                     action = agent.act(state)
@@ -195,7 +200,9 @@ def generate_dataset(
                         test_loss.append(env.test_losses / len(env.test_loader))
                     if environment_type == "CMAES":
                         lambdas.append(env.es.parameters.lambda_)
+                        f_curs.append(env.es.parameters.population.f)
 
+                       
                 state = next_state
                 if done:
                     break
@@ -227,6 +234,7 @@ def generate_dataset(
                     data.update(
                         {
                             "lambdas": lambdas,
+                            "f_curs": f_curs,
                         },
                     )
                 run_data = pd.DataFrame(data)
