@@ -13,13 +13,15 @@ class CSA:
         pass
 
     def act(self, env: AbstractMADACEnv) -> None:
-        env.es.parameters.sigma *= np.exp(
+        sigma = env.es.parameters.sigma 
+        sigma *= np.exp(
             (env.es.parameters.cs / env.es.parameters.damps)
             * (
                 (np.linalg.norm(env.es.parameters.ps) / env.es.parameters.chiN)
                 - 1
             ),
         )
+        return sigma
 
     def reset(self):
         pass
