@@ -43,7 +43,8 @@ def compare_experiments(exp1_path: str, exp2_path: str, id1: str, id2: str):
     tables_path = "tables"
 
     statistics_types = ["iqm", "mean", "lowest"]
-    functions = ["Ackley", "Rastrigin", "Rosenbrock", "Sphere"]
+    functions = ["Ackley", "Rastrigin", "Rosenbrock"]#, "Sphere"]
+    agent_list = ["td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac","bc", "iql"]
 
     results = {
         stat_type: {func: {} for func in functions}
@@ -123,7 +124,7 @@ def compare_experiments(exp1_path: str, exp2_path: str, id1: str, id2: str):
         agent_changes = {}
         for func, agents in funcs.items():
             for agent, teachers in agents.items():
-                if agent != "overall":
+                if agent != "overall" and agent in agent_list:
                     for teacher, changes in teachers.items():
                         agent_changes.setdefault(agent, []).extend(changes)
 
@@ -136,7 +137,7 @@ def compare_experiments(exp1_path: str, exp2_path: str, id1: str, id2: str):
         func_changes = {func: [] for func in functions}
         for func, agents in funcs.items():
             for agent, teachers in agents.items():
-                if agent != "overall":
+                if agent != "overall" and agent in agent_list:
                     for teacher, changes in teachers.items():
                         func_changes[func].extend(changes)
 
@@ -149,8 +150,9 @@ def compare_experiments(exp1_path: str, exp2_path: str, id1: str, id2: str):
         teacher_changes = {}
         for func, agents in funcs.items():
             for agent, teachers in agents.items():
-                for teacher, changes in teachers.items():
-                    teacher_changes.setdefault(teacher, []).extend(changes)
+                if agent in agent_list:
+                    for teacher, changes in teachers.items():
+                        teacher_changes.setdefault(teacher, []).extend(changes)
 
         print("\nMean change for each Teacher:")
         for teacher, changes in teacher_changes.items():
