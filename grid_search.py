@@ -25,7 +25,7 @@ if __name__ == "__main__":
         agent_config = json.load(file)
 
     agent_config.update({"params": {"initial_learning_rate": args.init_lr}})
-    env_config.update({"initial_learning_rate": args.init_lr})
+    env_config.update({"initial_learning_rate": args.init_lr, "instance_mode": "random_seed"})
 
     print(env_config)
     agg_run_data = generate_dataset(
