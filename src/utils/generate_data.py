@@ -78,29 +78,34 @@ def generate_dataset(
         )
     if environment_type == "ToySGD":
         results_dir = results_dir / env_config["function"]
+        num_batches = env_config["num_batches"]
 
     if results_dir.exists():
         print(f"Data already exists: {results_dir}")
         return
 
-    env = get_environment(env_config)
-    num_batches = env_config["num_batches"]
+    env = get_environment(env_config.copy())
+    env.reset()
+    phase = "batch"
 
-    env_config["action_space"] = env.action_space.shape
-    state = env.reset()[0]
-    state_dim = state.shape[0]
 
     phase = "batch"
     batches_per_epoch = 1
-    if environment_type == "SGD":
-        if env.epoch_mode is False:
-            # if SGD env, translates num_batches to num_epochs
-            batches_per_epoch = len(env.train_loader)
-            print(f"One epoch consists of {batches_per_epoch} batches.")
-            num_batches *= batches_per_epoch
-        else:
-            phase = "epoch"
-            print("Currently running in epoch mode.")
+    if env.epoch_mode is False:
+        num_epochs = env_config["num_epochs"]
+        # if SGD env, translates num_batches to num_epochs
+        batches_per_epoch = len(env.train_loader)
+        print(f"One epoch consists of {batches_per_epoch} batches.")
+        num_batches = num_epochs * batches_per_epoch
+        env_config["cutoff"] = num_batches
+    else:
+        phase = "epoch"
+        print("Currently running in epoch mode.")
+
+    env = get_environment(env_config)
+    state = env.reset()[0]
+    env.seed(seed) # Reseed environment here to allow for proper starting point generation
+    state_dim = state.shape[0]
 
     buffer_size = num_runs * num_batches
     replay_buffer = ReplayBuffer(
