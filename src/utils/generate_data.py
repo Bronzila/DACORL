@@ -170,7 +170,7 @@ def generate_dataset(
                     lambdas.append(env.es.parameters.lambda_)
                     f_curs.append(env.es.parameters.population.f)
 
-            for batch in range(1, (num_batches + batches_per_epoch)):
+            for batch in range(1, num_batches + 1):
                 print(
                     f"Starting {phase} {batch}/{num_batches} of run {run}. \
                     Total {batch + run * num_batches}/{num_runs * num_batches}",

@@ -9,7 +9,7 @@
         ["RELU", {}],
         ["CONV2D", {"in_channels": 32, "out_channels": 64, "kernel_size": 3}],
         ["RELU", {}],
-        ["POOLING", {"kernel_size": 2}],
+        ["MAXPOOL2D", {"kernel_size": 2}],
         ["DROPOUT", {"p": 0.25}],
         ["FLATTEN", {"start_dim": 1}],
         ["LINEAR", {"in_features": 12544, "out_features": 128}],
