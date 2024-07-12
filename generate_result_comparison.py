@@ -34,7 +34,7 @@ def create_dataframe(teachers, rows):
 
 def calculate_percentage_change(val1, val2):
     if val2 != 0:
-        return ((val1 - val2) / abs(val2)) * 100
+        return ((val1 - val2) / abs(val2 + 10e-5)) * 100
     return float("inf")
 
 
@@ -44,7 +44,7 @@ def compare_experiments(exp1_path: str, exp2_path: str, id1: str, id2: str):
 
     statistics_types = ["iqm", "mean", "lowest"]
     functions = ["Ackley", "Rastrigin", "Rosenbrock"]#, "Sphere"]
-    agent_list = ["td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac","bc", "iql"]
+    agent_list = ["td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac","bc", "iql", "td3"]
 
     results = {
         stat_type: {func: {} for func in functions}

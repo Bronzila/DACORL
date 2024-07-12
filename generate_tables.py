@@ -29,7 +29,7 @@ def generate_file_path(base_path: Path, metric: str, function: str, agent_id: st
     table_dir = base_path / "tables"
     table_dir.mkdir(exist_ok=True)
 
-    return table_dir / f"mean_{function}_{agent_id}.{suffix}"
+    return table_dir / f"{metric}_{function}_{agent_id}.{suffix}"
 
 def calculate_percentage_change(reference, current):
     return ((current - reference) / abs(reference)) * 100
@@ -64,7 +64,7 @@ if __name__ == "__main__":
         "--agents",
         help="Specify which agents to generate the table for",
         nargs="+",
-        default=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac", "iql"],
+        default=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac", "iql", "td3"],
     )
     parser.add_argument(
         "--functions",

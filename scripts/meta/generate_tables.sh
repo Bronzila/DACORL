@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -p bosch_cpu-cascadelake # partition (queue)
-#SBATCH -t 0-00:10:00
+#SBATCH -t 0-01:00:00
 #SBATCH -o logs/%A.%N.o       # STDOUT  (the folder log has to exist) %A will be replaced by the SLURM_ARRAY_JOB_ID value
 #SBATCH -e logs/%A.%N.e       # STDERR  (the folder log has to exist) %A will be replaced by the SLURM_ARRAY_JOB_ID value
 #SBATCH -J Statistics # sets the job name. 
