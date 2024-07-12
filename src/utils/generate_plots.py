@@ -275,6 +275,8 @@ def plot_actions(
     aggregate: bool = True,
     teacher: bool = True,
     reward: bool = False,
+    labels: list = [],
+    title: str = "",
 ) -> None:
     plt.clf()
     run_data_path = []
@@ -301,16 +303,7 @@ def plot_actions(
     if teacher:
         run_data_teacher_path = Path(dir_path, "aggregated_run_data.csv")
         run_data_teacher = pd.read_csv(run_data_teacher_path)
-        completed_runs_ids = run_data_teacher[run_data_teacher["batch"] == 99][
-            "run"
-        ].unique()
-        completed_runs = run_data_teacher[
-            run_data_teacher["run"].isin(completed_runs_ids)
-        ]
-        single_teacher_run = completed_runs[
-            completed_runs["run"] == completed_runs_ids[0]
-        ]
-        single_teacher_run["action"] = 10 ** single_teacher_run["action"]
+        run_data_teacher["action"] = 10 ** run_data_teacher["action"]
 
         # Get run info from file
         with Path.open(run_info_path) as file:
@@ -324,7 +317,6 @@ def plot_actions(
 
     if num_runs > 0:
         for data in list(aggregated_df.groupby("run")):
-            plt.clf()
             ax = sns.lineplot(
                 data=data,
                 x="batch",
@@ -344,7 +336,7 @@ def plot_actions(
                 )
             if teacher:
                 sns.lineplot(
-                    data=single_teacher_run,
+                    data=run_data_teacher,
                     x="batch",
                     y="action",
                     drawstyle=teacher_drawstyle,
@@ -353,13 +345,20 @@ def plot_actions(
 
     if aggregate:
         plt.clf()
+        if teacher:
+            ax = sns.lineplot(
+                data=run_data_teacher,
+                x="batch",
+                y="action",
+                drawstyle=teacher_drawstyle,
+                label=labels[0],
+            )
         ax = sns.lineplot(
             data=aggregated_df,
             x="batch",
             y="action",
             drawstyle=drawstyle,
-            label=agent_type.upper(),
-            legend=False,
+            label=labels[1],
         )
         if reward:
             ax2 = ax.twinx()
@@ -370,21 +369,12 @@ def plot_actions(
                 color="g",
                 label="Reward",
                 ax=ax2,
-                legend=False,
-            )
-        if teacher:
-            sns.lineplot(
-                data=single_teacher_run,
-                x="batch",
-                y="action",
-                drawstyle=teacher_drawstyle,
-                label="Teacher",
-                ax=ax,
-                legend=False,
             )
 
-        ax.figure.legend()
-        ax.set(xlabel="Step", ylabel="Learning Rate")
+        if title:
+            plt.title(title, fontsize=BIGGER_SIZE)
+        plt.ticklabel_format(axis="y", style="sci")
+        ax.set(xlabel="Step $i$", ylabel="Learning Rate $\\alpha_i$")
         # Show or save the plot
         if show:
             plt.show()
@@ -399,8 +389,8 @@ def plot_actions(
 
             if not save_path.exists():
                 save_path.mkdir(parents=True)
-            print(f"Saving figure to {save_path / f'{filename}_aggregate.svg'}")
-            plt.savefig(save_path / f"{filename}_aggregate.svg", bbox_inches="tight")
+            print(f"Saving figure to {save_path / f'{filename}_aggregate.pdf'}")
+            plt.savefig(save_path / f"{filename}_aggregate.pdf", bbox_inches="tight")
 
 def plot_comparison(
     dir_paths: list,
