@@ -14,7 +14,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    data_dir = Path("data", "SGD_teacher_hpo_const")
+    data_dir = Path("data", "SGD_teacher_hpo_const", f"{args.init_lr}")
 
     env_config_path = Path("configs", "environment", "SGD", "default.json")
     with env_config_path.open() as file:
