@@ -26,6 +26,11 @@ if __name__ == "__main__":
         action=argparse.BooleanOptionalAction,
     )
     parser.add_argument(
+        "--auc",
+        help="Get mean and std deviation table of AuC",
+        action=argparse.BooleanOptionalAction,
+    )
+    parser.add_argument(
         "--results",
         help="Find results subfolders",
         action=argparse.BooleanOptionalAction,
@@ -82,10 +87,12 @@ if __name__ == "__main__":
         header.extend(args.functions)
         rows_mean = [header]
         rows_iqm = [header]
+        rows_auc = [header]
         rows_lowest = [header]
         for agent in args.agents:
             row_mean = [agent]
             row_iqm = [agent]
+            row_auc = [agent]
             row_lowest = [agent]
             for function in args.functions:
                 if args.results:
@@ -95,7 +102,7 @@ if __name__ == "__main__":
                 if args.custom_path:                    
                     # run_data_path = base_path / agent / function / "results" if args.results else base_path / agent / function / "aggregated_run_data.csv"
                     run_data_path = base_path / function / "results" if args.results else base_path / function / "aggregated_run_data.csv"
-                mean, std, lowest, iqm, iqm_std, min_path = calculate_statistics(path=run_data_path, results=args.results, verbose=args.verbose, multi_seed=args.multi_seed, num_runs=args.num_runs, interpolation=args.interpolation)
+                mean, std, lowest, iqm, iqm_std, min_path, auc, auc_std = calculate_statistics(path=run_data_path, results=args.results, verbose=args.verbose, multi_seed=args.multi_seed, num_runs=args.num_runs, interpolation=args.interpolation)
                 pattern = r"(\d+)"
                 train_steps = int(re.findall(pattern, str(min_path))[-1]) if args.results else 0
                 if args.mean:
@@ -104,12 +111,16 @@ if __name__ == "__main__":
                 if args.lowest:
                     lowest = lowest.to_numpy()[0]
                     row_lowest.append(f"{lowest:.3e}")
+                if args.auc:
+                    row_auc.append(f"{auc:.3e} ± {auc_std:.3e}, {train_steps}")
             if args.mean:
                 rows_mean.append(row_mean)
                 rows_iqm.append(row_iqm)
             if args.lowest:
                 rows_lowest.append(row_lowest)
-        
+            if args.auc:
+                rows_auc.append(row_auc)
+
         table_name = "tables_interpolation" if args.interpolation else "tables"
         table_dir = base_path / table_name
         table_dir.mkdir(exist_ok=True)
@@ -129,6 +140,12 @@ if __name__ == "__main__":
         if args.lowest:
             table_result_path = table_dir / f"lowest_{agent_or_teacher}_{agent_id}.md"
             table = table_from_string_list(rows_lowest)
+            markdown = generate_markdown(table)
+            with table_result_path.open("w") as f:
+                f.write(markdown)
+        if args.auc:
+            table_result_path = table_dir / f"auc_{agent_or_teacher}_{agent_id}.md"
+            table = table_from_string_list(rows_auc)
             markdown = generate_markdown(table)
             with table_result_path.open("w") as f:
                 f.write(markdown)
