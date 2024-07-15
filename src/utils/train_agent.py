@@ -58,7 +58,6 @@ def train_agent(
             "action_dim": 1,
             "max_action": 0,
             "min_action": -10,
-            "action_space": run_info["environment"]["action_space"],
         },
     )
     agent = get_agent(agent_type, agent_config, tanh_scaling, hyperparameters)

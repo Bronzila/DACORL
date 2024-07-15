@@ -39,7 +39,7 @@ if __name__ == "__main__":
         save_rep_buffer=True,
     )
 
-    final_evaluations = agg_run_data.groupby("run").last()
-    fbests = final_evaluations["f_cur"]
-    fct = env_config["function"]
-    print(f"Results on {fct} with initial lr {args.init_lr}: {fbests.mean()}")
+    # final_evaluations = agg_run_data.groupby("run").last()
+    # fbests = final_evaluations["f_cur"]
+    # fct = env_config["function"]
+    # print(f"Results on {fct} with initial lr {args.init_lr}: {fbests.mean()}")
