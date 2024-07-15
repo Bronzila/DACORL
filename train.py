@@ -73,7 +73,7 @@ if __name__ == "__main__":
         "--cs_type",
         type=str,
         help="Which config space to use",
-        default="reduced_dropout"
+        default="reduced_no_arch_dropout"
     )
 
     args = parser.parse_args()

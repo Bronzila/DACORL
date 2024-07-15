@@ -17,7 +17,7 @@ FC3=Rosenbrock
 FC4=Sphere
 NUM_RUNS=1000
 VERSION=extended_velocity
-CS_TYPE=reduced_no_arch
+CS_TYPE=reduced_no_arch_dropout
 BENCHMARK=ToySGD
 
 start=`date +%s`

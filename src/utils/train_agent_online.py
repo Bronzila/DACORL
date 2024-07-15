@@ -34,7 +34,7 @@ def train_agent(
     hyperparameters: dict,
     eval_protocol: str,
     eval_seed: int,
-    start_timesteps: int = 0,  # 25e3  <-- Find good default value
+    start_timesteps: int = 2560,  # 25e3  <-- Find good default value
     tanh_scaling: bool = False,
     use_wandb: bool = False,
     num_eval_runs: int | None = None,
