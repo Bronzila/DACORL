@@ -146,13 +146,15 @@ def train_agent(
                 else:
                     logs[k].append(v)
 
-                if (not debug) and use_wandb:
-                    wandb.log(log_dict, agent.total_it)
+            log_dict.update({"episode_reward": episode_reward})
+
+            if (not debug) and use_wandb:
+                wandb.log(log_dict, agent.total_it)
 
         # if we run out of bounds or reached max optimization iters
         if done or episode_timesteps == num_batches:
             print(
-                f"Total T: {t+1}/{int(num_train_iter)} Episode Num: {episode_num+1} Episode T: {episode_timesteps} Avg. Reward: {episode_reward/episode_timesteps:.3f}",
+                f"Total T: {t+1}/{int(num_train_iter)} Episode Num: {episode_num+1} Episode T: {episode_timesteps} Reward: {episode_reward:.3f}",
             )
             # Reset environment
             (state, meta_info), done = env.reset(), False
