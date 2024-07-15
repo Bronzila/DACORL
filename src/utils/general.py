@@ -749,14 +749,15 @@ def find_lowest_values(df, column_name, n=10):
     return sorted_df.head(n)
 
 
-def calc_mean_and_std_dev(df: pd.DataFrame) -> float:
+def calc_mean_and_std_dev(df: pd.DataFrame, objective: str) -> float:
     final_evaluations = df.groupby("run").last()
 
-    fbests = final_evaluations["f_cur"]
+    fbests = final_evaluations[objective]
     return fbests.mean(), fbests.std()
 
 
 def calculate_single_seed_statistics(
+    objective: str,
     calc_mean: bool = True,
     calc_lowest: bool = True,
     n_lowest: int = 1,
@@ -784,7 +785,7 @@ def calculate_single_seed_statistics(
             print(f"Calculating for path {path}")
 
         if calc_mean:
-            mean, std = calc_mean_and_std_dev(df)
+            mean, std = calc_mean_and_std_dev(df, objective)
             mean = float(f"{mean:.3e}")
             std = float(f"{std:.3e}")
             if mean < min_mean or mean == min_mean and std < min_std:
@@ -792,16 +793,16 @@ def calculate_single_seed_statistics(
                 min_mean = mean
                 min_std = std
                 min_path = path
-                min_iqm, min_iqm_std = compute_iqm(df)
+                min_iqm, min_iqm_std = compute_iqm(df, objective)
             if verbose:
                 print(f"Mean +- Std {mean:.3e} ± {std:.3e}")
         if calc_lowest:
-            lowest_vals = find_lowest_values(df, "f_cur", n_lowest)
+            lowest_vals = find_lowest_values(df, objective, n_lowest)
             if incumbent_changed:
-                lowest_vals_of_min_mean = lowest_vals["f_cur"]
+                lowest_vals_of_min_mean = lowest_vals[objective]
             if verbose:
                 print("Lowest values:")
-                print(lowest_vals["f_cur"])
+                print(lowest_vals[objective])
     return (
         min_mean,
         min_std,
@@ -813,6 +814,7 @@ def calculate_single_seed_statistics(
 
 
 def calculate_multi_seed_statistics(
+    objective: str,
     calc_mean: bool = True,
     calc_lowest: bool = True,
     n_iterations: int = 15000,
@@ -833,13 +835,13 @@ def calculate_multi_seed_statistics(
 
     combined_data = combine_run_data(paths, num_runs=num_runs)
     if calc_mean:
-        mean, std = calc_mean_and_std_dev(combined_data)
+        mean, std = calc_mean_and_std_dev(combined_data, objective)
         mean = float(f"{mean:.3e}")
         std = float(f"{std:.3e}")
-        iqm, iqm_std = compute_iqm(combined_data)
+        iqm, iqm_std = compute_iqm(combined_data, objective)
     if calc_lowest:
-        lowest_vals = find_lowest_values(combined_data, "f_cur", n_lowest)[
-            "f_cur"
+        lowest_vals = find_lowest_values(combined_data, objective, n_lowest)[
+            objective
         ]
     return (
         mean,
@@ -861,9 +863,11 @@ def calculate_statistics(
     verbose: bool = False,
     multi_seed: bool = False,
     num_runs: int = 100,
+    objective: str = "f_cur",
 ) -> tuple(float, float, float, float, float, Path):
     if multi_seed:
         return calculate_multi_seed_statistics(
+            objective,
             calc_mean,
             calc_lowest,
             n_iterations,
@@ -875,6 +879,7 @@ def calculate_statistics(
         )
     else:
         return calculate_single_seed_statistics(
+            objective,
             calc_mean,
             calc_lowest,
             n_lowest,
@@ -884,9 +889,9 @@ def calculate_statistics(
         )
 
 
-def compute_iqm(df):
+def compute_iqm(df: pd.DataFrame, objective: str):
     final_evaluations = df.groupby("run").last()
-    df_sorted = final_evaluations.sort_values(by="f_cur")
+    df_sorted = final_evaluations.sort_values(by=objective)
 
     # Calculate the number of rows representing 25% of the DataFrame
     num_rows = len(df_sorted)
@@ -894,7 +899,7 @@ def compute_iqm(df):
 
     # Remove the upper and lower 25% of the DataFrame
     df_trimmed = df_sorted[num_to_remove:-num_to_remove]
-    fbests = df_trimmed["f_cur"]
+    fbests = df_trimmed[objective]
     return fbests.mean(), fbests.std()
 
 

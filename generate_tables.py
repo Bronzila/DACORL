@@ -100,6 +100,15 @@ if __name__ == "__main__":
 
     args.agents.insert(0, "teacher")
     base_path = Path(args.path)
+    if base_path.name == "ToySGD":
+        objective = "f_cur"
+    elif base_path.name == "SGD":
+        objective = "valid_loss"
+    elif base_path.name == "CMAES":
+        objective = "f_cur"
+    else:
+        raise NotImplementedError(f"Currently the benchmark {base_path.name} is not implemented.")
+
     for function in args.functions:
         for agent_id in args.ids:
             header = [None]
@@ -116,13 +125,14 @@ if __name__ == "__main__":
                         path = base_path / teacher / str(agent_id) / function / "aggregated_run_data.csv"
                         mean, std, lowest, iqm, iqm_std, min_path = (
                             calculate_single_seed_statistics(
-                                path=path, results=False, verbose=args.verbose
+                                objective=objective, path=path, results=False, verbose=args.verbose
                             )
                         )
                     else:
                         path = base_path / teacher / str(agent_id) / function / "results" / agent
                         mean, std, lowest, iqm, iqm_std, min_path = (
                             calculate_multi_seed_statistics(
+                                objective=objective,
                                 path=path,
                                 n_iterations=args.hpo_budget,
                                 results=True,
