@@ -45,6 +45,7 @@ def train_agent(
 
     set_timeout(timeout)
     set_seeds(seed)
+    rng = np.random.default_rng(seed)
 
     results_dir = Path(data_dir, "results", agent_type)
     with Path(data_dir, "run_info.json").open(mode="rb") as f:
@@ -114,7 +115,7 @@ def train_agent(
 
         # Select action randomly or according to policy
         if t < start_timesteps:
-            action = env.action_space.sample()
+            action = rng.uniform(-10, 0, 1)
         else:
             action = (
                 agent.select_action(state)
