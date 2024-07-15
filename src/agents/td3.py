@@ -33,26 +33,38 @@ class Actor(nn.Module):
         action_dim: int,
         max_action: int,
         min_action: int,
+        dropout_rate: float,
+        hidden_dim: int,
     ) -> None:
         super().__init__()
 
         self.net = nn.Sequential(
-            nn.Linear(state_dim, 256),
+            nn.Linear(state_dim, hidden_dim),
             nn.ReLU(),
-            nn.Linear(256, 256),
+            nn.Dropout(dropout_rate),
+            nn.Linear(hidden_dim, hidden_dim),
             nn.ReLU(),
-            nn.Linear(256, action_dim),
+            nn.Dropout(dropout_rate),
+            nn.Linear(hidden_dim, action_dim),
         )
 
         self._max_action = max_action
         self._min_action = min_action
+        self._tanh_scaling = False
 
     def forward(self, state: torch.Tensor) -> torch.Tensor:
-        pred = self.net(state)
-        tanh_action = torch.tanh(pred)
-        return (tanh_action - 1) * (
-            (self._max_action - self._min_action) / 2
-        ) + self._max_action
+        action = self.net(state)
+        if self._tanh_scaling:
+            tanh_action = torch.tanh(action)
+            # instead of [-1,1] -> [self.min_action, self.max_action]
+            action = (tanh_action - 1) * (
+                (self._max_action - self._min_action) / 2
+            ) + self._max_action
+        else:
+            action = -torch.nn.functional.relu(action)
+            action.clamp_(self._min_action, self._max_action)
+
+        return action
 
     @torch.no_grad()
     def act(self, state: np.ndarray, device: str = "cpu") -> np.ndarray:
@@ -65,15 +77,15 @@ class Actor(nn.Module):
 
 
 class Critic(nn.Module):
-    def __init__(self, state_dim, action_dim) -> None:
+    def __init__(self, state_dim, action_dim, hidden_dim) -> None:
         super().__init__()
 
         self.net = nn.Sequential(
-            nn.Linear(state_dim + action_dim, 256),
+            nn.Linear(state_dim + action_dim, hidden_dim),
             nn.ReLU(),
-            nn.Linear(256, 256),
+            nn.Linear(hidden_dim, hidden_dim),
             nn.ReLU(),
-            nn.Linear(256, 1),
+            nn.Linear(hidden_dim, 1),
         )
 
     def forward(

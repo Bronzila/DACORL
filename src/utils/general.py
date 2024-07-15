@@ -538,6 +538,8 @@ def get_agent(
             action_dim=action_dim,
             max_action=max_action,
             min_action=min_action,
+            dropout_rate=hyperparameters["dropout_rate"],
+            hidden_dim=hyperparameters["actor_hidden_dim"],
         ).to(device)
         actor_optimizer = torch.optim.Adam(
             actor.parameters(),
@@ -547,6 +549,7 @@ def get_agent(
         critic_1 = td3.Critic(
             state_dim=state_dim,
             action_dim=action_dim,
+            hidden_dim=hyperparameters["critic_hidden_dim"],
         ).to(device)
         critic_1_optimizer = torch.optim.Adam(
             critic_1.parameters(),
@@ -556,6 +559,7 @@ def get_agent(
         critic_2 = td3.Critic(
             state_dim=state_dim,
             action_dim=action_dim,
+            hidden_dim=hyperparameters["critic_hidden_dim"],
         ).to(device)
         critic_2_optimizer = torch.optim.Adam(
             critic_2.parameters(),
