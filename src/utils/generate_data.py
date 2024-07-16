@@ -142,6 +142,8 @@ def generate_dataset(
                 elif environment_type == "SGD":
                     train_loss = []
                     valid_loss = []
+                    train_acc = []
+                    valid_acc = []
                     test_loss = []
                 elif environment_type == "CMAES":
                     lambdas = []
@@ -166,6 +168,8 @@ def generate_dataset(
                     actions.append(math.log10(env.learning_rate))
                     train_loss.append(env.train_loss)
                     valid_loss.append(env.validation_loss)
+                    train_acc.append(env.train_accuracy)
+                    valid_acc.append(env.validation_accuracy)
                     test_loss.append(env.test_loss)
                 if environment_type == "CMAES":
                     actions.append(env.es.parameters.sigma)
@@ -204,6 +208,8 @@ def generate_dataset(
                         valid_loss.append(
                             env.validation_loss,
                         )
+                        train_acc.append(env.train_accuracy)
+                        valid_acc.append(env.validation_accuracy)
                         test_loss.append(env.test_loss)
                     if environment_type == "CMAES":
                         lambdas.append(env.es.parameters.lambda_)
@@ -233,6 +239,8 @@ def generate_dataset(
                         {
                             "train_loss": train_loss,
                             "valid_loss": valid_loss,
+                            "train_acc": train_acc,
+                            "valid_acc": valid_acc,
                             "test_loss": test_loss,
                         },
                     )

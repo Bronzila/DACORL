@@ -103,7 +103,7 @@ if __name__ == "__main__":
     if base_path.name == "ToySGD":
         objective = "f_cur"
     elif base_path.name == "SGD":
-        objective = "valid_loss"
+        objective = "valid_acc"
     elif base_path.name == "CMAES":
         objective = "f_cur"
     else:

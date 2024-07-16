@@ -115,7 +115,7 @@ def train_agent(
 
         # Select action randomly or according to policy
         if t < start_timesteps:
-            action = rng.uniform(-10, 0, 1)
+            action = rng.uniform(-10, 0, 1).astype(np.float32)
         else:
             action = (
                 agent.select_action(state)
