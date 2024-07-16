@@ -9,6 +9,7 @@
 RESULTS_DIR=${1:-data}
 ID=${2:-0}
 FIDELITY=${3:-10000}
+ENV=${4:-ToySGD}
 
 start=`date +%s`
 
@@ -16,7 +17,7 @@ source ~/.bashrc
 cd /work/dlclarge2/gieringl-DACORL/MTORL-DAC
 conda activate DACORL
 
-python -W ignore generate_tables.py --path $RESULTS_DIR/ToySGD/  --mean --lowest --ids $ID --hpo_budget $FIDELITY
+python -W ignore generate_tables.py --path $RESULTS_DIR/$ENV/  --mean --lowest --ids $ID --hpo_budget $FIDELITY
 python -W ignore generate_results_markdown.py $RESULTS_DIR $ID
 
 
