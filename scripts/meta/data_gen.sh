@@ -21,7 +21,7 @@ FC2=Rastrigin
 FC3=Rosenbrock
 FC4=Sphere
 VERSION=extended_velocity
-INSTANCE_MODE=instance_set #random_seed,instance_set,random_instances
+INSTANCE_MODE=random_seed #random_seed,instance_set,random_instances
 
 if [ "$BENCH" = "SGD" ]; then
     ARGS="--env default --instance_mode $INSTANCE_MODE"
