@@ -27,9 +27,9 @@ BIGGER_SIZE = 20
 
 plt.rc("font", size=SMALL_SIZE)  # controls default text sizes
 plt.rc("axes", labelsize=MEDIUM_SIZE)  # fontsize of the x and y labels
-plt.rc("xtick", labelsize=TINY_SIZE)  # fontsize of the tick labels
-plt.rc("ytick", labelsize=TINY_SIZE)  # fontsize of the tick labels
-plt.rc("legend", fontsize=TINY_SIZE)  # legend fontsize
+plt.rc("xtick", labelsize=SMALL_SIZE)  # fontsize of the tick labels
+plt.rc("ytick", labelsize=SMALL_SIZE)  # fontsize of the tick labels
+plt.rc("legend", fontsize=MEDIUM_SIZE)  # legend fontsize
 plt.rc("figure", titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
 teacher_name_mapping = {
@@ -277,6 +277,7 @@ def plot_actions(
     reward: bool = False,
     labels: list = [],
     title: str = "",
+    heterogeneous: bool = False,
 ) -> None:
     plt.clf()
     run_data_path = []
@@ -309,7 +310,7 @@ def plot_actions(
         with Path.open(run_info_path) as file:
             run_info = json.load(file)
             teacher_drawstyle = "default"
-            if run_info["agent"]["type"] == "step_decay":
+            if run_info["agent"]["type"] == "step_decay" and not heterogeneous:
                 teacher_drawstyle = "steps-post"
 
     drawstyle = "default"
@@ -380,12 +381,20 @@ def plot_actions(
             plt.show()
         else:
             dir_path = Path(dir_path)
-            save_path = Path(
-                dir_path.parents[2],  # PROJECT/ToySGD/
-                "figures",
-                dir_path.name,  # FUNCTION/
-                dir_path.parents[1].name,  # TEACHER/
-            )
+            if not heterogeneous:
+                save_path = Path(
+                    dir_path.parents[2],  # PROJECT/ToySGD/
+                    "figures",
+                    dir_path.name,  # FUNCTION/
+                    dir_path.parents[1].name,  # TEACHER/
+                )
+            else:
+                save_path = Path(
+                    dir_path.parents[1],  # PROJECT/ToySGD/
+                    "figures",
+                    dir_path.name,  # FUNCTION/
+                    dir_path.parents[0].name,  # TEACHER/
+                )
 
             if not save_path.exists():
                 save_path.mkdir(parents=True)
@@ -397,25 +406,38 @@ def plot_comparison(
     agent_labels: list,
     teacher: bool = False,
     show: bool = False,
+    title: str="",
+    teacher_path: str="",
+    teacher_label: str=""
 ) -> None:
     for dir_path, agent_label in zip(dir_paths, agent_labels):
         dir_path = Path(dir_path)
         teacher_name = dir_path.parents[1].name
+        if teacher_name not in teacher_name_mapping: # heterogeneous case
+            teacher_name = dir_path.parents[0].name
         func_name = dir_path.name
         teacher_data = None
         agent_data = None
         if teacher:
-            teacher_path = dir_path / "aggregated_run_data.csv"
+            if teacher_path == "":
+                teacher_path = dir_path / "aggregated_run_data.csv"
+            else:
+                teacher_path = Path(teacher_path) / "aggregated_run_data.csv"
             teacher_data = load_data([teacher_path])
+
+            if teacher_label == "":
+                teacher_label = teacher_name_mapping[teacher_name]
 
         result_paths = dir_path.rglob("*/eval_data.csv")
         agent_data = load_data(result_paths)
 
         if teacher_data is not None:
-            ax = sns.lineplot(teacher_data,
-                              x="batch",
-                              y="f_cur",
-                              label=teacher_name_mapping[teacher_name])
+            ax = sns.lineplot(
+                teacher_data,
+                x="batch",
+                y="f_cur",
+                label=teacher_label,
+            )
         if agent_data is not None:
             ax = sns.lineplot(
                 agent_data,
@@ -429,6 +451,8 @@ def plot_comparison(
         plt.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
     ax.set_xlabel("Step $i$")
     ax.set_ylabel("$f(\\theta_i)$")
+    if title:
+        plt.title(title, fontsize=BIGGER_SIZE)
 
     if show:
         plt.show()

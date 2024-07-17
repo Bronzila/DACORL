@@ -112,8 +112,23 @@ if __name__ == "__main__":
         "--agent_labels", type=str, nargs="*", help="Data labels for the agents, have to be sorted according to the specified custom paths",
     )
     parser.add_argument(
+        "--title", type=str, help="Title for the plot", default=""
+    )
+    parser.add_argument(
+        "--teacher_dir", type=str, help="Path to teacher/baseline. Used for comparison plot if the baseline differs from the teacher it has been trained on.", default=""
+    )
+    parser.add_argument(
+        "--teacher_label", type=str, help="Label of teacher for comparison plot.", default=""
+    )
+    parser.add_argument(
         "--comparison",
         help="Plot f_cur comparison",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+    )
+    parser.add_argument(
+        "--heterogeneous",
+        help="Defines whether plots are for heterogeneous agents.",
         action=argparse.BooleanOptionalAction,
         default=False,
     )
@@ -137,6 +152,9 @@ if __name__ == "__main__":
             args.aggregate,
             args.teacher,
             args.reward,
+            args.agent_labels,
+            args.title,
+            args.heterogeneous,
         )
     if args.plot_type:
         plot_type(
@@ -160,11 +178,17 @@ if __name__ == "__main__":
             plot_comparison([args.data_dir],
                             args.agent_labels,
                             args.teacher,
-                            args.show)
+                            args.show,
+                            args.title,
+                            args.teacher_dir,
+                            args.teacher_label)
         elif args.custom_paths:
             with Path(args.custom_paths).open("r") as f:
                 custom_paths = json.load(f)
             plot_comparison(custom_paths,
                             args.agent_labels,
                             args.teacher,
-                            args.show)
+                            args.show,
+                            args.title,
+                            args.teacher_dir,
+                            args.teacher_label)

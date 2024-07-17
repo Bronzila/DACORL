@@ -18,9 +18,6 @@ for teacher in step_decay sgdr constant exponential_decay
 do
     for function in Rastrigin Rosenbrock Sphere Ackley
     do
-        for id in $IDS
-        do
-            python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/$teacher/$id/$function/ --action_teacher --reward
-        done
+        python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/$teacher/ --action_teacher --single_plot --function $function
     done
 done
