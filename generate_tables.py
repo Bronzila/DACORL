@@ -106,13 +106,13 @@ if __name__ == "__main__":
                 pattern = r"(\d+)"
                 train_steps = int(re.findall(pattern, str(min_path))[-1]) if args.results else 0
                 if args.mean:
-                    row_mean.append(f"{mean:.3e} ± {std:.3e}, {train_steps}")
-                    row_iqm.append(f"{iqm:.3e} ± {iqm_std:.3e}, {train_steps}")
+                    row_mean.append(f"{mean:.2e} ± {std:.2e}, {train_steps}")
+                    row_iqm.append(f"{iqm:.2e} ± {iqm_std:.2e}, {train_steps}")
                 if args.lowest:
                     lowest = lowest.to_numpy()[0]
-                    row_lowest.append(f"{lowest:.3e}")
+                    row_lowest.append(f"{lowest:.2e}")
                 if args.auc:
-                    row_auc.append(f"{auc:.3e} ± {auc_std:.3e}, {train_steps}")
+                    row_auc.append(f"{auc:.2e} ± {auc_std:.2e}, {train_steps}")
             if args.mean:
                 rows_mean.append(row_mean)
                 rows_iqm.append(row_iqm)

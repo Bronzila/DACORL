@@ -496,8 +496,8 @@ def calculate_single_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=
             print(f"Calculating for path {path}")
         if calc_mean:
             mean, std = calc_mean_and_std_dev(df)
-            mean = float(f"{mean:.3e}")
-            std = float(f"{std:.3e}")
+            mean = float(f"{mean:.2e}")
+            std = float(f"{std:.2e}")
             if mean < min_mean or mean == min_mean and std < min_std:
                 incumbent_changed = True
                 min_mean = mean
@@ -507,7 +507,7 @@ def calculate_single_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=
                 if calc_auc:
                     min_auc, min_auc_std = compute_AuC(df)
             if verbose:
-                print(f"Mean +- Std {mean:.3e} ± {std:.3e}")
+                print(f"Mean +- Std {mean:.2e} ± {std:.2e}")
         if calc_lowest:
             lowest_vals = find_lowest_values(df, "f_cur", n_lowest)
             if incumbent_changed:
@@ -523,7 +523,6 @@ def calculate_multi_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=1
     filename = "eval_data_interpolation.csv" if interpolation else "eval_data.csv"
     if results:
         for eval_file in Path(path).rglob(filename):
-            print(eval_file)
             # Extract the seed directory
             seed_dir = eval_file.parents[1]
             seed_dirs.add(seed_dir)
@@ -533,7 +532,7 @@ def calculate_multi_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=1
     best_iterations_paths = []
     # This is only used if there are multiple checkpoints in the seed directory --> choose the best one
     for seed_dir in seed_dirs:
-        min_mean, min_std, _, _, _, min_path = calculate_single_seed_statistics(calc_mean, calc_lowest,
+        min_mean, min_std, _, _, _, min_path, _, _ = calculate_single_seed_statistics(calc_mean, calc_lowest,
                                                                                 n_lowest, seed_dir, results, verbose,
                                                                                 interpolation, calc_auc)
         if verbose:
@@ -542,8 +541,8 @@ def calculate_multi_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=1
     combined_data = combine_run_data(best_iterations_paths, num_runs=num_runs)
     if calc_mean:
             mean, std = calc_mean_and_std_dev(combined_data)
-            mean = float(f"{mean:.3e}")
-            std = float(f"{std:.3e}")
+            mean = float(f"{mean:.2e}")
+            std = float(f"{std:.2e}")
             iqm, iqm_std = compute_IQM(combined_data)
     if calc_lowest:
         lowest_vals = find_lowest_values(combined_data, "f_cur", n_lowest)["f_cur"]
