@@ -89,11 +89,11 @@ class ReplayBuffer:
 
     def save(self, filename: Path) -> None:
         # Only save actual collected data, not zeros
-        self._states = self._states[:(self._size)]
-        self._actions = self._actions[:(self._size)]
-        self._next_states = self._next_states[:(self._size)]
-        self._rewards = self._rewards[:(self._size)]
-        self._dones = self._dones[:(self._size)]
+        self._states = self._states[: (self._size)]
+        self._actions = self._actions[: (self._size)]
+        self._next_states = self._next_states[: (self._size)]
+        self._rewards = self._rewards[: (self._size)]
+        self._dones = self._dones[: (self._size)]
         self._buffer_size = self._size
         self._pointer = self._pointer % self._buffer_size
 
@@ -102,6 +102,17 @@ class ReplayBuffer:
         num_zero_states = states_zero_mask.sum().item()
         assert num_zero_states == 0
 
+        try:
+            with filename.open(mode="wb") as f:
+                pickle.dump(self, f)
+        except FileNotFoundError:
+            if not filename.parent.exists():
+                filename.parent.mkdir(parents=True)
+                with filename.open(mode="wb") as f:
+                    pickle.dump(self, f)
+
+    def checkpoint(self, filename: Path) -> None:
+        """Saves the ReplayBuffer without cutting its size."""
         try:
             with filename.open(mode="wb") as f:
                 pickle.dump(self, f)
