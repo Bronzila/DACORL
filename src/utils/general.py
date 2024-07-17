@@ -730,6 +730,7 @@ def combine_run_data(
 ) -> pd.DataFrame:
     combined_run_data = []
     for idx, root_path in enumerate(data_paths):
+        print(root_path)
         run_data_path = Path(root_path)
         try:
             df = pd.read_csv(run_data_path)
@@ -764,11 +765,12 @@ def calculate_single_seed_statistics(
     objective: str,
     calc_mean: bool = True,
     calc_lowest: bool = True,
+    calc_auc: bool = True,
     n_lowest: int = 1,
     path: str | None | None = None,
     results: bool = True,
     verbose: bool = False,
-) -> tuple(float, float, float, float, float, Path):
+) -> tuple[float, float, float, float, float, Path]:
     paths = []
     if results:
         for folder_path, _, _ in os.walk(path):
@@ -780,8 +782,13 @@ def calculate_single_seed_statistics(
     min_std = np.inf
     min_iqm = np.inf
     min_iqm_std = np.inf
+    min_auc = np.inf
+    min_auc_std = np.inf
     min_path = ""
     lowest_vals_of_min_mean = []
+    assert (
+        len(paths) == 1
+    ), "There are more than 1 paths given. Are you sure, you want to only use the lowest checkpoint?"
     for path in paths:
         incumbent_changed = False
         df = pd.read_csv(path)
@@ -798,6 +805,8 @@ def calculate_single_seed_statistics(
                 min_std = std
                 min_path = path
                 min_iqm, min_iqm_std = compute_iqm(df, objective)
+                if calc_auc:
+                    min_auc, min_auc_std = compute_AuC(df)
             if verbose:
                 print(f"Mean +- Std {mean:.3e} ± {std:.3e}")
         if calc_lowest:
@@ -814,6 +823,8 @@ def calculate_single_seed_statistics(
         min_iqm,
         min_iqm_std,
         min_path,
+        min_auc,
+        min_auc_std,
     )
 
 
@@ -821,13 +832,14 @@ def calculate_multi_seed_statistics(
     objective: str,
     calc_mean: bool = True,
     calc_lowest: bool = True,
+    calc_auc: bool = True,
     n_iterations: int = 15000,
     n_lowest: int = 1,
     path: str | None = None,
     results: bool = True,
     verbose: bool = False,
     num_runs: int = 100,
-) -> tuple(float, float, float, float, float, Path):
+) -> tuple[float, float, float, float, float, Path]:
     # TODO here we currently assume, that we only have one training
     # folder and eval file in results/td3_bc/<seed>/
     paths = []
@@ -843,6 +855,8 @@ def calculate_multi_seed_statistics(
         mean = float(f"{mean:.3e}")
         std = float(f"{std:.3e}")
         iqm, iqm_std = compute_iqm(combined_data, objective)
+    if calc_auc:
+        auc, auc_std = compute_AuC(combined_data)
     if calc_lowest:
         lowest_vals = find_lowest_values(combined_data, objective, n_lowest)[
             objective
@@ -854,6 +868,8 @@ def calculate_multi_seed_statistics(
         iqm,
         iqm_std,
         paths[0],
+        auc,
+        auc_std,
     )  # path doesnt really matter here
 
 
@@ -868,7 +884,7 @@ def calculate_statistics(
     multi_seed: bool = False,
     num_runs: int = 100,
     objective: str = "f_cur",
-) -> tuple(float, float, float, float, float, Path):
+) -> tuple[float, float, float, float, float, Path]:
     if multi_seed:
         return calculate_multi_seed_statistics(
             objective,
@@ -905,6 +921,48 @@ def compute_iqm(df: pd.DataFrame, objective: str):
     df_trimmed = df_sorted[num_to_remove:-num_to_remove]
     fbests = df_trimmed[objective]
     return fbests.mean(), fbests.std()
+
+
+def compute_AuC(df):
+    def fill_missing_values(group):
+        last_value = group["f_cur"].iloc[-1]
+
+        # Create full run
+        all_steps = pd.DataFrame({"batch": range(101)})
+
+        # Merge group with full run
+        filled_group = pd.merge(all_steps, group, on="batch", how="left")
+
+        filled_group["run"] = group["run"].iloc[0]
+        filled_group["f_cur"] = filled_group["f_cur"].fillna(last_value)
+
+        return filled_group
+
+    required_fields_df = df[["f_cur", "run", "batch"]]
+
+    df_filled = (
+        required_fields_df.groupby("run")
+        .apply(fill_missing_values)
+        .reset_index(drop=True)
+    )
+
+    # Sort by run and batch to ensure order
+    df_filled = df_filled.sort_values(by=["run", "batch"]).reset_index(
+        drop=True,
+    )
+
+    def calculate_auc(run):
+        auc = np.trapz(run["f_cur"], run["batch"])
+        return pd.Series({"run": run["run"].iloc[0], "auc": auc})
+
+    auc_per_run = (
+        df_filled.groupby("run").apply(calculate_auc).reset_index(drop=True)
+    )
+
+    mean_auc = auc_per_run["auc"].mean()
+    std_auc = auc_per_run["auc"].std()
+
+    return mean_auc, std_auc
 
 
 def get_config_space(config_type: str) -> ConfigSpace:

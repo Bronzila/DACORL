@@ -1,4 +1,5 @@
 import argparse
+import re
 from pathlib import Path
 
 import numpy as np
@@ -9,16 +10,31 @@ from src.utils.general import (
 )
 from markdown_table_generator import generate_markdown, table_from_string_list
 
+teacher_mapping = {
+    "teacher": {
+        "constant": "Constant",
+        "exponential_decay": "Exp. Decay",
+        "step_decay": "Step Decay",
+        "sgdr": "SGDR"
+    },
+}
+
+def format_number(num):
+    if 1 <= num <= 999:
+        return f"{num:.2f}".rstrip('0').rstrip('.')
+    elif 0.1 <= num < 1:
+        return f"{num:.3f}".rstrip('0').rstrip(".")
+    else:
+        formatted_num = f"{num:.2e}"
+        return formatted_num.replace('e-0', 'e-').replace('e+0', 'e')
+
 def generate_table(rows: list, format: str):
     if format == "markdown":
         table = table_from_string_list(rows)
         return generate_markdown(table)
     elif format == "latex":
         df = pd.DataFrame(rows[1:], columns=rows[0])
-        filepath = Path('folder/subfolder/out.csv') 
-        filepath.parent.mkdir(parents=True, exist_ok=True)
-        df.to_csv(filepath)  
-        return df.style.to_latex(index=False, escape=False)
+        return df.to_latex(index=False, escape=False)
 
 def generate_file_path(base_path: Path, metric: str, function: str, agent_id: str | int, format: str):
     if format == "markdown":
@@ -42,17 +58,23 @@ if __name__ == "__main__":
     parser.add_argument(
         "--lowest",
         help="Get fbest table",
-        action=argparse.BooleanOptionalAction,
+        action="store_true",
     )
     parser.add_argument(
         "--mean",
         help="Get mean and std deviation table",
-        action=argparse.BooleanOptionalAction,
+        action="store_true",
+    )
+    parser.add_argument(
+        "--auc",
+        help="Get mean and std deviation table of AuC",
+        action="store_true",
+        default=True,
     )
     parser.add_argument(
         "--verbose",
         help="Verbose output",
-        action=argparse.BooleanOptionalAction,
+        action="store_true",
     )
     parser.add_argument(
         "--teacher",
@@ -109,28 +131,32 @@ if __name__ == "__main__":
     else:
         raise NotImplementedError(f"Currently the benchmark {base_path.name} is not implemented.")
 
+    pm = "$\pm$" if args.format == "latex" else "±"
+
     for function in args.functions:
         for agent_id in args.ids:
             header = [None]
             header.extend(args.teacher)
             rows_mean = [header]
             rows_iqm = [header]
+            rows_auc = [header]
             rows_lowest = [header]
             for i, agent in enumerate(args.agents):
                 row_mean = [agent]
                 row_iqm = [agent]
+                row_auc = [agent]
                 row_lowest = [agent]
                 for j, teacher in enumerate(args.teacher):
                     if agent == "teacher":
                         path = base_path / teacher / str(agent_id) / function / "aggregated_run_data.csv"
-                        mean, std, lowest, iqm, iqm_std, min_path = (
+                        mean, std, lowest, iqm, iqm_std, min_path, auc, auc_std = (
                             calculate_single_seed_statistics(
-                                objective=objective, path=path, results=False, verbose=args.verbose
+                                objective=objective, path=path, results=False, verbose=args.verbose, calc_auc=args.auc
                             )
                         )
                     else:
                         path = base_path / teacher / str(agent_id) / function / "results" / agent
-                        mean, std, lowest, iqm, iqm_std, min_path = (
+                        mean, std, lowest, iqm, iqm_std, min_path, auc, auc_std = (
                             calculate_multi_seed_statistics(
                                 objective=objective,
                                 path=path,
@@ -138,29 +164,35 @@ if __name__ == "__main__":
                                 results=True,
                                 verbose=args.verbose,
                                 num_runs=args.num_runs,
+                                calc_auc=args.auc,
                             )
                         )
 
+                    train_steps = int(re.findall("(\d+)", str(min_path))[-1])                   
                     if args.mean:
                         if mean is None:
                             row_mean.append(" ")
                             continue
-                        row_mean.append(f"{mean:.3e} ± {std:.3e}")
+                        row_mean.append(f"{format_number(mean)} {pm} {format_number(std)}")
                         if iqm is None:
                             row_iqm.append(" ")
                             continue
-                        row_iqm.append(f"{iqm:.3e} ± {iqm_std:.3e}")
+                        row_iqm.append(f"{format_number(iqm)} {pm} {format_number(iqm_std)}")
                     if args.lowest:
                         if lowest is None:
                             row_lowest.append(" ")
                             continue
                         lowest = lowest
-                        row_lowest.append(f"{lowest.to_numpy()[0]:.3e}")
+                        row_lowest.append(f"{format_number(lowest.to_numpy()[0])}")
+                    if args.auc:
+                        row_auc.append(f"{format_number(auc)} {pm} {format_number(auc_std)}")
                 if args.mean:
                     rows_mean.append(row_mean)
                     rows_iqm.append(row_iqm)
                 if args.lowest:
                     rows_lowest.append(row_lowest)
+                if args.auc:
+                    rows_auc.append(row_auc)
 
             
             if args.mean:
@@ -177,5 +209,10 @@ if __name__ == "__main__":
             if args.lowest:
                 table_result_path = generate_file_path(base_path, "lowest", function, agent_id, args.format)
                 table_content = generate_table(rows_lowest, args.format)
+                with table_result_path.open("w") as f:
+                    f.write(table_content)
+            if args.auc:
+                table_result_path = generate_file_path(base_path, "auc", function, agent_id, args.format)
+                table_content = generate_table(rows_auc, args.format)
                 with table_result_path.open("w") as f:
                     f.write(table_content)
