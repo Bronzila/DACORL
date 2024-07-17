@@ -504,8 +504,12 @@ def calculate_single_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=
                 min_std = std
                 min_path = path
                 min_iqm, min_iqm_std = compute_IQM(df)
+                min_iqm = float(f"{min_iqm:.2e}")
+                min_iqm_std = float(f"{min_iqm_std:.2e}")
                 if calc_auc:
                     min_auc, min_auc_std = compute_AuC(df)
+                    min_auc = float(f"{min_auc:.2e}")
+                    min_auc_std = float(f"{min_auc_std:.2e}")
             if verbose:
                 print(f"Mean +- Std {mean:.2e} ± {std:.2e}")
         if calc_lowest:
@@ -544,10 +548,14 @@ def calculate_multi_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=1
             mean = float(f"{mean:.2e}")
             std = float(f"{std:.2e}")
             iqm, iqm_std = compute_IQM(combined_data)
+            iqm = float(f"{iqm:.2e}")
+            iqm_std = float(f"{iqm_std:.2e}")
     if calc_lowest:
         lowest_vals = find_lowest_values(combined_data, "f_cur", n_lowest)["f_cur"]
     if calc_auc:
         auc, auc_std = compute_AuC(combined_data)
+        auc = float(f"{auc:.2e}")
+        auc_std = float(f"{auc_std:.2e}")
     return mean, std, lowest_vals, iqm, iqm_std, 0, auc, auc_std # path doesnt really matter here
 
 def calculate_statistics(calc_mean=True, calc_lowest=True, n_lowest=1, path=None,

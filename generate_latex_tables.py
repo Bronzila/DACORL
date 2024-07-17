@@ -48,8 +48,10 @@ heterogeneous_name_mapping = {
 
 
 def format_number(num):
-    if 0.01 <= num <= 999:
+    if 1 <= num <= 999:
         return f"{num:.2f}".rstrip('0').rstrip('.')
+    elif 0.1 <= num < 1:
+        return f"{num:.3f}".rstrip('0').rstrip('.')
     else:
         formatted_num = f"{num:.2e}"
         return formatted_num.replace('e-0', 'e-').replace('e+0', 'e')
