@@ -26,6 +26,9 @@ def save_data(
     run_info,
     starting_points,
 ) -> None:
+    if not results_dir.exists():
+        results_dir.mkdir(parents=True)
+
     run_info["starting_points"] = starting_points
     save_path = Path(results_dir, "rep_buffer")
     if save_rep_buffer:
@@ -33,8 +36,6 @@ def save_data(
         with Path(results_dir, "run_info.json").open(mode="w") as f:
             json.dump(run_info, f, indent=4)
 
-    if not results_dir.exists():
-        results_dir.mkdir(parents=True)
     if save_run_data:
         aggregated_run_data.to_csv(
             Path(results_dir, "aggregated_run_data.csv"),
