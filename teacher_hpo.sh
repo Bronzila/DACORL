@@ -22,13 +22,13 @@ echo "Running job $SLURM_JOB_NAME using $SLURM_JOB_CPUS_PER_NODE cpus per node w
 
 if [ 1 -eq $SLURM_ARRAY_TASK_ID ]
 then
-    python teacher_hpo.py --data_dir $RESULTS_DIR --agent_type exponential_decay --output_path teach_hpo_exponential_decay --env default
+    python teacher_hpo.py --data_dir $RESULTS_DIR --agent_type exponential_decay --output_path teach_hpo/exponential_decay --env default
 elif [ 2 -eq $SLURM_ARRAY_TASK_ID  ]
 then
-    python teacher_hpo.py --data_dir $RESULTS_DIR --agent_type step_decay --output_path teach_hpo_step_decay --env default
+    python teacher_hpo.py --data_dir $RESULTS_DIR --agent_type step_decay --output_path teach_hpo/step_decay --env default
 elif [ 3 -eq $SLURM_ARRAY_TASK_ID ]
 then
-    python teacher_hpo.py --data_dir $RESULTS_DIR --agent_type sgdr --output_path teach_hpo_sgdr --env default
+    python teacher_hpo.py --data_dir $RESULTS_DIR --agent_type sgdr --output_path teach_hpo/sgdr --env default
 fi
 
 # Print some Information about the end-time to STDOUT

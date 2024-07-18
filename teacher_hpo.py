@@ -9,6 +9,7 @@ from ConfigSpace import (
     Configuration,
     ConfigurationSpace,
     Categorical,
+    Constant,
 )
 from smac import (
     HyperparameterOptimizationFacade as HPOFacade,
@@ -32,7 +33,7 @@ class TD3BC_Optimizee:
         self.agent_type = agent_type
         self.env_configs = []
         if env:
-            env_config_path = Path("configs", "environment", env + ".json")
+            env_config_path = Path("configs", "environment", "SGD", env + ".json")
             with env_config_path.open() as file:
                 self.env_configs.append(json.load(file))
         else:
@@ -49,7 +50,7 @@ class TD3BC_Optimizee:
         cs = ConfigurationSpace()
         if self.agent_type == "exponential_decay":
             decay_steps = Categorical("decay_steps", [225, 450, 675], default=450)
-            decay_rate = Categorical("decay_rate", [0.8, 0.9, 0.99], default=0.9)
+            decay_rate = Categorical("decay_rate", [0.8, 0.85, 0.9, 0.95], default=0.9)
             # Add the parameters to configuration space
             cs.add_hyperparameters(
                 [
@@ -59,7 +60,7 @@ class TD3BC_Optimizee:
             )
         elif self.agent_type == "step_decay":
             step_size = Categorical("step_size", [225, 450, 675], default=450)
-            gamma = Categorical("gamma", [0.8, 0.9, 0.99], default=0.9)
+            gamma = Categorical("gamma", [0.8, 0.85, 0.9, 0.95], default=0.9)
             # Add the parameters to configuration space
             cs.add_hyperparameters(
                 [
@@ -68,9 +69,9 @@ class TD3BC_Optimizee:
                 ],
             )
         elif self.agent_type == "sgdr":
-            T_i = Categorical("T_i", [1,3], default=1)
-            T_mult = Categorical("T_mult", (2,3), default=2)
-            batches_per_epoch = Categorical("batches_per_epoch", [5, 10, 20], default=10)
+            T_i = Categorical("T_i", [1,2,3], default=1)
+            T_mult = Categorical("T_mult", (1,2,3), default=2)
+            batches_per_epoch = Constant("batches_per_epoch", 450)
             # Add the parameters to configuration space
             cs.add_hyperparameters(
                 [
@@ -104,7 +105,7 @@ class TD3BC_Optimizee:
                 agent_config["params"]["initial_learning_rate"] = env_config["initial_learning_rate"]
             agg_run_data = generate_dataset(agent_config, env_config, num_runs=1, seed=seed,
                              results_dir=self.data_dir, save_run_data=True, timeout=0,
-                             save_rep_buffer=True, verbose=False)
+                             save_rep_buffer=True, checkpoint=0, checkpointing_freq=0)
 
             final_evaluations = agg_run_data.groupby("run").last()
             fbests = final_evaluations["f_cur"]
@@ -148,7 +149,7 @@ if __name__ == "__main__":
     scenario = Scenario(
         optimizee.configspace,
         output_directory=output_path,
-        n_trials=20,
+        n_trials=12,
         n_workers=1,
         deterministic=False,
     )
