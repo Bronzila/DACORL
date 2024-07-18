@@ -4,19 +4,17 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
 from src.utils.general import (
     calculate_multi_seed_statistics,
     calculate_single_seed_statistics,
 )
-from markdown_table_generator import generate_markdown, table_from_string_list
 
 teacher_mapping = {
-    "teacher": {
-        "constant": "Constant",
-        "exponential_decay": "Exp. Decay",
-        "step_decay": "Step Decay",
-        "sgdr": "SGDR"
-    },
+    "constant": "Constant",
+    "exponential_decay": "Exp. Decay",
+    "step_decay": "Step Decay",
+    "sgdr": "SGDR"
 }
 
 def format_number(num):
@@ -28,12 +26,17 @@ def format_number(num):
         formatted_num = f"{num:.2e}"
         return formatted_num.replace('e-0', 'e-').replace('e+0', 'e')
 
-def generate_table(rows: list, format: str):
+def generate_table(rows: list, format: str, metric_min: list) -> str:
     if format == "markdown":
+        from markdown_table_generator import generate_markdown, table_from_string_list
         table = table_from_string_list(rows)
         return generate_markdown(table)
     elif format == "latex":
         df = pd.DataFrame(rows[1:], columns=rows[0])
+        for col in metric_min:
+            i, j, _ = col
+            df.iloc[i, j + 1] = f"\\cellcolor{{highlight}} {df.iloc[i, j + 1]}"
+
         return df.to_latex(index=False, escape=False)
 
 def generate_file_path(base_path: Path, metric: str, function: str, agent_id: str | int, format: str):
@@ -114,7 +117,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--num_runs",
-        help="Number of runs used for evaluation. Needed for multi-seed results in order to adjust indeces correctly",
+        help="Number of runs used for evaluation. Needed for multi-seed results in order to adjust indices correctly",
         type=int,
         default=1000
     )
@@ -135,17 +138,30 @@ if __name__ == "__main__":
 
     for function in args.functions:
         for agent_id in args.ids:
-            header = [None]
-            header.extend(args.teacher)
+            header = [" "]
+            header.extend([teacher_mapping[teacher] for teacher in args.teacher])
             rows_mean = [header]
             rows_iqm = [header]
             rows_auc = [header]
             rows_lowest = [header]
+
+            mean_min = [[0, 0, np.inf] for _ in range(len(args.teacher))]
+            iqm_min = [[0, 0, np.inf] for _ in range(len(args.teacher))]
+            lowest_min = [[0, 0, np.inf] for _ in range(len(args.teacher))]
+            auc_min = [[0, 0, np.inf] for _ in range(len(args.teacher))]
+
             for i, agent in enumerate(args.agents):
+                agent_str = f"\\gls{{{agent}}}"
                 row_mean = [agent]
                 row_iqm = [agent]
                 row_auc = [agent]
                 row_lowest = [agent]
+
+                teacher_mean = [np.inf] * len(args.teacher)
+                teacher_iqm = [np.inf] * len(args.teacher)
+                teacher_lowest = [np.inf] * len(args.teacher)
+                teacher_auc = [np.inf] * len(args.teacher)
+
                 for j, teacher in enumerate(args.teacher):
                     if agent == "teacher":
                         path = base_path / teacher / str(agent_id) / function / "aggregated_run_data.csv"
@@ -154,6 +170,10 @@ if __name__ == "__main__":
                                 objective=objective, path=path, results=False, verbose=args.verbose, calc_auc=args.auc
                             )
                         )
+                        teacher_mean[j] = mean
+                        teacher_iqm[j] = iqm
+                        teacher_lowest[j] = lowest.to_numpy()[0]
+                        teacher_auc[j] = auc
                     else:
                         path = base_path / teacher / str(agent_id) / function / "results" / agent
                         mean, std, lowest, iqm, iqm_std, min_path, auc, auc_std = (
@@ -168,24 +188,38 @@ if __name__ == "__main__":
                             )
                         )
 
-                    train_steps = int(re.findall("(\d+)", str(min_path))[-1])                   
                     if args.mean:
-                        if mean is None:
-                            row_mean.append(" ")
-                            continue
-                        row_mean.append(f"{format_number(mean)} {pm} {format_number(std)}")
-                        if iqm is None:
-                            row_iqm.append(" ")
-                            continue
-                        row_iqm.append(f"{format_number(iqm)} {pm} {format_number(iqm_std)}")
+                        mean_str = f"{format_number(mean)} {pm} {format_number(std)}"
+                        if mean < teacher_mean[j]:
+                            mean_str = f"\\textbf{{{mean_str}}}"
+                        row_mean.append(mean_str)
+                        if mean < mean_min[j][2]:
+                            mean_min[j] = [i, j, mean]
+
+                        iqm_str = f"{format_number(iqm)} {pm} {format_number(iqm_std)}"
+                        if iqm < teacher_iqm[j]:
+                            iqm_str = f"\\textbf{{{iqm_str}}}"
+                        row_iqm.append(iqm_str)
+                        if iqm < iqm_min[j][2]:
+                            iqm_min[j] = [i, j, iqm]
+
                     if args.lowest:
-                        if lowest is None:
-                            row_lowest.append(" ")
-                            continue
-                        lowest = lowest
-                        row_lowest.append(f"{format_number(lowest.to_numpy()[0])}")
+                        lowest_val = lowest.to_numpy()[0]
+                        lowest_str = f"{format_number(lowest_val)}"
+                        if lowest_val < teacher_lowest[j]:
+                            lowest_str = f"\\textbf{{{lowest_str}}}"
+                        row_lowest.append(lowest_str)
+                        if lowest_val < lowest_min[j][2]:
+                            lowest_min[j] = [i, j, lowest_val]
+
                     if args.auc:
-                        row_auc.append(f"{format_number(auc)} {pm} {format_number(auc_std)}")
+                        auc_str = f"{format_number(auc)} {pm} {format_number(auc_std)}"
+                        if auc < teacher_auc[j]:
+                            auc_str = f"\\textbf{{{auc_str}}}"
+                        row_auc.append(auc_str)
+                        if auc < auc_min[j][2]:
+                            auc_min[j] = [i, j, auc]
+
                 if args.mean:
                     rows_mean.append(row_mean)
                     rows_iqm.append(row_iqm)
@@ -194,25 +228,32 @@ if __name__ == "__main__":
                 if args.auc:
                     rows_auc.append(row_auc)
 
-            
             if args.mean:
                 # Regular mean
                 table_result_path = generate_file_path(base_path, "mean", function, agent_id, args.format)
-                table_content = generate_table(rows_mean, args.format)
+                table_content = generate_table(rows_mean, args.format, mean_min)
+                # if args.format == "latex":
+                #     table_content = highlight_min(table_content)
                 with table_result_path.open("w") as f:
                     f.write(table_content)
                 # IQM
                 table_result_path = generate_file_path(base_path, "iqm", function, agent_id, args.format)
-                table_content = generate_table(rows_iqm, args.format)
+                table_content = generate_table(rows_iqm, args.format, iqm_min)
+                # if args.format == "latex":
+                #     table_content = highlight_min(table_content)
                 with table_result_path.open("w") as f:
                     f.write(table_content)
             if args.lowest:
                 table_result_path = generate_file_path(base_path, "lowest", function, agent_id, args.format)
-                table_content = generate_table(rows_lowest, args.format)
+                table_content = generate_table(rows_lowest, args.format, lowest_min)
+                # if args.format == "latex":
+                #     table_content = highlight_min(table_content, is_pair=False)
                 with table_result_path.open("w") as f:
                     f.write(table_content)
             if args.auc:
                 table_result_path = generate_file_path(base_path, "auc", function, agent_id, args.format)
-                table_content = generate_table(rows_auc, args.format)
+                table_content = generate_table(rows_auc, args.format, auc_min)
+                # if args.format == "latex":
+                    # table_content = highlight_min(table_content)
                 with table_result_path.open("w") as f:
                     f.write(table_content)
