@@ -292,7 +292,9 @@ def plot_actions(
         )
         filename = f"action_{agent_type}_{seed}_{fidelity}"
     elif seed is None:
-        filename = f"action_{agent_type}_aggregate_{fidelity}"
+        dir_path = Path(dir_path)
+        teacher_name = dir_path.parents[1].name if not heterogeneous else dir_path.parents[0].name
+        filename = f"action_{dir_path.name}_{teacher_name}_aggregate_{fidelity}"
         for path in (Path(dir_path) / "results" / agent_type).rglob(
             "*/eval_data.csv",
         ):
@@ -312,6 +314,19 @@ def plot_actions(
             teacher_drawstyle = "default"
             if run_info["agent"]["type"] == "step_decay" and not heterogeneous:
                 teacher_drawstyle = "steps-post"
+                # Only use single step_decay teacher for plotting, otherwise it adds weird
+                # Semi transparent line
+                if len(run_data_teacher) <= 101000: # single teacher case
+                    completed_runs_ids = run_data_teacher[run_data_teacher["batch"] == 100][
+                        "run"
+                    ].unique()
+                    completed_runs = run_data_teacher[
+                        run_data_teacher["run"].isin(completed_runs_ids)
+                    ]
+                    single_teacher_run = completed_runs[
+                        completed_runs["run"] == completed_runs_ids[0]
+                    ]
+                    run_data_teacher = single_teacher_run
 
     drawstyle = "default"
     aggregated_df = load_data(run_data_path)
@@ -353,6 +368,7 @@ def plot_actions(
                 y="action",
                 drawstyle=teacher_drawstyle,
                 label=labels[0],
+                errorbar=("pi", 80),
             )
         ax = sns.lineplot(
             data=aggregated_df,
@@ -360,6 +376,7 @@ def plot_actions(
             y="action",
             drawstyle=drawstyle,
             label=labels[1],
+            errorbar=("pi", 80),
         )
         if reward:
             ax2 = ax.twinx()
@@ -374,7 +391,7 @@ def plot_actions(
 
         if title:
             plt.title(title, fontsize=BIGGER_SIZE)
-        plt.ticklabel_format(axis="y", style="sci")
+        plt.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
         ax.set(xlabel="Step $i$", ylabel="Learning Rate $\\alpha_i$")
         # Show or save the plot
         if show:
@@ -437,6 +454,7 @@ def plot_comparison(
                 x="batch",
                 y="f_cur",
                 label=teacher_label,
+                errorbar=("ci", 99),
             )
         if agent_data is not None:
             ax = sns.lineplot(
@@ -444,6 +462,7 @@ def plot_comparison(
                 x="batch",
                 y="f_cur",
                 label=agent_label,
+                errorbar=("ci", 99),
             )
     if func_name in ["Rosenbrock", "Sphere"]:
         ax.set_yscale("log")
@@ -466,7 +485,7 @@ def plot_comparison(
         )
         if not save_path.exists():
             save_path.mkdir(parents=True)
-        file_name = f"trajectory_comparison_agent_teacher_{teacher_name}.pdf" if len(dir_paths) == 1 else "trajectory_comparison_agents.pdf"
+        file_name = f"comparison_{dir_path.name}_{teacher_name}.pdf" if len(dir_paths) == 1 else "trajectory_comparison_agents.pdf"
         print(f"Saving figure to {save_path / file_name}")
         plt.savefig(save_path / file_name, bbox_inches="tight")
 

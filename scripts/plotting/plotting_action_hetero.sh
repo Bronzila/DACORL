@@ -65,7 +65,8 @@ do
                     LABEL="Unknown"
                     ;;
             esac
-            TITLE="Comparing Teacher and Agent Behavior on $function"
+            # TITLE="Comparing Teacher and Agent Behavior on $function"
+            TITLE=""
 
             python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/$teacher/$function/ --agent $AGENT --fidelity $FIDELITY --action --num_runs $NUM_RUNS --teacher --agent_labels "$LABEL" "TD3+BC" --title "$TITLE" --heterogeneous
         # done

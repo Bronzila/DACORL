@@ -49,7 +49,8 @@ do
             else
                 TEACHER_ARG="--teacher_dir $TEACHER_DIR/ToySGD/$teacher/$ID/$function/"
             fi
-            TITLE="Comparing Teacher and Agent Trajectories on $function"
+            # TITLE="Comparing Teacher and Agent Trajectories on $function"
+            TITLE=""
 
             python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/$teacher/$ID/$function/ $TEACHER_ARG --comparison --teacher --teacher_label "$LABEL" --agent_labels "TD3+BC" --title "$TITLE"
         # done

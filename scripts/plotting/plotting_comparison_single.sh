@@ -42,7 +42,8 @@ do
                     LABEL="Unknown"
                     ;;
             esac
-            TITLE="Comparing Teacher and Agent Trajectories on $function"
+            # TITLE="Comparing Teacher and Agent Trajectories on $function"
+            TITLE=""
 
             python -W ignore plotting.py --data_dir $RESULTS_DIR/ToySGD/$teacher/$ID/$function/ --comparison --teacher --agent_labels "TD3+BC" --title "$TITLE"
         # done

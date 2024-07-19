@@ -20,6 +20,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--agent",
+        default="td3_bc",
         help="agent to plot the actions",
     )
     parser.add_argument(
