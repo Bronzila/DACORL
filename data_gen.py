@@ -33,7 +33,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--instance_mode",
         type=str,
-        default="",
+        default=None,
         help="Select the instance mode for SGD Benchmark.",
     )
     parser.add_argument(
@@ -85,7 +85,8 @@ if __name__ == "__main__":
         env_config["initial_learning_rate"] = agent_config["params"]["learning_rate"]
 
     if env_config["type"] == "SGD":
-        env_config["instance_mode"] = args.instance_mode
+        if args.instance_mode:
+            env_config["instance_mode"] = args.instance_mode
 
     generate_dataset(
         agent_config=agent_config,

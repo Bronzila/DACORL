@@ -103,7 +103,7 @@ def generate_dataset(
             phase = "epoch"
             print("Currently running in epoch mode.")
 
-    env = get_environment(env_config)
+    env = get_environment(env_config.copy())
     state = env.reset()[0]
     env.seed(seed) # Reseed environment here to allow for proper starting point generation
     state_dim = state.shape[0]
@@ -138,10 +138,13 @@ def generate_dataset(
                 if environment_type == "ToySGD":
                     f_curs = []
                     x_curs = []
-                if environment_type == "SGD":
+                elif environment_type == "SGD":
                     train_loss = []
+                    train_acc = []
                     valid_loss = []
+                    valid_acc = []
                     test_loss = []
+                    test_acc = []
             state, meta_info = env.reset()
             if environment_type == "ToySGD":
                 starting_points.append(meta_info["start"])
@@ -159,7 +162,10 @@ def generate_dataset(
                     actions.append(math.log10(env.learning_rate))
                     train_loss.append(env.train_loss)
                     valid_loss.append(env.validation_loss)
-                    test_loss.append(env.test_losses / len(env.test_loader))
+                    train_acc.append(env.train_accuracy)
+                    valid_acc.append(env.validation_accuracy)
+                    test_loss.append(env.test_loss)
+                    test_acc.append(env.test_accuracy)
 
             for batch in range(1, num_batches + 1): # As we start with batch 1 and not 0, add 1
                 if verbose:
@@ -191,7 +197,10 @@ def generate_dataset(
                         valid_loss.append(
                             env.validation_loss,
                         )
-                        test_loss.append(env.test_losses / len(env.test_loader))
+                        train_acc.append(env.train_accuracy)
+                        valid_acc.append(env.validation_accuracy)
+                        test_loss.append(env.test_loss)
+                        test_acc.append(env.test_accuracy)
 
                 state = next_state
                 if done:
@@ -217,7 +226,10 @@ def generate_dataset(
                         {
                             "train_loss": train_loss,
                             "valid_loss": valid_loss,
+                            "train_acc": train_acc,
+                            "valid_acc": valid_acc,
                             "test_loss": test_loss,
+                            "test_acc": test_acc,
                         },
                     )
                 run_data = pd.DataFrame(data)
