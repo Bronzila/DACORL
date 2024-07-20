@@ -47,9 +47,12 @@ class TD3BC_Optimizee:
 
     @property
     def configspace(self) -> ConfigurationSpace:
+        # batches_per_epoch
+        bpe = 375
+
         cs = ConfigurationSpace()
         if self.agent_type == "exponential_decay":
-            decay_steps = Categorical("decay_steps", [225, 450, 675], default=450)
+            decay_steps = Categorical("decay_steps", [int(bpe/2), bpe, int(bpe*1.5), bpe*2], default=bpe)
             decay_rate = Categorical("decay_rate", [0.8, 0.85, 0.9, 0.95], default=0.9)
             # Add the parameters to configuration space
             cs.add_hyperparameters(
@@ -59,7 +62,7 @@ class TD3BC_Optimizee:
                 ],
             )
         elif self.agent_type == "step_decay":
-            step_size = Categorical("step_size", [225, 450, 675], default=450)
+            step_size = Categorical("step_size", [int(bpe/2), bpe, int(bpe*1.5), bpe*2], default=bpe)
             gamma = Categorical("gamma", [0.8, 0.85, 0.9, 0.95], default=0.9)
             # Add the parameters to configuration space
             cs.add_hyperparameters(
@@ -69,9 +72,9 @@ class TD3BC_Optimizee:
                 ],
             )
         elif self.agent_type == "sgdr":
-            T_i = Categorical("T_i", [1,2,3], default=1)
-            T_mult = Categorical("T_mult", (1,2,3), default=2)
-            batches_per_epoch = Constant("batches_per_epoch", 450)
+            T_i = Categorical("T_i", [1,2,3,4], default=1)
+            T_mult = Categorical("T_mult", [1,2,3], default=2)
+            batches_per_epoch = Constant("batches_per_epoch", bpe)
             # Add the parameters to configuration space
             cs.add_hyperparameters(
                 [
@@ -81,7 +84,7 @@ class TD3BC_Optimizee:
                 ],
             )
         elif self.agent_type == "constant":
-            learning_rate = Categorical("learning_rate", [0.001], default=0.001)
+            learning_rate = Categorical("learning_rate", [0.0025, 0.002, 0.0015, 0.00125, 0.001, 0.00075, 0.0005, 0.0001], default=0.001)
             cs.add_hyperparameters(
                 [
                     learning_rate
@@ -94,6 +97,7 @@ class TD3BC_Optimizee:
     ) -> float:
         seed = 0
         config = dict(config)
+        print(config)
         agent_config = {
             "params": config,
             "id": 0,
@@ -105,13 +109,22 @@ class TD3BC_Optimizee:
                 agent_config["params"]["initial_learning_rate"] = env_config["initial_learning_rate"]
             agg_run_data = generate_dataset(agent_config, env_config, num_runs=1, seed=seed,
                              results_dir=self.data_dir, save_run_data=True, timeout=0,
-                             save_rep_buffer=True, checkpoint=0, checkpointing_freq=0)
+                             save_rep_buffer=True, checkpoint=0, checkpointing_freq=0, check_if_exists=False)
 
             final_evaluations = agg_run_data.groupby("run").last()
-            fbests = final_evaluations["f_cur"]
-            fct = env_config["function"]
-            print(f"Results on {fct}: {fbests.mean()}")
-            results.append(fbests.mean())
+            train_loss = final_evaluations["train_loss"]
+            valid_loss = final_evaluations["valid_loss"]
+            test_loss = final_evaluations["test_loss"]
+            train_acc = final_evaluations["train_acc"]
+            valid_acc = final_evaluations["valid_acc"]
+            test_acc = final_evaluations["test_acc"]
+            print(f"Train Loss: {train_loss.mean()}")
+            print(f"Valid Loss: {valid_loss.mean()}")
+            print(f"Test Loss: {test_loss.mean()}")
+            print(f"Train Acc: {train_acc.mean()}")
+            print(f"Valid Acc: {valid_acc.mean()}")
+            print(f"Test Acc: {test_acc.mean()}")
+            results.append(valid_loss.mean())
 
         print(f"Mean result: {np.mean(results)}")
         return np.mean(results)
@@ -149,7 +162,7 @@ if __name__ == "__main__":
     scenario = Scenario(
         optimizee.configspace,
         output_directory=output_path,
-        n_trials=12,
+        n_trials=30,
         n_workers=1,
         deterministic=False,
     )

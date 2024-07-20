@@ -75,6 +75,7 @@ def generate_dataset(
     checkpoint: int,
     save_run_data: bool,
     save_rep_buffer: bool,
+    check_if_exists: bool = True,
 ) -> None:
     set_timeout(timeout)
     set_seeds(seed)
@@ -105,7 +106,7 @@ def generate_dataset(
         results_dir = results_dir / env_config["function"]
         num_batches = env_config["num_batches"]
 
-    if results_dir.exists() and checkpoint == 0:
+    if check_if_exists and (results_dir.exists() and checkpoint == 0):
         print(f"Data already exists: {results_dir}")
         return
 
@@ -197,6 +198,7 @@ def generate_dataset(
                     train_acc = []
                     valid_acc = []
                     test_loss = []
+                    test_acc = []
                 elif environment_type == "CMAES":
                     lambdas = []
                     f_curs = []
@@ -223,6 +225,7 @@ def generate_dataset(
                     train_acc.append(env.train_accuracy)
                     valid_acc.append(env.validation_accuracy)
                     test_loss.append(env.test_loss)
+                    test_acc.append(env.test_accuracy)
                 if environment_type == "CMAES":
                     actions.append(env.es.parameters.sigma)
                     lambdas.append(env.es.parameters.lambda_)
@@ -263,6 +266,7 @@ def generate_dataset(
                         train_acc.append(env.train_accuracy)
                         valid_acc.append(env.validation_accuracy)
                         test_loss.append(env.test_loss)
+                        test_acc.append(env.test_accuracy)
                     if environment_type == "CMAES":
                         lambdas.append(env.es.parameters.lambda_)
                         f_curs.append(env.es.parameters.population.f)
@@ -294,6 +298,7 @@ def generate_dataset(
                             "train_acc": train_acc,
                             "valid_acc": valid_acc,
                             "test_loss": test_loss,
+                            "test_acc": test_acc,
                         },
                     )
                 if environment_type == "CMAES":
@@ -371,3 +376,5 @@ def generate_dataset(
         msg += "rep_buffer " if save_rep_buffer else ""
         msg += "run_data " if save_run_data else ""
         print(f"{msg}to {results_dir}")
+
+    return pd.concat(aggregated_run_data)
