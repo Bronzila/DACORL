@@ -183,6 +183,9 @@ def generate_dataset(
         assert run_info == checkpoint_run_info
 
         aggregated_run_data.append(checkpoint_data)
+    if environment_type == "CMAES":
+        # Start with instance 0
+        env.instance_index = -1
 
     try:
         for run in range(start_run, num_runs):
@@ -206,9 +209,6 @@ def generate_dataset(
                     lambdas = []
                     f_curs = []
                     target_value = []
-            if environment_type == "CMAES":
-                # Start with instance 0
-                env.instance_index = -1
             state, meta_info = env.reset()
             if environment_type == ("ToySGD"):
                 starting_points.append(meta_info["start"])
@@ -234,7 +234,7 @@ def generate_dataset(
                     actions.append(env.es.parameters.sigma)
                     lambdas.append(env.es.parameters.lambda_)
                     f_curs.append(env.es.parameters.population.f)
-                    target_value.append(env.objective.get_target())
+                    target_value.append(env.target)
 
             for batch in range(1, num_batches + 1):
                 print(
@@ -275,7 +275,7 @@ def generate_dataset(
                     if environment_type == "CMAES":
                         lambdas.append(env.es.parameters.lambda_)
                         f_curs.append(env.es.parameters.population.f)
-                        target_value.append(env.objective.get_target())
+                        target_value.append(env.target)
 
                 state = next_state
                 if done:
