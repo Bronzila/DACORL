@@ -71,6 +71,11 @@ if __name__ == "__main__":
         type=int,
         default=0,
         help="Specify which checkpoint (run number) you want to load. Default 0 means no loading",
+    ),
+    parser.add_argument(
+        "--check_if_exists",
+        action=argparse.BooleanOptionalAction,
+        default=False,
     )
 
     args = parser.parse_args()
@@ -106,6 +111,7 @@ if __name__ == "__main__":
         checkpoint=args.checkpoint,
         save_run_data=args.save_run_data,
         save_rep_buffer=args.save_rep_buffer,
+        check_if_exists=args.check_if_exists,
     )
 
     end = time.time()

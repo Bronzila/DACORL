@@ -106,9 +106,12 @@ def generate_dataset(
         results_dir = results_dir / env_config["function"]
         num_batches = env_config["num_batches"]
 
+    if environment_type == "CMAES":
+        num_batches = env_config["num_batches"]
+
     if check_if_exists and (results_dir.exists() and checkpoint == 0):
         print(f"Data already exists: {results_dir}")
-        return
+        return None
 
     env = get_environment(env_config.copy())
     env.reset()
@@ -202,6 +205,7 @@ def generate_dataset(
                 elif environment_type == "CMAES":
                     lambdas = []
                     f_curs = []
+                    target_value = []
             if environment_type == "CMAES":
                 # Start with instance 0
                 env.instance_index = -1
@@ -230,6 +234,7 @@ def generate_dataset(
                     actions.append(env.es.parameters.sigma)
                     lambdas.append(env.es.parameters.lambda_)
                     f_curs.append(env.es.parameters.population.f)
+                    target_value.append(env.objective.get_target())
 
             for batch in range(1, num_batches + 1):
                 print(
@@ -270,6 +275,7 @@ def generate_dataset(
                     if environment_type == "CMAES":
                         lambdas.append(env.es.parameters.lambda_)
                         f_curs.append(env.es.parameters.population.f)
+                        target_value.append(env.objective.get_target())
 
                 state = next_state
                 if done:
@@ -306,6 +312,7 @@ def generate_dataset(
                         {
                             "lambdas": lambdas,
                             "f_curs": f_curs,
+                            "target_value": target_value,
                         },
                     )
                 run_data = pd.DataFrame(data)
