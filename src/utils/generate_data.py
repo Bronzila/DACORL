@@ -261,3 +261,5 @@ def generate_dataset(
         msg += "rep_buffer " if save_rep_buffer else ""
         msg += "run_data " if save_run_data else ""
         print(f"{msg}to {results_dir}")
+    
+    return pd.concat(aggregated_run_data)
