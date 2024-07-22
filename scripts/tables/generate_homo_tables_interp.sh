@@ -17,9 +17,9 @@ RESULTS_DIR=${1:-data_homo_256_60k}
 if [ 1 -eq $SLURM_ARRAY_TASK_ID ]
 then
     echo "Homo Teacher Teacher Table";
-    python generate_latex_tables.py --path $RESULTS_DIR/ToySGD/ --lowest --mean --auc --ids combined
+    python generate_latex_tables.py --path data_teacher_eval_66316748/ToySGD/ --lowest --mean --auc --ids combined
 elif [ 2 -eq $SLURM_ARRAY_TASK_ID  ]
 then
     echo "Homo Teacher Agent Table";
-    python generate_latex_tables.py --path $RESULTS_DIR/ToySGD/ --lowest --mean --auc --results --multi_seed --num_runs 1000 --ids combined
+    python generate_latex_tables.py --path $RESULTS_DIR/ToySGD/ --lowest --mean --auc --results --multi_seed --num_runs 1000 --ids combined --interpolation
 fi
