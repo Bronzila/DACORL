@@ -12,7 +12,7 @@ cd /work/dlclarge2/gieringl-DACORL/MTORL-DAC
 source activate DACORL
 
 NUM_RUNS=1
-RESULTS_DIR="data/teacher_hpo_cifar10"
+RESULTS_DIR="data/teacher_hpo_MNIST"
 
 # Print some information about the job to STDOUT
 echo "Workingdir: $(pwd)";

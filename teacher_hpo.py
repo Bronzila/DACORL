@@ -48,7 +48,7 @@ class TD3BC_Optimizee:
     @property
     def configspace(self) -> ConfigurationSpace:
         # batches_per_epoch
-        bpe = 375
+        bpe = 450 #375
 
         cs = ConfigurationSpace()
         if self.agent_type == "exponential_decay":
@@ -92,6 +92,7 @@ class TD3BC_Optimizee:
             )
         return cs
 
+
     def train(
         self, config: Configuration, seed: int = 0
     ) -> float:
@@ -107,6 +108,8 @@ class TD3BC_Optimizee:
         for env_config in self.env_configs:
             if self.agent_type == "sgdr":
                 agent_config["params"]["initial_learning_rate"] = env_config["initial_learning_rate"]
+            if self.agent_type == "constant":
+                env_config["initial_learning_rate"] = config["learning_rate"]
             agg_run_data = generate_dataset(agent_config, env_config, num_runs=1, seed=seed,
                              results_dir=self.data_dir, save_run_data=True, timeout=0,
                              save_rep_buffer=True, checkpoint=0, checkpointing_freq=0, check_if_exists=False)
