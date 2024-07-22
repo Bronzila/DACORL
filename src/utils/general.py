@@ -465,7 +465,7 @@ def find_lowest_values(df, column_name, n=10):
     return sorted_df.head(n)
 
 def calc_mean_and_std_dev(df):
-    final_evaluations = df.groupby("run").last()
+    final_evaluations = df.sort_values(by=["run", "batch"]).groupby("run").last()
 
     fbests = final_evaluations["f_cur"]
     return fbests.mean(), fbests.std()

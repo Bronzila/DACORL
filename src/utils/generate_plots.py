@@ -50,15 +50,20 @@ def get_problem_from_name(function_name) -> Any:
         problem = Sphere()
     return problem
 
-def load_data(paths: list):
+def load_data(paths: list, num_runs: int=1000):
     aggregated_df = pd.DataFrame()
-    for path in paths:
+    length = 0
+    for idx, path in enumerate(paths):
         # Read run data
         df = pd.read_csv(path)
+        length += len(df.index)
+
+        df["run"] += idx * num_runs
 
         df["action"] = df["action"].map(lambda x: 10**x)
 
         aggregated_df = pd.concat([aggregated_df, df], ignore_index=True)
+    assert length == len(aggregated_df.index)
     return aggregated_df
 
 
@@ -329,7 +334,7 @@ def plot_actions(
                     run_data_teacher = single_teacher_run
 
     drawstyle = "default"
-    aggregated_df = load_data(run_data_path)
+    aggregated_df = load_data(run_data_path, run_info["num_runs"])
 
     if num_runs > 0:
         for data in list(aggregated_df.groupby("run")):
@@ -425,10 +430,15 @@ def plot_comparison(
     show: bool = False,
     title: str="",
     teacher_path: str="",
-    teacher_label: str=""
+    teacher_label: str="",
+    metric: str="f_cur"
 ) -> None:
     for dir_path, agent_label in zip(dir_paths, agent_labels):
         dir_path = Path(dir_path)
+        run_info_path = Path(dir_path, "run_info.json")
+        with Path.open(run_info_path) as file:
+            run_info = json.load(file)
+
         teacher_name = dir_path.parents[1].name
         if teacher_name not in teacher_name_mapping: # heterogeneous case
             teacher_name = dir_path.parents[0].name
@@ -440,17 +450,46 @@ def plot_comparison(
                 teacher_path = dir_path / "aggregated_run_data.csv"
             else:
                 teacher_path = Path(teacher_path) / "aggregated_run_data.csv"
-            teacher_data = load_data([teacher_path])
+            teacher_data = load_data([teacher_path], run_info["num_runs"])
 
             if teacher_label == "":
                 teacher_label = teacher_name_mapping[teacher_name]
 
         result_paths = dir_path.rglob("*/eval_data.csv")
-        agent_data = load_data(result_paths)
+
+        agent_data = load_data(result_paths, run_info["num_runs"])
+
+        def fill_missing_values(group, metric):
+            last_value = group[metric].iloc[-1]
+
+            # Create full run
+            all_steps = pd.DataFrame({"batch": range(101)})
+
+            # Merge group with full run
+            filled_group = pd.merge(all_steps, group, on="batch", how="left")
+
+            filled_group["run"] = group["run"].iloc[0]
+            filled_group[metric] = filled_group[metric].fillna(last_value)
+
+            return filled_group
+
+        agent_required_df = agent_data[[metric, "run", "batch"]]
+        teacher_required_df = teacher_data[[metric, "run", "batch"]]
+
+        agent_df_filled = (
+            agent_required_df.groupby("run")
+            .apply(fill_missing_values, metric)
+            .reset_index(drop=True)
+        )
+        teacher_df_filled = (
+            teacher_required_df.groupby("run")
+            .apply(fill_missing_values, metric)
+            .reset_index(drop=True)
+        )
 
         if teacher_data is not None:
             ax = sns.lineplot(
-                teacher_data,
+                teacher_df_filled,
                 x="batch",
                 y="f_cur",
                 label=teacher_label,
@@ -458,7 +497,7 @@ def plot_comparison(
             )
         if agent_data is not None:
             ax = sns.lineplot(
-                agent_data,
+                agent_df_filled,
                 x="batch",
                 y="f_cur",
                 label=agent_label,
