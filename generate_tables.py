@@ -19,9 +19,9 @@ teacher_mapping = {
 
 def format_number(num):
     if 1 <= num <= 999:
-        return f"{num:.2f}".rstrip('0').rstrip('.')
+        return f"{num:.2f}"
     elif 0.1 <= num < 1:
-        return f"{num:.3f}".rstrip('0').rstrip(".")
+        return f"{num:.3f}"
     else:
         formatted_num = f"{num:.2e}"
         return formatted_num.replace('e-0', 'e-').replace('e+0', 'e')
@@ -35,9 +35,11 @@ def generate_table(rows: list, format: str, metric_min: list) -> str:
         df = pd.DataFrame(rows[1:], columns=rows[0])
         for col in metric_min:
             i, j, _ = col
-            df.iloc[i, j + 1] = f"\\cellcolor{{highlight}} {df.iloc[i, j + 1]}"
+            df.iloc[i, j + 1] = f"\\cellcolor{{highlight}}{df.iloc[i, j + 1]}"
 
-        return df.to_latex(index=False, escape=False)
+        latex_str = df.to_latex(index=False, escape=False)
+        latex_str = latex_str.replace('{lllll}', '{lcccc}', 1)
+        return latex_str
 
 def generate_file_path(base_path: Path, metric: str, function: str, agent_id: str | int, format: str):
     if format == "markdown":
@@ -150,17 +152,18 @@ if __name__ == "__main__":
             lowest_min = [[0, 0, np.inf] for _ in range(len(args.teacher))]
             auc_min = [[0, 0, np.inf] for _ in range(len(args.teacher))]
 
-            for i, agent in enumerate(args.agents):
-                agent_str = f"\\gls{{{agent}}}"
-                row_mean = [agent]
-                row_iqm = [agent]
-                row_auc = [agent]
-                row_lowest = [agent]
 
-                teacher_mean = [np.inf] * len(args.teacher)
-                teacher_iqm = [np.inf] * len(args.teacher)
-                teacher_lowest = [np.inf] * len(args.teacher)
-                teacher_auc = [np.inf] * len(args.teacher)
+            teacher_mean = [np.inf] * len(args.teacher)
+            teacher_iqm = [np.inf] * len(args.teacher)
+            teacher_lowest = [np.inf] * len(args.teacher)
+            teacher_auc = [np.inf] * len(args.teacher)
+
+            for i, agent in enumerate(args.agents):
+                agent_str = f"\\acrshort{{{agent}}}"
+                row_mean = [agent_str]
+                row_iqm = [agent_str]
+                row_auc = [agent_str]
+                row_lowest = [agent_str]
 
                 for j, teacher in enumerate(args.teacher):
                     if agent == "teacher":
@@ -193,6 +196,7 @@ if __name__ == "__main__":
                         if mean < teacher_mean[j]:
                             mean_str = f"\\textbf{{{mean_str}}}"
                         row_mean.append(mean_str)
+                        print(row_mean)
                         if mean < mean_min[j][2]:
                             mean_min[j] = [i, j, mean]
 
