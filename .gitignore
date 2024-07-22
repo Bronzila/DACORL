@@ -1,4 +1,6 @@
 # Ours
+teach_hpo/
+.nfs*
 smac/
 data*/*
 wandb/
