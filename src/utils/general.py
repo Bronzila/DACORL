@@ -464,10 +464,10 @@ def find_lowest_values(df, column_name, n=10):
     # Get the lowest n values from the sorted DataFrame
     return sorted_df.head(n)
 
-def calc_mean_and_std_dev(df):
+def calc_mean_and_std_dev(df, metric="f_cur"):
     final_evaluations = df.sort_values(by=["run", "batch"]).groupby("run").last()
 
-    fbests = final_evaluations["f_cur"]
+    fbests = final_evaluations[metric]
     return fbests.mean(), fbests.std()
 
 def calculate_single_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=1, path=None,
