@@ -15,7 +15,8 @@ from src.utils.general import (
     set_timeout,
 )
 from src.utils.replay_buffer import ReplayBuffer
-from src.utils.test_agent import test_agent
+from src.utils.test_agent import test_agent as test_toy
+from src.utils.test_cma import test_agent as test_cma
 
 
 def train_agent(
@@ -62,6 +63,19 @@ def train_agent(
     )
     agent = get_agent(agent_type, agent_config, tanh_scaling, hyperparameters)
 
+    # if agent_type == "bc":
+    #     from CORL.algorithms.offline.any_percent_bc import (
+    #         TrainConfig,
+    #         keep_best_trajectories,
+    #     )
+
+    #     replay_buffer = keep_best_trajectories(
+    #         replay_buffer,
+    #         TrainConfig().frac,
+    #         agent.discount,
+    #         run_info["num_batches"],
+    #     )
+
     if (not debug) and use_wandb:
         fct = run_info["environment"]["function"]
         teacher = run_info["agent"]["type"]
@@ -90,6 +104,13 @@ def train_agent(
             wandb.log(log_dict, agent.total_it)
 
         if val_freq != 0 and (t + 1) % val_freq == 0:
+            print("eval")
+            if run_info["environment"]["type"] == "CMAES":
+                print("using toy")
+                test_agent = test_cma
+            else:
+                test_agent = test_toy
+
             with torch.random.fork_rng():
                 env = get_environment(run_info["environment"])
                 eval_runs = (
