@@ -80,6 +80,7 @@ def train_agent(
         if val_freq != 0 and (t + 1) % val_freq == 0:
             with torch.random.fork_rng():
                 env = get_environment(run_info["environment"])
+                env.reset()
                 if run_info["environment"]["type"] == "ToySGD":
                     eval_runs = num_eval_runs if num_eval_runs is not None else len(run_info["starting_points"])
                     if eval_protocol == "train":
@@ -155,6 +156,9 @@ def train_agent(
                         inc_value = test_acc_mean
                     else:
                         inc_value = np.max([inc_value, test_acc_mean])
+                    
+                if np.isnan(inc_value):
+                    print(dict(hyperparameters))
 
     save_agent(agent.state_dict(), results_dir, t, seed)
 

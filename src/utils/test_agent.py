@@ -150,7 +150,7 @@ def test_agent_SGD(
             action = actor.act(state)
             next_state, reward, done, truncated, info = env.step(action)
 
-            actions.append(action)
+            actions.append(action.item())
             rewards.append(reward.numpy())
             states.append(state.numpy())
             batches.append(batch)
