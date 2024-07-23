@@ -22,7 +22,7 @@ map_agent_label = {
     "td3_bc": "TD3+BC",
     "cql": "CQL",
     "awac": "AWAC",
-    "EDAC": "EDAC",
+    "edac": "EDAC",
     "sac_n": "SAC-N",
     "lb_sac": "LB-SAC",
     "iql": "IQL",

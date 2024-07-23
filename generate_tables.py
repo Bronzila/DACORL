@@ -27,6 +27,7 @@ def format_number(num):
         return formatted_num.replace('e-0', 'e-').replace('e+0', 'e')
 
 def generate_table(rows: list, format: str, metric_min: list) -> str:
+    pd.set_option('display.max_colwidth', None)
     if format == "markdown":
         from markdown_table_generator import generate_markdown, table_from_string_list
         table = table_from_string_list(rows)
@@ -35,7 +36,9 @@ def generate_table(rows: list, format: str, metric_min: list) -> str:
         df = pd.DataFrame(rows[1:], columns=rows[0])
         for col in metric_min:
             i, j, _ = col
+            asd = df.iloc[i, j + 1]
             df.iloc[i, j + 1] = f"\\cellcolor{{highlight}}{df.iloc[i, j + 1]}"
+            print(f"{asd} -> {df.iloc[i, j + 1]}")
 
         latex_str = df.to_latex(index=False, escape=False)
         latex_str = latex_str.replace('{lllll}', '{lcccc}', 1)
@@ -159,7 +162,7 @@ if __name__ == "__main__":
             teacher_auc = [np.inf] * len(args.teacher)
 
             for i, agent in enumerate(args.agents):
-                agent_str = f"\\acrshort{{{agent}}}"
+                agent_str = f"\\acrshort{{{agent}}}" if agent != "teacher" else agent
                 row_mean = [agent_str]
                 row_iqm = [agent_str]
                 row_auc = [agent_str]
@@ -236,28 +239,20 @@ if __name__ == "__main__":
                 # Regular mean
                 table_result_path = generate_file_path(base_path, "mean", function, agent_id, args.format)
                 table_content = generate_table(rows_mean, args.format, mean_min)
-                # if args.format == "latex":
-                #     table_content = highlight_min(table_content)
                 with table_result_path.open("w") as f:
                     f.write(table_content)
                 # IQM
                 table_result_path = generate_file_path(base_path, "iqm", function, agent_id, args.format)
                 table_content = generate_table(rows_iqm, args.format, iqm_min)
-                # if args.format == "latex":
-                #     table_content = highlight_min(table_content)
                 with table_result_path.open("w") as f:
                     f.write(table_content)
             if args.lowest:
                 table_result_path = generate_file_path(base_path, "lowest", function, agent_id, args.format)
                 table_content = generate_table(rows_lowest, args.format, lowest_min)
-                # if args.format == "latex":
-                #     table_content = highlight_min(table_content, is_pair=False)
                 with table_result_path.open("w") as f:
                     f.write(table_content)
             if args.auc:
                 table_result_path = generate_file_path(base_path, "auc", function, agent_id, args.format)
                 table_content = generate_table(rows_auc, args.format, auc_min)
-                # if args.format == "latex":
-                    # table_content = highlight_min(table_content)
                 with table_result_path.open("w") as f:
                     f.write(table_content)
