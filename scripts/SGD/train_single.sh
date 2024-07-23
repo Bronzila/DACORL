@@ -5,7 +5,7 @@
 #SBATCH -J train_single              # sets the job name. 
 #SBATCH -a 1-4 # array size
 #SBATCH -t 0-20:00:00
-#SBATCH --mem 8GB
+#SBATCH --mem 16GB
 
 cd /work/dlclarge1/fixj-thesis/MTORL-DAC
 source ~/.bashrc

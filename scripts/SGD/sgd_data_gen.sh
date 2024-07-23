@@ -4,8 +4,8 @@
 #SBATCH -e logs/%A[%a].%N.err       # STDERR  (the folder log has to exist) %A will be replaced by the SLURM_ARRAY_JOB_ID value
 #SBATCH -J SGD_data              # sets the job name. 
 #SBATCH -a 1-4 # array size
-#SBATCH -t 0-04:00:00
-#SBATCH --mem 8GB
+#SBATCH -t 0-24:00:00
+#SBATCH --mem 16GB
 
 cd /work/dlclarge1/fixj-thesis/MTORL-DAC
 source ~/.bashrc
@@ -31,16 +31,16 @@ echo "Running job $SLURM_JOB_NAME using $SLURM_JOB_CPUS_PER_NODE cpus per node w
 
 if [ 1 -eq $SLURM_ARRAY_TASK_ID ]
 then
-    python data_gen.py --save_run_data --save_rep_buffer --env $VERSION --instance_mode $instance_mode --agent exponential_decay --benchmark SGD --num_runs $NUM_RUNS --id $ID --results_dir $RESULTS_DIR
+    python data_gen.py --save_run_data --save_rep_buffer --env $VERSION --instance_mode $INSTANCE_MODE --agent exponential_decay --benchmark SGD --num_runs $NUM_RUNS --id $ID --results_dir $RESULTS_DIR
 elif [ 2 -eq $SLURM_ARRAY_TASK_ID  ]
 then
-    python data_gen.py --save_run_data --save_rep_buffer --env $VERSION --instance_mode $instance_mode --agent step_decay --benchmark SGD --num_runs $NUM_RUNS --id $ID --results_dir $RESULTS_DIR
+    python data_gen.py --save_run_data --save_rep_buffer --env $VERSION --instance_mode $INSTANCE_MODE --agent step_decay --benchmark SGD --num_runs $NUM_RUNS --id $ID --results_dir $RESULTS_DIR
 elif [ 3 -eq $SLURM_ARRAY_TASK_ID  ]
 then
-    python data_gen.py --save_run_data --save_rep_buffer --env $VERSION --instance_mode $instance_mode --agent sgdr --benchmark SGD --num_runs $NUM_RUNS --id $ID --results_dir $RESULTS_DIR
+    python data_gen.py --save_run_data --save_rep_buffer --env $VERSION --instance_mode $INSTANCE_MODE --agent sgdr --benchmark SGD --num_runs $NUM_RUNS --id $ID --results_dir $RESULTS_DIR
 elif [ 4 -eq $SLURM_ARRAY_TASK_ID  ]
 then
-    python data_gen.py --save_run_data --save_rep_buffer --env $VERSION --instance_mode $instance_mode --agent constant --benchmark SGD --num_runs $NUM_RUNS --id $ID --results_dir $RESULTS_DIR
+    python data_gen.py --save_run_data --save_rep_buffer --env $VERSION --instance_mode $INSTANCE_MODE --agent constant --benchmark SGD --num_runs $NUM_RUNS --id $ID --results_dir $RESULTS_DIR
 fi
 
 # Print some Information about the end-time to STDOUT
