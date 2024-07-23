@@ -23,6 +23,7 @@ NUM_RUNS=50
 VERSION=default
 INSTANCE_MODE=random_seed
 RESULTS_DIR="SGD_data/single"
+CHECKPOINTING_FREQ=50
 # Print some information about the job to STDOUT
 echo "Workingdir: $(pwd)";
 echo "Started at $(date)";
@@ -31,16 +32,16 @@ echo "Running job $SLURM_JOB_NAME using $SLURM_JOB_CPUS_PER_NODE cpus per node w
 
 if [ 1 -eq $SLURM_ARRAY_TASK_ID ]
 then
-    python data_gen.py --save_run_data --save_rep_buffer --env $VERSION --instance_mode $INSTANCE_MODE --agent exponential_decay --benchmark SGD --num_runs $NUM_RUNS --id $ID --results_dir $RESULTS_DIR
+    python data_gen.py --save_run_data --save_rep_buffer --env $VERSION --instance_mode $INSTANCE_MODE --agent exponential_decay --benchmark SGD --num_runs $NUM_RUNS --id $ID --results_dir $RESULTS_DIR --checkpointing_freq $CHECKPOINTING_FREQ
 elif [ 2 -eq $SLURM_ARRAY_TASK_ID  ]
 then
-    python data_gen.py --save_run_data --save_rep_buffer --env $VERSION --instance_mode $INSTANCE_MODE --agent step_decay --benchmark SGD --num_runs $NUM_RUNS --id $ID --results_dir $RESULTS_DIR
+    python data_gen.py --save_run_data --save_rep_buffer --env $VERSION --instance_mode $INSTANCE_MODE --agent step_decay --benchmark SGD --num_runs $NUM_RUNS --id $ID --results_dir $RESULTS_DIR --checkpointing_freq $CHECKPOINTING_FREQ
 elif [ 3 -eq $SLURM_ARRAY_TASK_ID  ]
 then
-    python data_gen.py --save_run_data --save_rep_buffer --env $VERSION --instance_mode $INSTANCE_MODE --agent sgdr --benchmark SGD --num_runs $NUM_RUNS --id $ID --results_dir $RESULTS_DIR
+    python data_gen.py --save_run_data --save_rep_buffer --env $VERSION --instance_mode $INSTANCE_MODE --agent sgdr --benchmark SGD --num_runs $NUM_RUNS --id $ID --results_dir $RESULTS_DIR --checkpointing_freq $CHECKPOINTING_FREQ
 elif [ 4 -eq $SLURM_ARRAY_TASK_ID  ]
 then
-    python data_gen.py --save_run_data --save_rep_buffer --env $VERSION --instance_mode $INSTANCE_MODE --agent constant --benchmark SGD --num_runs $NUM_RUNS --id $ID --results_dir $RESULTS_DIR
+    python data_gen.py --save_run_data --save_rep_buffer --env $VERSION --instance_mode $INSTANCE_MODE --agent constant --benchmark SGD --num_runs $NUM_RUNS --id $ID --results_dir $RESULTS_DIR --checkpointing_freq $CHECKPOINTING_FREQ
 fi
 
 # Print some Information about the end-time to STDOUT

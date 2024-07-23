@@ -25,6 +25,7 @@ def save_data(
     results_dir,
     run_info,
     starting_points,
+    checkpoint: bool = False,
 ) -> None:
     if not results_dir.exists():
         results_dir.mkdir(parents=True)
@@ -32,7 +33,10 @@ def save_data(
     run_info["starting_points"] = starting_points
     save_path = Path(results_dir, "rep_buffer")
     if save_rep_buffer:
-        replay_buffer.save(save_path)
+        if checkpoint:
+            replay_buffer.checkpoint(save_path)
+        else:
+            replay_buffer.save(save_path)
         with Path(results_dir, "run_info.json").open(mode="w") as f:
             json.dump(run_info, f, indent=4)
 
@@ -41,6 +45,22 @@ def save_data(
             Path(results_dir, "aggregated_run_data.csv"),
         )
 
+def load_checkpoint(
+    checkpoint_dir: Path,
+) -> tuple[pd.DataFrame, ReplayBuffer, dict]:
+    if not checkpoint_dir.exists():
+        raise RuntimeError(
+            f"The specified checkpoint does not exist: {checkpoint_dir}",
+        )
+
+    checkpoint_run_data = pd.read_csv(
+        checkpoint_dir / "aggregated_run_data.csv",
+    )
+    rb = ReplayBuffer.load(checkpoint_dir / "rep_buffer")
+    with (checkpoint_dir / "run_info.json").open(mode="rb") as f:
+        run_info = json.load(f)
+
+    return checkpoint_run_data, rb, run_info
 
 def generate_dataset(
     agent_config: dict,
@@ -51,7 +71,9 @@ def generate_dataset(
     timeout: int,
     save_run_data: bool,
     save_rep_buffer: bool,
-    verbose: bool= False,
+    checkpointing_freq: int,
+    checkpoint: int,
+    verbose: bool=False,
 ) -> None:
     set_timeout(timeout)
     set_seeds(seed)
@@ -81,9 +103,9 @@ def generate_dataset(
     if environment_type == "ToySGD":
         results_dir = results_dir / env_config["function"]
 
-    if results_dir.exists():
-        print(f"Data already exists: {results_dir}")
-        return
+    # if results_dir.exists():
+    #     print(f"Data already exists: {results_dir}")
+    #     return
 
     if environment_type == "ToySGD":
         num_batches = env_config["num_batches"]
@@ -126,9 +148,36 @@ def generate_dataset(
         "num_runs": num_runs,
         "num_batches": num_batches,
     }
+
+    start_run = 0
     starting_points = []
+
+    if checkpoint != 0:
+        checkpoint_dir = Path(results_dir, "checkpoints", str(checkpoint))
+        checkpoint_data, replay_buffer, checkpoint_run_info = load_checkpoint(
+            checkpoint_dir,
+        )
+
+        starting_points = checkpoint_run_info["starting_points"]
+        start_run = checkpoint_run_info["checkpoint_info"]["run"] + 1
+        if environment_type == "SGD":
+            # assuming we use PCG64 as rng
+            env.rng.bit_generator.state = checkpoint_run_info[
+                "checkpoint_info"
+            ]["rng"]
+            env.instance_index = checkpoint_run_info["checkpoint_info"][
+                "instance_index"
+            ]
+
+        del checkpoint_run_info["starting_points"]
+        del checkpoint_run_info["checkpoint_info"]
+
+        assert run_info == checkpoint_run_info
+
+        aggregated_run_data.append(checkpoint_data)
+
     try:
-        for run in range(num_runs):
+        for run in range(start_run, num_runs):
             if save_run_data:
                 actions = []
                 rewards = []
@@ -234,6 +283,44 @@ def generate_dataset(
                     )
                 run_data = pd.DataFrame(data)
                 aggregated_run_data.append(run_data)
+            
+            if checkpointing_freq != 0 and (run + 1) % checkpointing_freq == 0:
+
+                checkpoint_dir = Path(results_dir, "checkpoints", str(run))
+                if not checkpoint_dir.exists():
+                    checkpoint_dir.mkdir(parents=True)
+
+                if environment_type == "ToySGD":
+                    raise UserWarning(
+                        "Are you sure you want to checkpoint ToySGD?",
+                    )
+                elif environment_type == "SGD":
+                    run_info.update(
+                        {
+                            "checkpoint_info": {
+                                "run": run,
+                                "rng": env.rng.bit_generator.state,
+                                "instance_index": env.instance_index,
+                            },
+                        },
+                    )
+                elif environment_type == "CMAES":
+                    raise UserWarning(
+                        "Are you sure you want to checkpoint ToySGD?",
+                    )
+
+                save_data(
+                    save_run_data,
+                    pd.concat(aggregated_run_data),
+                    save_rep_buffer,
+                    replay_buffer,
+                    checkpoint_dir,
+                    run_info,
+                    starting_points,
+                    checkpoint=True,
+                )
+
+                print(f"Saved checkpoint {checkpoint_dir}")
     except OutOfTimeError:
         save_data(
             save_run_data,

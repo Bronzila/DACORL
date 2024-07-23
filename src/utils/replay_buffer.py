@@ -102,6 +102,23 @@ class ReplayBuffer:
         num_zero_states = states_zero_mask.sum().item()
         assert num_zero_states == 0
 
+        print(torch.isfinite(self._states).all())
+        print(torch.isfinite(self._next_states).all())
+        print(torch.isfinite(self._actions).all())
+        print(torch.isfinite(self._rewards).all())
+        print(torch.isfinite(self._dones).all())
+
+        try:
+            with filename.open(mode="wb") as f:
+                pickle.dump(self, f)
+        except FileNotFoundError:
+            if not filename.parent.exists():
+                filename.parent.mkdir(parents=True)
+                with filename.open(mode="wb") as f:
+                    pickle.dump(self, f)
+
+    def checkpoint(self, filename: Path) -> None:
+        """Saves the ReplayBuffer without cutting its size."""
         try:
             with filename.open(mode="wb") as f:
                 pickle.dump(self, f)
