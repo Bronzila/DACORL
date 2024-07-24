@@ -17,6 +17,20 @@ from src.utils.general import (
 from src.utils.replay_buffer import ReplayBuffer
 from src.utils.test_agent import test_agent as test_toy
 from src.utils.test_cma import test_agent as test_cma
+from src.utils.test_sgd import test_agent as test_sgd
+
+cma_es_function = {
+    12: "BentCigar",
+    11: "Discus",
+    2: "Ellipsoid",
+    23: "Katsuura",
+    15: "Rastrigin",
+    8: "Rosenbrock",
+    17: "Schaffers",
+    20: "Schwefel",
+    1: "Sphere",
+    16: "Weierstrass",
+}
 
 
 def train_agent(
@@ -48,6 +62,8 @@ def train_agent(
     with Path(data_dir, "run_info.json").open(mode="rb") as f:
         run_info = json.load(f)
 
+    env_type = run_info["environment"]["type"]
+
     replay_buffer = ReplayBuffer.load(Path(data_dir, "rep_buffer"))
     replay_buffer.seed(seed)
     state, _, _, _, _ = replay_buffer.sample(1)
@@ -57,8 +73,8 @@ def train_agent(
         {
             "state_dim": state_dim,
             "action_dim": 1,
-            "max_action": 0,
-            "min_action": -10,
+            "max_action": 0 if env_type != "CMAES" else 10,
+            "min_action": -10 if env_type != "CMAES" else 0,
         },
     )
     agent = get_agent(agent_type, agent_config, tanh_scaling, hyperparameters)
@@ -104,10 +120,10 @@ def train_agent(
             wandb.log(log_dict, agent.total_it)
 
         if val_freq != 0 and (t + 1) % val_freq == 0:
-            print("eval")
-            if run_info["environment"]["type"] == "CMAES":
-                print("using toy")
+            if test_env == "CMAES":
                 test_agent = test_cma
+            elif env_type == "SGD":
+                test_agent = test_sgd
             else:
                 test_agent = test_toy
 
@@ -148,9 +164,26 @@ def train_agent(
 
                 # Calculate mean performance for this checkpoint
                 final_evaluations = eval_data.groupby("run").last()
-                fbests = final_evaluations["f_cur"]
-                fbest_mean = fbests.mean()
-                print(f"Mean at iteration {t+1}: {fbest_mean}")
+                if env_type == "CMAES":
+                    function_group = final_evaluations.groupby("function_id")
+                    for function in function_group:
+                        fbests = function[1]["f_cur"].mean()
+                        target_value = function[1]["target_value"].mean()
+                        fid = int(function[1]["function_id"].mean())
+                        print(
+                            f"Mean at iteration {t+1}: {fbests} - {target_value} at function {cma_es_function[fid]}",
+                        )
+                    fbest_mean = final_evaluations["f_cur"].mean()
+                elif env_type == "SGD":
+                    val_acc = final_evaluations["val_acc"]
+                    val_acc_mean = val_acc.mean()
+                    print(
+                        f"Mean validation_acc at iteration {t+1}: {val_acc_mean}",
+                    )
+                else:
+                    fbests = final_evaluations["f_cur"]
+                    fbest_mean = fbests.mean()
+                    print(f"Mean at iteration {t+1}: {fbest_mean}")
                 min_fbest = np.min([min_fbest, fbest_mean])
 
     save_agent(agent.state_dict(), results_dir, t, seed)

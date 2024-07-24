@@ -85,7 +85,7 @@ def test_agent(
 
     logs = ({},)
 
-    if starting_points is not None:
+    if starting_points is not None and len(starting_points) > 0:
         for run_id, starting_point in enumerate(starting_points[:n_runs]):
             env.reset(
                 seed=None,
@@ -107,6 +107,7 @@ def test_agent(
 
     else:
         for run_id in range(n_runs):
+            print(f"Evaluating run {run_id}")
             env.reset()
             run_logs = run_batches(
                 actor,

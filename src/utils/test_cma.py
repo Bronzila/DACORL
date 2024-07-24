@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import math
 from typing import Any
 
 import numpy as np
@@ -14,7 +13,11 @@ def run_batches(actor, env, n_batches, run_id):
     actions = []
     rewards = []
     f_curs = []
+    population = []
+    lambdas = []
+    target_value = []
     states = []
+    function_id = []
     runs = []
     batches = []
 
@@ -22,11 +25,13 @@ def run_batches(actor, env, n_batches, run_id):
     actions.append(env.es.parameters.sigma)
     rewards.append(np.NaN)
     lambdas.append(env.es.parameters.lambda_)
-    f_curs.append(env.es.parameters.population.f)
+    f_curs.append(env.es.parameters.fopt)
+    population.append(env.es.parameters.population.f)
     target_value.append(env.target)
     states.append(state.numpy())
     runs.append(run_id)
     batches.append(0)
+    function_id.append(env.fid)
     for batch_id in range(1, n_batches + 1):
         action = actor.act(state)
         next_state, reward, done, _, _ = env.step(action.item())
@@ -35,17 +40,29 @@ def run_batches(actor, env, n_batches, run_id):
         actions.append(action.item())
         rewards.append(reward.numpy())
         lambdas.append(env.es.parameters.lambda_)
-        f_curs.append(env.es.parameters.population.f)
+        f_curs.append(env.es.parameters.fopt)
+        population.append(env.es.parameters.population.f)
         target_value.append(env.target)
         states.append(state.numpy())
         runs.append(run_id)
         batches.append(batch_id)
+        function_id.append(env.fid)
 
         if done:
             break
 
-        print(f"{action.item()}, {reward.numpy()}, {env.es.parameters.population.f}")
-    return actions, rewards, lambdas, f_curs, target_value, states, runs, batches
+    return {
+        "action": actions,
+        "reward": rewards,
+        "lambda": lambdas,
+        "f_cur": f_curs,
+        "population": population,
+        "target_value": target_value,
+        "states": states,
+        "run": runs,
+        "batch": batches,
+        "function_id": function_id,
+    }
 
 
 def test_agent(
@@ -60,16 +77,9 @@ def test_agent(
     set_seeds(seed)
     actor.eval()
 
-    actions = []
-    rewards = []
-    lambdas = []
-    f_curs = []
-    target_value = []
-    states = []
-    runs = []
-    batches = []
+    logs = {}
 
-    if starting_points is not None:
+    if starting_points is not None and len(starting_points) > 0:
         for run_id, starting_point in enumerate(starting_points[:n_runs]):
             env.reset(
                 seed=None,
@@ -77,48 +87,32 @@ def test_agent(
                     "starting_point": torch.tensor(starting_point),
                 },
             )
-            r_a, r_r, r_l, r_f, r_t, r_s, r_runs, r_b = run_batches(
+            run_logs = run_batches(
                 actor,
                 env,
                 n_batches,
                 run_id,
             )
-            actions.extend(r_a)
-            rewards.extend(r_r)
-            lambdas.extend(r_l)
-            f_curs.extend(r_f)
-            target_value.extend(r_t)
-            states.extend(r_s)
-            runs.extend(r_runs)
-            batches.extend(r_b)
+            for k, v in run_logs.items():
+                if k not in logs:
+                    logs[k] = []
+
+                logs[k].extend(v)
     else:
+        env.use_test_set()
         for run_id in range(n_runs):
             env.reset()
-            r_a, r_r, r_l, r_f, r_t, r_s, r_runs, r_b = run_batches(
+            run_logs = run_batches(
                 actor,
                 env,
                 n_batches,
                 run_id,
             )
-            actions.extend(r_a)
-            rewards.extend(r_r)
-            lambdas.extend(r_l)
-            f_curs.extend(r_f)
-            target_value.extend(r_t)
-            states.extend(r_s)
-            runs.extend(r_runs)
-            batches.extend(r_b)
+            for k, v in run_logs.items():
+                if k not in logs:
+                    logs[k] = []
+
+                logs[k].extend(v)
 
     actor.train()
-    return pd.DataFrame(
-        {
-            "action": actions,
-            "reward": rewards,
-            "lambdas": lambdas,
-            "f_cur": f_curs,
-            "target_value": target_value,
-            "states": states,
-            "run": runs,
-            "batch": batches,
-        },
-    )
+    return pd.DataFrame(logs)

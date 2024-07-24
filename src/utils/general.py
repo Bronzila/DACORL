@@ -1182,6 +1182,38 @@ def get_config_space(config_type: str) -> ConfigSpace:
             [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4],
             default=0.2,
         )
+    elif config_type == "reduced_no_arch_dropout_256":
+        # General
+        lr_actor = Float("lr_actor", (1e-5, 1e-2), default=3e-4, log=True)
+        lr_critic = Float("lr_critic", (1e-5, 1e-2), default=3e-4, log=True)
+        discount_factor = Categorical(
+            "discount_factor",
+            [0.9, 0.99, 0.999, 0.9999],
+            default=0.99,
+        )
+        target_update_rate = Float(
+            "target_update_rate",
+            (0, 0.25),
+            default=5e-3,
+        )
+        batch_size = Categorical(
+            "batch_size",
+            [2, 4, 8, 16, 32, 64, 128, 256],
+            default=64,
+        )
+
+        # Arch
+        hidden_layers_actor = Constant("hidden_layers_actor", 1)
+        hidden_layers_critic = Constant("hidden_layers_critic", 1)
+        actor_hidden_dim = Constant("actor_hidden_dim", 256)
+        critic_hidden_dim = Constant("critic_hidden_dim", 256)
+        activation = Constant("activation", "ReLU")
+        # Dropout
+        dropout_rate = Categorical(
+            "dropout_rate",
+            [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4],
+            default=0.2,
+        )
 
     cs.add_hyperparameters(
         [

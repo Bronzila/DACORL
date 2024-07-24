@@ -51,6 +51,7 @@ def train_agent(
     with Path(data_dir, "run_info.json").open(mode="rb") as f:
         run_info = json.load(f)
 
+    env_type = run_info["environment"]["type"]
     env = get_environment(run_info["environment"])
     num_batches = run_info["environment"]["num_batches"]
 
@@ -58,7 +59,7 @@ def train_agent(
     state_dim = state.shape[0]
 
     batches_per_epoch = 1
-    if run_info["environment"]["type"] == "SGD":
+    if env_type == "SGD":
         if env.epoch_mode is False:
             # if SGD env, translates num_batches to num_epochs
             batches_per_epoch = len(env.train_loader)
@@ -198,10 +199,28 @@ def train_agent(
 
                 # Calculate mean performance for this checkpoint
                 final_evaluations = eval_data.groupby("run").last()
-                fbests = final_evaluations["f_cur"]
-                fbest_mean = fbests.mean()
-                print(f"Mean at iteration {t+1}: {fbest_mean}")
-                min_fbest = np.min([min_fbest, fbest_mean])
+                if env_type == "CMAES":
+                    function_group = final_evaluations.groupby("function_id")
+                    for function in function_group:
+                        fbests = function[1]["f_cur"].mean()
+                        target_value = function[1]["target_value"].mean()
+                        fid = int(function[1]["function_id"].mean())
+                        print(
+                            f"Mean at iteration {t+1}: {fbests} - {target_value} at function {fid}",
+                        )
+                    fbest_mean = final_evaluations["f_cur"].mean()
+                elif env_type == "SGD":
+                    val_acc = final_evaluations["val_acc"]
+                    val_acc_mean = val_acc.mean()
+                    print(
+                        f"Mean validation_acc at iteration {t+1}: {val_acc_mean}",
+                    )
+                    min_fbest = np.min([min_fbest, fbest_mean])
+                else:
+                    fbests = final_evaluations["f_cur"]
+                    fbest_mean = fbests.mean()
+                    print(f"Mean at iteration {t+1}: {fbest_mean}")
+                    min_fbest = np.min([min_fbest, fbest_mean])
 
     save_agent(agent.state_dict(), results_dir, t, seed)
 
