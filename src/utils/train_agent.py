@@ -80,7 +80,6 @@ def train_agent(
         if val_freq != 0 and (t + 1) % val_freq == 0:
             with torch.random.fork_rng():
                 env = get_environment(run_info["environment"])
-                env.reset()
                 if run_info["environment"]["type"] == "ToySGD":
                     eval_runs = num_eval_runs if num_eval_runs is not None else len(run_info["starting_points"])
                     if eval_protocol == "train":
@@ -101,6 +100,7 @@ def train_agent(
                             seed=eval_seed,
                         )
                 elif run_info["environment"]["type"] == "SGD":
+                    env.reset()
                     n_batches_total = run_info["environment"]["num_epochs"] * len(env.train_loader)
                     if eval_protocol == "train":
                         eval_data = test_agent_SGD(
