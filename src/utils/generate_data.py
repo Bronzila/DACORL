@@ -120,6 +120,7 @@ def generate_dataset(
     phase = "batch"
     batches_per_epoch = 1
     if environment_type == "SGD":
+        print(f"Generating data for {env_config['dataset_name']}")
         if env.epoch_mode is False:
             num_epochs = env_config["num_epochs"]
             # if SGD env, translates num_batches to num_epochs
@@ -208,7 +209,9 @@ def generate_dataset(
                 elif environment_type == "CMAES":
                     lambdas = []
                     f_curs = []
+                    population = []
                     target_value = []
+                    fid = []
             state, meta_info = env.reset()
             if environment_type == ("ToySGD"):
                 starting_points.append(meta_info["start"])
@@ -233,8 +236,10 @@ def generate_dataset(
                 if environment_type == "CMAES":
                     actions.append(env.es.parameters.sigma)
                     lambdas.append(env.es.parameters.lambda_)
-                    f_curs.append(env.es.parameters.population.f)
+                    f_curs.append(env.es.parameters.fopt)
+                    population.append(env.es.parameters.population.f)
                     target_value.append(env.target)
+                    fid.append(env.fid)
 
             for batch in range(1, num_batches + 1):
                 print(
@@ -242,7 +247,7 @@ def generate_dataset(
                     Total {batch + run * num_batches}/{num_runs * num_batches}",
                 )
 
-                if agent_type == "csa":
+                if agent_type == "csa" or agent_type == "cmaes_constant":
                     action = agent.act(env)
                 else:
                     action = agent.act(state)
@@ -274,8 +279,10 @@ def generate_dataset(
                         test_acc.append(env.test_accuracy)
                     if environment_type == "CMAES":
                         lambdas.append(env.es.parameters.lambda_)
-                        f_curs.append(env.es.parameters.population.f)
+                        f_curs.append(env.es.parameters.fopt)
+                        population.append(env.es.parameters.population.f)
                         target_value.append(env.target)
+                        fid.append(env.fid)
 
                 state = next_state
                 if done:
@@ -311,8 +318,10 @@ def generate_dataset(
                     data.update(
                         {
                             "lambdas": lambdas,
-                            "f_curs": f_curs,
+                            "f_cur": f_curs,
+                            "population": population,
                             "target_value": target_value,
+                            "function_id": fid,
                         },
                     )
                 run_data = pd.DataFrame(data)

@@ -83,14 +83,9 @@ def train_agent(
     #     from CORL.algorithms.offline.any_percent_bc import (
     #         TrainConfig,
     #         keep_best_trajectories,
-    #     )
 
-    #     replay_buffer = keep_best_trajectories(
     #         replay_buffer,
-    #         TrainConfig().frac,
     #         agent.discount,
-    #         run_info["num_batches"],
-    #     )
 
     if (not debug) and use_wandb:
         fct = run_info["environment"]["function"]
@@ -120,7 +115,7 @@ def train_agent(
             wandb.log(log_dict, agent.total_it)
 
         if val_freq != 0 and (t + 1) % val_freq == 0:
-            if test_env == "CMAES":
+            if env_type == "CMAES":
                 test_agent = test_cma
             elif env_type == "SGD":
                 test_agent = test_sgd
@@ -140,7 +135,9 @@ def train_agent(
                         env=env,
                         n_runs=eval_runs,
                         starting_points=run_info["starting_points"],
-                        n_batches=run_info["environment"]["num_batches"],
+                        n_batches=run_info["num_batches"]
+                        if env_type == "SGD"
+                        else run_info["environment"]["num_batches"],
                         seed=run_info["seed"],
                     )
                 elif eval_protocol == "interpolation":

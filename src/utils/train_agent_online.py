@@ -127,7 +127,8 @@ def train_agent(
                 ).astype(np.float32)
             ).clip(min_action, max_action)
 
-        action = torch.from_numpy(action)
+        if env_type != "CMAES":
+            action = torch.from_numpy(action)
 
         # Perform action
         next_state, reward, done, _, _ = env.step(action)

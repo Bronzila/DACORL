@@ -34,6 +34,7 @@ from torch import nn
 from src.agents import (
     CSA,
     ConstantAgent,
+    ConstantCMAES,
     ExponentialDecayAgent,
     SGDRAgent,
     StepDecayAgent,
@@ -82,6 +83,8 @@ def get_teacher(
         return ConstantAgent()
     if teacher_type == "csa":
         return CSA(**teacher_config["params"])
+    if teacher_type == "cmaes_constant":
+        return ConstantCMAES()
 
     raise NotImplementedError(
         f"No agent with type {teacher_type} implemented.",
@@ -923,9 +926,9 @@ def compute_iqm(df: pd.DataFrame, objective: str):
     return fbests.mean(), fbests.std()
 
 
-def compute_AuC(df):
+def compute_AuC(df: pd.DataFrame, objective: str) -> tuple[float, float]:
     def fill_missing_values(group):
-        last_value = group["f_cur"].iloc[-1]
+        last_value = group[objective].iloc[-1]
 
         # Create full run
         all_steps = pd.DataFrame({"batch": range(101)})
@@ -934,11 +937,11 @@ def compute_AuC(df):
         filled_group = pd.merge(all_steps, group, on="batch", how="left")
 
         filled_group["run"] = group["run"].iloc[0]
-        filled_group["f_cur"] = filled_group["f_cur"].fillna(last_value)
+        filled_group[objective] = filled_group[objective].fillna(last_value)
 
         return filled_group
 
-    required_fields_df = df[["f_cur", "run", "batch"]]
+    required_fields_df = df[[objective, "run", "batch"]]
 
     df_filled = (
         required_fields_df.groupby("run")
