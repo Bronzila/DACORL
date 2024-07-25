@@ -83,7 +83,7 @@ if __name__ == "__main__":
 
     agent_name = "default" if args.id == 0 else str(args.id)
     # Read agent config from file
-    agent_config_path = Path("configs", "agents", args.agent, f"{agent_name}.json")
+    agent_config_path = Path("configs", "agents", args.agent, f"{args.benchmark}", f"{agent_name}.json")
     with agent_config_path.open() as file:
         agent_config = json.load(file)
 
