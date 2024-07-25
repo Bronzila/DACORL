@@ -2,6 +2,6 @@
     "params": {
         "learning_rate": 2
     },
-    "type": "constant",
-    "id": 1
+    "type": "cmaes_constant",
+    "id": 0
 }
