@@ -23,9 +23,11 @@ def run_batches(actor, env, n_batches, run_id):
     test_loss = []
     test_acc = []
 
-    state = env.get_state()
+    state, meta_info = env.reset()
+
     actions.append(math.log10(env.learning_rate))
     rewards.append(np.NaN)
+    states.append(state.numpy())
     train_loss.append(env.train_loss)
     valid_loss.append(env.validation_loss)
     train_acc.append(env.train_accuracy)
@@ -87,6 +89,7 @@ def test_agent(
 
     if starting_points is not None and len(starting_points) > 0:
         for run_id, starting_point in enumerate(starting_points[:n_runs]):
+            print(f"Evaluating run {run_id}")
             env.reset(
                 seed=None,
                 options={
