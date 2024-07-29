@@ -471,7 +471,7 @@ def calc_mean_and_std_dev(df, metric="f_cur"):
     return fbests.mean(), fbests.std()
 
 def calculate_single_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=1, path=None,
-                                    results=True, verbose=False, interpolation=False, calc_auc=True):
+                                    results=True, verbose=False, interpolation=False, calc_auc=True, metric="f_cur"):
     paths = []
     filename = "eval_data_interpolation.csv" if interpolation else "eval_data.csv"
     if results:
@@ -495,7 +495,7 @@ def calculate_single_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=
         if verbose:
             print(f"Calculating for path {path}")
         if calc_mean:
-            mean, std = calc_mean_and_std_dev(df)
+            mean, std = calc_mean_and_std_dev(df, metric)
             mean = float(f"{mean:.2e}")
             std = float(f"{std:.2e}")
             if mean < min_mean or mean == min_mean and std < min_std:
@@ -503,26 +503,29 @@ def calculate_single_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=
                 min_mean = mean
                 min_std = std
                 min_path = path
-                min_iqm, min_iqm_std = compute_IQM(df)
+                min_iqm, min_iqm_std = compute_IQM(df, metric)
                 min_iqm = float(f"{min_iqm:.2e}")
                 min_iqm_std = float(f"{min_iqm_std:.2e}")
                 if calc_auc:
-                    min_auc, min_auc_std = compute_AuC(df)
+                    min_auc, min_auc_std = compute_AuC(df, metric)
                     min_auc = float(f"{min_auc:.2e}")
                     min_auc_std = float(f"{min_auc_std:.2e}")
+                else:
+                    min_auc = 0
+                    min_auc_std = 0
             if verbose:
                 print(f"Mean +- Std {mean:.2e} ± {std:.2e}")
         if calc_lowest:
-            lowest_vals = find_lowest_values(df, "f_cur", n_lowest)
+            lowest_vals = find_lowest_values(df, metric, n_lowest)
             if incumbent_changed:
-                lowest_vals_of_min_mean = lowest_vals["f_cur"]
+                lowest_vals_of_min_mean = lowest_vals[metric]
             if verbose:
                 print("Lowest values:")
-                print(lowest_vals["f_cur"])
+                print(lowest_vals[metric])
     return min_mean, min_std, lowest_vals_of_min_mean, min_iqm, min_iqm_std, min_path, min_auc, min_auc_std
 
 def calculate_multi_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=1, path=None,
-                                    results=True, verbose=False, num_runs=100, interpolation=False, calc_auc=True):
+                                    results=True, verbose=False, num_runs=100, interpolation=False, calc_auc=True, metric="f_cur"):
     seed_dirs = set()
     filename = "eval_data_interpolation.csv" if interpolation else "eval_data.csv"
     if results:
@@ -533,45 +536,49 @@ def calculate_multi_seed_statistics(calc_mean=True, calc_lowest=True, n_lowest=1
     else:
         seed_dirs.add(path)
 
+    print(seed_dirs)
     best_iterations_paths = []
     # This is only used if there are multiple checkpoints in the seed directory --> choose the best one
     for seed_dir in seed_dirs:
         min_mean, min_std, _, _, _, min_path, _, _ = calculate_single_seed_statistics(calc_mean, calc_lowest,
                                                                                 n_lowest, seed_dir, results, verbose,
-                                                                                interpolation, calc_auc)
+                                                                                interpolation, calc_auc, metric)
         if verbose:
             print(f"Minimum mean {min_mean} +- {min_std} for path {min_path}")
         best_iterations_paths.append(min_path)
     combined_data = combine_run_data(best_iterations_paths, num_runs=num_runs)
     if calc_mean:
-            mean, std = calc_mean_and_std_dev(combined_data)
+            mean, std = calc_mean_and_std_dev(combined_data, metric)
             mean = float(f"{mean:.2e}")
             std = float(f"{std:.2e}")
-            iqm, iqm_std = compute_IQM(combined_data)
+            iqm, iqm_std = compute_IQM(combined_data, metric)
             iqm = float(f"{iqm:.2e}")
             iqm_std = float(f"{iqm_std:.2e}")
     if calc_lowest:
-        lowest_vals = find_lowest_values(combined_data, "f_cur", n_lowest)["f_cur"]
+        lowest_vals = find_lowest_values(combined_data, metric, n_lowest)[metric]
     if calc_auc:
-        auc, auc_std = compute_AuC(combined_data)
+        auc, auc_std = compute_AuC(combined_data, metric)
         auc = float(f"{auc:.2e}")
         auc_std = float(f"{auc_std:.2e}")
+    else:
+        auc = 0
+        auc_std = 0
     return mean, std, lowest_vals, iqm, iqm_std, 0, auc, auc_std # path doesnt really matter here
 
 def calculate_statistics(calc_mean=True, calc_lowest=True, n_lowest=1, path=None,
                          results=True, verbose=False, multi_seed=False, num_runs=100,
-                         interpolation=False, calc_auc=True):
+                         interpolation=False, calc_auc=True, metric="f_cur"):
     if multi_seed:
         return calculate_multi_seed_statistics(calc_mean, calc_lowest,
                                                n_lowest, path, results, verbose, num_runs,
-                                               interpolation, calc_auc)
+                                               interpolation, calc_auc, metric)
     else:
         return calculate_single_seed_statistics(calc_mean, calc_lowest, n_lowest,
-                                                path, results, verbose, interpolation, calc_auc)
+                                                path, results, verbose, interpolation, calc_auc, metric)
 
-def compute_IQM(df):
+def compute_IQM(df, metric="f_cur"):
     final_evaluations = df.groupby("run").last()
-    df_sorted = final_evaluations.sort_values(by="f_cur")
+    df_sorted = final_evaluations.sort_values(by=metric)
 
     # Calculate the number of rows representing 25% of the DataFrame
     num_rows = len(df_sorted)
@@ -579,12 +586,12 @@ def compute_IQM(df):
 
     # Remove the upper and lower 25% of the DataFrame
     df_trimmed = df_sorted[num_to_remove:-num_to_remove]
-    fbests = df_trimmed["f_cur"]
+    fbests = df_trimmed[metric]
     return fbests.mean(), fbests.std()
 
-def compute_AuC(df):
+def compute_AuC(df, metric):
     def fill_missing_values(group):
-        last_value = group["f_cur"].iloc[-1]
+        last_value = group[metric].iloc[-1]
 
         # Create full run
         all_steps = pd.DataFrame({"batch": range(101)})
@@ -593,11 +600,11 @@ def compute_AuC(df):
         filled_group = pd.merge(all_steps, group, on="batch", how="left")
 
         filled_group["run"] = group["run"].iloc[0]
-        filled_group["f_cur"] = filled_group["f_cur"].fillna(last_value)
+        filled_group[metric] = filled_group[metric].fillna(last_value)
 
         return filled_group
 
-    required_fields_df = df[["f_cur", "run", "batch"]]
+    required_fields_df = df[[metric, "run", "batch"]]
 
     df_filled = required_fields_df.groupby("run").apply(fill_missing_values).reset_index(drop=True)
 
@@ -605,7 +612,7 @@ def compute_AuC(df):
     df_filled = df_filled.sort_values(by=["run", "batch"]).reset_index(drop=True)
 
     def calculate_auc(run):
-        auc = np.trapz(run["f_cur"], run["batch"])
+        auc = np.trapz(run[metric], run["batch"])
         return pd.Series({"run": run["run"].iloc[0], "auc": auc})
 
     auc_per_run = df_filled.groupby("run").apply(calculate_auc).reset_index(drop=True)
