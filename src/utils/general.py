@@ -809,7 +809,7 @@ def calculate_single_seed_statistics(
                 min_path = path
                 min_iqm, min_iqm_std = compute_iqm(df, objective)
                 if calc_auc:
-                    min_auc, min_auc_std = compute_AuC(df)
+                    min_auc, min_auc_std = compute_AuC(df, objective)
             if verbose:
                 print(f"Mean +- Std {mean:.3e} ± {std:.3e}")
         if calc_lowest:
@@ -955,7 +955,7 @@ def compute_AuC(df: pd.DataFrame, objective: str) -> tuple[float, float]:
     )
 
     def calculate_auc(run):
-        auc = np.trapz(run["f_cur"], run["batch"])
+        auc = np.trapz(run[objective], run["batch"])
         return pd.Series({"run": run["run"].iloc[0], "auc": auc})
 
     auc_per_run = (
@@ -1170,7 +1170,7 @@ def get_config_space(config_type: str) -> ConfigSpace:
         batch_size = Categorical(
             "batch_size",
             [2, 4, 8, 16, 32, 64, 128, 256],
-            default=64,
+            default=256,
         )
 
         # Arch
@@ -1202,7 +1202,7 @@ def get_config_space(config_type: str) -> ConfigSpace:
         batch_size = Categorical(
             "batch_size",
             [2, 4, 8, 16, 32, 64, 128, 256],
-            default=64,
+            default=256,
         )
 
         # Arch

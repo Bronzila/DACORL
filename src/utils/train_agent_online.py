@@ -15,7 +15,10 @@ from src.utils.general import (
     set_timeout,
 )
 from src.utils.replay_buffer import ReplayBuffer
-from src.utils.test_agent import test_agent
+from src.utils.test_agent import test_agent as test_toy
+from src.utils.test_cma import test_agent as test_cma
+from src.utils.test_sgd import test_agent as test_sgd
+
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -52,8 +55,8 @@ def train_agent(
         run_info = json.load(f)
 
     env_type = run_info["environment"]["type"]
-    env = get_environment(run_info["environment"])
-    num_batches = run_info["environment"]["num_batches"]
+    env = get_environment(run_info["environment"].copy())
+    num_batches = run_info["num_batches"] if env_type == "SGD" else run_info["environment"]["num_batches"]
 
     state = env.reset()[0]
     state_dim = state.shape[0]
@@ -64,11 +67,12 @@ def train_agent(
             # if SGD env, translates num_batches to num_epochs
             batches_per_epoch = len(env.train_loader)
             print(f"One epoch consists of {batches_per_epoch} batches.")
-            num_batches *= batches_per_epoch
+            # num_batches *= batches_per_epoch
         else:
             print("Currently running in epoch mode.")
+    print(f"One run contains {num_batches} iterations")
 
-    buffer_size = num_train_iter * num_batches
+    buffer_size = num_train_iter# * num_batches
     replay_buffer = ReplayBuffer(
         state_dim=state_dim,
         action_dim=1,
@@ -77,8 +81,12 @@ def train_agent(
     )
 
     action_dim = 1
-    max_action = 0
-    min_action = -10
+    if env_type == "CMAES":
+        max_action = 10
+        min_action = 0
+    else:
+        max_action = 0
+        min_action = -10
     agent_config.update(
         {
             "state_dim": state_dim,
@@ -111,15 +119,17 @@ def train_agent(
     episode_reward = 0
     episode_num = 0
     min_fbest = np.inf
+    print(f"Batch Size: {batch_size}")
     for t in range(int(num_train_iter)):
         episode_timesteps += 1
 
         # Select action randomly or according to policy
         if t < start_timesteps:
-            action = rng.uniform(-10, 0, 1).astype(np.float32)
+            action = rng.uniform(min_action, max_action, 1).astype(np.float32)
         else:
+            print("First Time")
             action = (
-                agent.select_action(state)
+                agent.select_action(state.type(torch.float32))
                 + np.random.normal(
                     0,
                     max_action * 0.1,
@@ -131,7 +141,7 @@ def train_agent(
             action = torch.from_numpy(action)
 
         # Perform action
-        next_state, reward, done, _, _ = env.step(action)
+        next_state, reward, done, _, _ = env.step(action.item())
 
         # Store data in replay buffer
         replay_buffer.add_transition(state, action, next_state, reward, done)
@@ -167,8 +177,15 @@ def train_agent(
 
         # Evaluate episode
         if val_freq != 0 and (t + 1) % val_freq == 0:
+            if env_type == "CMAES":
+                test_agent = test_cma
+            elif env_type == "SGD":
+                test_agent = test_sgd
+            else:
+                test_agent = test_toy
+
             with torch.random.fork_rng():
-                val_env = get_environment(run_info["environment"])
+                val_env = get_environment(run_info["environment"].copy())
                 eval_runs = num_eval_runs
                 if eval_protocol == "train":
                     eval_data = test_agent(
@@ -176,7 +193,7 @@ def train_agent(
                         env=val_env,
                         n_runs=eval_runs,
                         starting_points=run_info["starting_points"],
-                        n_batches=run_info["environment"]["num_batches"],
+                        n_batches=num_batches,
                         seed=seed,
                     )
                 elif eval_protocol == "interpolation":
@@ -211,7 +228,7 @@ def train_agent(
                         )
                     fbest_mean = final_evaluations["f_cur"].mean()
                 elif env_type == "SGD":
-                    val_acc = final_evaluations["val_acc"]
+                    val_acc = final_evaluations["valid_acc"]
                     val_acc_mean = val_acc.mean()
                     print(
                         f"Mean validation_acc at iteration {t+1}: {val_acc_mean}",

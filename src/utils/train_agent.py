@@ -57,6 +57,7 @@ def train_agent(
 
     set_timeout(timeout)
     set_seeds(seed)
+    print(f"Seed in trianing: {seed}")
 
     results_dir = Path(data_dir, "results", agent_type)
     with Path(data_dir, "run_info.json").open(mode="rb") as f:
@@ -102,7 +103,9 @@ def train_agent(
 
     logs: dict = {}
     min_fbest = np.inf
+    print(f"Batch Size: {batch_size}")
     for t in range(int(num_train_iter)):
+        print(f"{t}/{int(num_train_iter)}")
         batch = replay_buffer.sample(batch_size)
         log_dict = agent.train(batch)
         for k, v in log_dict.items():
@@ -172,7 +175,7 @@ def train_agent(
                         )
                     fbest_mean = final_evaluations["f_cur"].mean()
                 elif env_type == "SGD":
-                    val_acc = final_evaluations["val_acc"]
+                    val_acc = final_evaluations["valid_acc"]
                     val_acc_mean = val_acc.mean()
                     print(
                         f"Mean validation_acc at iteration {t+1}: {val_acc_mean}",

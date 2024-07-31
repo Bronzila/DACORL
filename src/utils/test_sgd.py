@@ -38,6 +38,7 @@ def run_batches(actor, env, n_batches, run_id):
     batches.append(0)
     for batch_id in range(1, n_batches + 1):
         action = actor.act(state)
+        print(action.item())
         next_state, reward, done, _, _ = env.step(action.item())
         state = next_state
 
@@ -62,8 +63,8 @@ def run_batches(actor, env, n_batches, run_id):
         "actions": actions,
         "rewards": rewards,
         "states": states,
-        "runs": runs,
-        "batches": batches,
+        "run": runs,
+        "batch": batches,
         "train_loss": train_loss,
         "train_acc": train_acc,
         "valid_loss": valid_loss,
@@ -85,7 +86,7 @@ def test_agent(
     set_seeds(seed)
     actor.eval()
 
-    logs = ({},)
+    logs = {}
 
     if starting_points is not None and len(starting_points) > 0:
         for run_id, starting_point in enumerate(starting_points[:n_runs]):
@@ -111,7 +112,6 @@ def test_agent(
     else:
         for run_id in range(n_runs):
             print(f"Evaluating run {run_id}")
-            env.reset()
             run_logs = run_batches(
                 actor,
                 env,

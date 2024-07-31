@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import math
 from pathlib import Path
+import time
 
 import numpy as np
 import pandas as pd
@@ -83,6 +84,9 @@ def generate_dataset(
 
     if not (save_run_data or save_rep_buffer):
         input("You are not saving any results. Enter a key to continue anyway.")
+
+    print(f"Environment: {env_config}")
+    print(f"Teacher: {agent_config}", flush=True)
 
     # Get types
     environment_type = env_config["type"]
@@ -241,6 +245,7 @@ def generate_dataset(
                     target_value.append(env.target)
                     fid.append(env.fid)
 
+            start = time.time()
             for batch in range(1, num_batches + 1):
                 print(
                     f"Starting {phase} {batch}/{num_batches} of run {run}. \
@@ -287,6 +292,9 @@ def generate_dataset(
                 state = next_state
                 if done:
                     break
+            
+            end = time.time()
+            print(f"Run {run} took {end - start} sec.")
 
             if save_run_data:
                 data = {
