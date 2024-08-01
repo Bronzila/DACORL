@@ -20,7 +20,7 @@ single_name_mapping = {
 }
 heterogeneous_name_mapping = {
     "teacher": {
-        "combined": "Combined all",
+        "combined": "All",
         "combined_e_c": "Exp + Const",
         "combined_e_sg": "Exp + SGDR",
         "combined_e_sg_c": "Exp + SGDR + Const",
@@ -28,6 +28,7 @@ heterogeneous_name_mapping = {
         "combined_e_st_c": "Exp + Step + Const",
         "combined_e_st_sg": "Exp + Step + SGDR",
         "combined_sg_c": "SGDR + Const",
+        "combined_st_c": "Step + Const",
         "combined_st_sg": "Step + SGDR",
         "combined_st_sg_c": "Step + SGDR + Const"
     },
@@ -60,7 +61,7 @@ def format_number(num):
 
 def generate_latex(table):
     latex = "{ \\renewcommand{\\arraystretch}{1.4} % Adjust the row height only within this group\n"
-    latex += "\\begin{table}[h]\n\\fontsize{10}{12}\n\\centering\n\\caption{Your caption here}\n\\label{tab:your_label}\n\\begin{tabularx}{\\textwidth}{l " + "c " * (len(table[0]) - 1) + "}\n\\toprule\n"
+    latex += "\\begin{table}[h]\n\\centering\n\\caption{Your caption here}\n\\label{tab:your_label}\n\\begin{tabular}{l " + "c " * (len(table[0]) - 1) + "}\n\\toprule\n"
     for i, row in enumerate(table):
         if i == 0:
             latex += " & ".join(row) + " \\\\\n\\midrule\n"
@@ -76,6 +77,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--path", type=str, help="Base path",
         default="data/ToySGD"
+    )
+    parser.add_argument(
+        "--teacher_base_path", type=str, help="Teacher base path"
     )
     parser.add_argument(
         "--heterogeneous",
@@ -152,11 +156,14 @@ if __name__ == "__main__":
 
             
             results_path = base_path / agent / str(agent_id) / "results"
-            teacher_path = base_path / agent / str(agent_id) / "aggregated_run_data.csv"
+            if args.teacher_base_path:
+                teacher_path = Path(args.teacher_base_path) / agent / str(agent_id) / "aggregated_run_data.csv"
+            else:
+                teacher_path = base_path / agent / str(agent_id) / "aggregated_run_data.csv"
 
             if args.heterogeneous:                    
-                results_path = base_path / agent / function / "results"
-                teacher_path = base_path / agent / function / "aggregated_run_data.csv"
+                results_path = base_path / agent / "results"
+                teacher_path = base_path / agent / "aggregated_run_data.csv"
 
             # Calculate agent performance
             a_mean, a_std, a_lowest, a_iqm, a_iqm_std, a_min_path, a_auc, a_auc_std = calculate_statistics(path=results_path, results=True, verbose=args.verbose, multi_seed=True, num_runs=args.num_runs, interpolation=args.interpolation, metric="test_acc")

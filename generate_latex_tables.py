@@ -18,7 +18,7 @@ single_name_mapping = {
 }
 heterogeneous_name_mapping = {
     "teacher": {
-        "combined": "Combined all",
+        "combined": "All",
         "combined_e_c": "Exp + Const",
         "combined_e_sg": "Exp + SGDR",
         "combined_e_sg_c": "Exp + SGDR + Const",
@@ -56,7 +56,7 @@ def format_number(num):
 
 def generate_latex(table, caption, label):
     latex = "{ \\renewcommand{\\arraystretch}{1.4} % Adjust the row height only within this group\n"
-    latex += "\\begin{table}[h]\n\\fontsize{10}{12}\n\\centering\n\\caption{" + caption + "}\n\\label{" + label + "}\n\\begin{tabularx}{\\textwidth}{l " + "c " * (len(table[0]) - 1) + "}\n\\toprule\n"
+    latex += "\\begin{table}[h]\n\\fontsize{10}{12}\n\\centering\n\\caption{" + caption + "}\n\\label{" + label + "}\n\\begin{tabular}{l " + "c " * (len(table[0]) - 1) + "}\n\\toprule\n"
     for i, row in enumerate(table):
         if i == 0:
             latex += " & ".join(row) + " \\\\\n\\midrule\n"

@@ -166,9 +166,13 @@ def compute_AuC(df, metric):
 
         return filled_group
 
+    # Metric has to be validation accuracy as test accuracy is only computed at end of epoch
+    metric = "valid_acc"
     required_fields_df = df[[metric, "run", "batch"]]
 
-    df_filled = required_fields_df.groupby("run").apply(fill_missing_values).reset_index(drop=True)
+    # df_filled = required_fields_df.groupby("run").apply(fill_missing_values).reset_index(drop=True)
+    # No need to fill values for SGD since we do not terminate early
+    df_filled = required_fields_df
 
     # Sort by run and batch to ensure order
     df_filled = df_filled.sort_values(by=["run", "batch"]).reset_index(drop=True)
