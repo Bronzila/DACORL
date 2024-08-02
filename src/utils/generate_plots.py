@@ -545,7 +545,7 @@ def plot_comparison(
                 )
                 if not save_path.exists():
                     save_path.mkdir(parents=True)
-                    file_name = f"comparison_{dir_path.parents[0].name}.pdf" if len(dir_paths) == 1 else "trajectory_comparison_agents.pdf"
+                file_name = f"comparison_{dir_path.parents[0].name}.pdf" if len(dir_paths) == 1 else "trajectory_comparison_agents.pdf"
             else:
                 dir_path = Path(dir_paths[0])
                 save_path = Path(
@@ -555,7 +555,7 @@ def plot_comparison(
                 )
                 if not save_path.exists():
                     save_path.mkdir(parents=True)
-                    file_name = f"comparison_{dir_path.name}.pdf" if len(dir_paths) == 1 else "trajectory_comparison_agents.pdf"
+                file_name = f"comparison_{dir_path.name}.pdf" if len(dir_paths) == 1 else "trajectory_comparison_agents.pdf"
 
             print(f"Saving figure to {save_path / file_name}")
             plt.savefig(save_path / file_name, bbox_inches="tight")
