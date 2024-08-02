@@ -4,6 +4,7 @@ from pathlib import Path
 
 from src.utils.generate_plots import (
     plot_actions,
+    plot_actions_sgd,
     plot_comparison,
     plot_optimization_trace,
     plot_teacher_actions,
@@ -133,63 +134,106 @@ if __name__ == "__main__":
         action=argparse.BooleanOptionalAction,
         default=False,
     )
+    parser.add_argument(
+        "--metric", type=str, help="Metric to use.", default="f_cur"
+    )
     args = parser.parse_args()
 
-    if args.optim_trace:
-        plot_optimization_trace(
-            args.data_dir,
-            args.agent_path,
-            args.show,
-            args.num_runs,
-        )
-    if args.action:
-        plot_actions(
-            args.data_dir,
-            args.agent,
-            args.fidelity,
-            args.seed,
-            args.show,
-            args.num_runs,
-            args.aggregate,
-            args.teacher,
-            args.reward,
-            args.agent_labels,
-            args.title,
-            args.heterogeneous,
-        )
-    if args.plot_type:
-        plot_type(
-            args.plot_type,
-            args.data_dir,
-            args.fidelity,
-            args.seed,
-            args.show,
-            args.teacher,
-        )
-    if args.action_teacher:
-        plot_teacher_actions(
-            args.data_dir,
-            args.show,
-            args.reward,
-            args.single_plot,
-            args.function,
-        )
-    if args.comparison:
-        if args.data_dir:
-            plot_comparison([args.data_dir],
-                            args.agent_labels,
-                            args.teacher,
-                            args.show,
-                            args.title,
-                            args.teacher_dir,
-                            args.teacher_label)
-        elif args.custom_paths:
-            with Path(args.custom_paths).open("r") as f:
-                custom_paths = json.load(f)
-            plot_comparison(custom_paths,
-                            args.agent_labels,
-                            args.teacher,
-                            args.show,
-                            args.title,
-                            args.teacher_dir,
-                            args.teacher_label)
+    if args.metric == "f_cur":
+        if args.optim_trace:
+            plot_optimization_trace(
+                args.data_dir,
+                args.agent_path,
+                args.show,
+                args.num_runs,
+            )
+        if args.action:
+            plot_actions(
+                args.data_dir,
+                args.agent,
+                args.fidelity,
+                args.seed,
+                args.show,
+                args.num_runs,
+                args.aggregate,
+                args.teacher,
+                args.reward,
+                args.agent_labels,
+                args.title,
+                args.heterogeneous,
+            )
+        if args.plot_type:
+            plot_type(
+                args.plot_type,
+                args.data_dir,
+                args.fidelity,
+                args.seed,
+                args.show,
+                args.teacher,
+            )
+        if args.action_teacher:
+            plot_teacher_actions(
+                args.data_dir,
+                args.show,
+                args.reward,
+                args.single_plot,
+                args.function,
+            )
+        if args.comparison:
+            if args.data_dir:
+                plot_comparison([args.data_dir],
+                                args.agent_labels,
+                                args.teacher,
+                                args.show,
+                                args.title,
+                                args.teacher_dir,
+                                args.teacher_label)
+            elif args.custom_paths:
+                with Path(args.custom_paths).open("r") as f:
+                    custom_paths = json.load(f)
+                plot_comparison(custom_paths,
+                                args.agent_labels,
+                                args.teacher,
+                                args.show,
+                                args.title,
+                                args.teacher_dir,
+                                args.teacher_label)
+    else: # SGD case here
+        if args.action:
+            plot_actions_sgd(
+                args.data_dir,
+                args.agent,
+                args.fidelity,
+                args.seed,
+                args.show,
+                args.num_runs,
+                args.aggregate,
+                args.teacher,
+                args.reward,
+                args.agent_labels,
+                args.title,
+                args.heterogeneous,
+            )
+        if args.comparison:
+            if args.data_dir:
+                plot_comparison([args.data_dir],
+                                args.agent_labels,
+                                args.teacher,
+                                args.show,
+                                args.title,
+                                args.teacher_dir,
+                                args.teacher_label,
+                                heterogeneous=args.heterogeneous,
+                                metric=args.metric)
+            elif args.custom_paths:
+                with Path(args.custom_paths).open("r") as f:
+                    custom_paths = json.load(f)
+                plot_comparison(custom_paths,
+                                args.agent_labels,
+                                args.teacher,
+                                args.show,
+                                args.title,
+                                args.teacher_dir,
+                                args.teacher_label,
+                                heterogeneous=args.heterogeneous,
+                                metric=args.metric)

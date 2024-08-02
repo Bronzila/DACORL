@@ -515,7 +515,7 @@ def plot_comparison(
     x_label = "Step" if metric == "f_cur" else "Batch"
     y_label = "$f(\\theta_i)$" if metric == "f_cur" else "Validation Acc."
     ax.set_xlabel(f"{x_label} $i$")
-    ax.set_ylabel()
+    ax.set_ylabel(y_label)
     if title:
         plt.title(title, fontsize=BIGGER_SIZE)
 
