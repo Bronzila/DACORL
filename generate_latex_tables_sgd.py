@@ -60,8 +60,7 @@ def format_number(num):
         return formatted_num.replace('e-0', 'e-').replace('e+0', 'e')
 
 def generate_latex(table):
-    latex = "{ \\renewcommand{\\arraystretch}{1.4} % Adjust the row height only within this group\n"
-    latex += "\\begin{table}[h]\n\\centering\n\\caption{Your caption here}\n\\label{tab:your_label}\n\\begin{tabular}{l " + "c " * (len(table[0]) - 1) + "}\n\\toprule\n"
+    latex = "\\begin{table}[htb]\n\\centering\n\\caption{Your caption here}\n\\label{tab:your_label}\n\\begin{tabular}{l " + "c " * (len(table[0]) - 1) + "}\n\\toprule\n"
     for i, row in enumerate(table):
         if i == 0:
             latex += " & ".join(row) + " \\\\\n\\midrule\n"
@@ -69,7 +68,7 @@ def generate_latex(table):
             latex += " & ".join(row) + " \\\\\n\\bottomrule\n"
         else:
             latex += " & ".join(row) + " \\\\\n"
-    latex += "\\end{tabularx}\n\\end{table}\n}"
+    latex += "\\end{tabular}\n\\end{table}\n"
     return latex
 
 if __name__ == "__main__":
@@ -163,7 +162,8 @@ if __name__ == "__main__":
 
             if args.heterogeneous:                    
                 results_path = base_path / agent / "results"
-                teacher_path = base_path / agent / "aggregated_run_data.csv"
+                if args.teacher_base_path:
+                    teacher_path = Path(args.teacher_base_path) / agent / "aggregated_run_data.csv"
 
             # Calculate agent performance
             a_mean, a_std, a_lowest, a_iqm, a_iqm_std, a_min_path, a_auc, a_auc_std = calculate_statistics(path=results_path, results=True, verbose=args.verbose, multi_seed=True, num_runs=args.num_runs, interpolation=args.interpolation, metric="test_acc")

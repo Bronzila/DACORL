@@ -12,13 +12,14 @@ source activate MTORL-DAC
 
 RESULTS_DIR=${1:-data}
 AGENT=${2:-exponential_decay}
+ID=""
 FC1=Ackley
 FC2=Rastrigin
 FC3=Rosenbrock
 FC4=Sphere
 NUM_RUNS=1000
 GEN_SEED=123
-TRAIN_ITER=30000
+TRAIN_ITER=60000
 # Print some information about the job to STDOUT
 echo "Workingdir: $(pwd)";
 echo "Started at $(date)";
@@ -30,37 +31,37 @@ if [ 1 -eq $SLURM_ARRAY_TASK_ID ]
 then
     echo "Running $AGENT on $FC1";
     # for seed in {0..11}
-    # for seed in "209652396" "398764591" "924231285" "1478610112" "441365315" "1537364731" "192771779" "1491434855" "1819583497" "530702035"
-    for seed in "3653403230" "2735729614" "2195314464" "1158725111" "1322117303" "175979944" "323153948" "70985653" "752767290" "3492969079" "2789219405" "3920255352"
+    # for seed in "3653403230" "2735729614" "2195314464" "1158725111" "1322117303" "175979944" "323153948" "70985653" "752767290" "3492969079" "2789219405" "3920255352"
+    for seed in "209652396" "398764591" "924231285" "1478610112" "441365315" "1537364731" "192771779" "1491434855" "1819583497" "530702035"
     do
-        python3.10 eval.py --data_dir $RESULTS_DIR/ToySGD/$AGENT/0/$FC1/ --training_seed $seed --num_runs $NUM_RUNS --num_train_iter $TRAIN_ITER --eval_protocol interpolation --gen_seed $GEN_SEED
+        python3.10 eval.py --data_dir $RESULTS_DIR/ToySGD/$AGENT/$ID/$FC1/ --training_seed $seed --num_runs $NUM_RUNS --num_train_iter $TRAIN_ITER --eval_protocol interpolation --gen_seed $GEN_SEED
     done
 elif [ 2 -eq $SLURM_ARRAY_TASK_ID  ]
 then
     echo "Running $AGENT on $FC2";
     # for seed in {0..11}
-    # for seed in "209652396" "398764591" "924231285" "1478610112" "441365315" "1537364731" "192771779" "1491434855" "1819583497" "530702035"
-    for seed in "3653403230" "2735729614" "2195314464" "1158725111" "1322117303" "175979944" "323153948" "70985653" "752767290" "3492969079" "2789219405" "3920255352"
+    # for seed in "3653403230" "2735729614" "2195314464" "1158725111" "1322117303" "175979944" "323153948" "70985653" "752767290" "3492969079" "2789219405" "3920255352"
+    for seed in "209652396" "398764591" "924231285" "1478610112" "441365315" "1537364731" "192771779" "1491434855" "1819583497" "530702035"
     do
-        python3.10 eval.py --data_dir $RESULTS_DIR/ToySGD/$AGENT/0/$FC2/ --training_seed $seed --num_runs $NUM_RUNS --num_train_iter $TRAIN_ITER --eval_protocol interpolation --gen_seed $GEN_SEED
+        python3.10 eval.py --data_dir $RESULTS_DIR/ToySGD/$AGENT/$ID/$FC2/ --training_seed $seed --num_runs $NUM_RUNS --num_train_iter $TRAIN_ITER --eval_protocol interpolation --gen_seed $GEN_SEED
     done
 elif [ 3 -eq $SLURM_ARRAY_TASK_ID ]
 then
     echo "Running $AGENT on $FC3";
     # for seed in {0..11}
-    # for seed in "209652396" "398764591" "924231285" "1478610112" "441365315" "1537364731" "192771779" "1491434855" "1819583497" "530702035"
-    for seed in "3653403230" "2735729614" "2195314464" "1158725111" "1322117303" "175979944" "323153948" "70985653" "752767290" "3492969079" "2789219405" "3920255352"
+    # for seed in "3653403230" "2735729614" "2195314464" "1158725111" "1322117303" "175979944" "323153948" "70985653" "752767290" "3492969079" "2789219405" "3920255352"
+    for seed in "209652396" "398764591" "924231285" "1478610112" "441365315" "1537364731" "192771779" "1491434855" "1819583497" "530702035"
     do
-        python3.10 eval.py --data_dir $RESULTS_DIR/ToySGD/$AGENT/0/$FC3/ --training_seed $seed --num_runs $NUM_RUNS --num_train_iter $TRAIN_ITER --eval_protocol interpolation --gen_seed $GEN_SEED
+        python3.10 eval.py --data_dir $RESULTS_DIR/ToySGD/$AGENT/$ID/$FC3/ --training_seed $seed --num_runs $NUM_RUNS --num_train_iter $TRAIN_ITER --eval_protocol interpolation --gen_seed $GEN_SEED
     done
 elif [ 4 -eq $SLURM_ARRAY_TASK_ID ]
 then
     echo "Running $AGENT on $FC4";
     # for seed in {0..11}
-    # for seed in "209652396" "398764591" "924231285" "1478610112" "441365315" "1537364731" "192771779" "1491434855" "1819583497" "530702035"
-    for seed in "3653403230" "2735729614" "2195314464" "1158725111" "1322117303" "175979944" "323153948" "70985653" "752767290" "3492969079" "2789219405" "3920255352"
+    # for seed in "3653403230" "2735729614" "2195314464" "1158725111" "1322117303" "175979944" "323153948" "70985653" "752767290" "3492969079" "2789219405" "3920255352"
+    for seed in "209652396" "398764591" "924231285" "1478610112" "441365315" "1537364731" "192771779" "1491434855" "1819583497" "530702035"
     do
-        python3.10 eval.py --data_dir $RESULTS_DIR/ToySGD/$AGENT/0/$FC4/ --training_seed $seed --num_runs $NUM_RUNS --num_train_iter $TRAIN_ITER --eval_protocol interpolation --gen_seed $GEN_SEED
+        python3.10 eval.py --data_dir $RESULTS_DIR/ToySGD/$AGENT/$ID/$FC4/ --training_seed $seed --num_runs $NUM_RUNS --num_train_iter $TRAIN_ITER --eval_protocol interpolation --gen_seed $GEN_SEED
     done
 fi
 

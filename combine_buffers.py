@@ -18,7 +18,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--function",
-        help="function",
+        help="function", default="",
     )
     parser.add_argument(
          "--combined_dir",

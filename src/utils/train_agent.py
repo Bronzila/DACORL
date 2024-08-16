@@ -68,6 +68,9 @@ def train_agent(
 
     logs = {"actor_loss": [], "critic_loss": []}
     inc_value = None
+
+    print(f"Batch size: {batch_size}")
+    print(f"HP config: {hyperparameters}")
     for t in range(int(num_train_iter)):
         batch = replay_buffer.sample(batch_size)
         log_dict = agent.train(batch)

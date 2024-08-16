@@ -4,7 +4,7 @@
 #SBATCH -e logs/%A[%a].%N.err       # STDERR  (the folder log has to exist) %A will be replaced by the SLURM_ARRAY_JOB_ID value
 #SBATCH -J Teacher_HPO              # sets the job name. 
 #SBATCH -a 1-4 # array size
-#SBATCH -t 0-15:00:00
+#SBATCH -t 0-20:00:00
 #SBATCH --mem 8GB
 
 cd /work/dlclarge1/fixj-thesis/MTORL-DAC

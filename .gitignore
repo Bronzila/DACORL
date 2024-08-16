@@ -22,6 +22,7 @@ agent_total_it
 smac*
 logs*
 data*
+SGD_data/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

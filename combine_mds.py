@@ -23,7 +23,7 @@ def read_and_concatenate(files):
 
 def main(root_dir):
     for file_prefix in ["mean", "iqm", "lowest"]:
-        file_name = f'{file_prefix}_agent_0.md'
+        file_name = f'tables/{file_prefix}_agent_0.md'
         files = find_files(root_dir, file_name)
         if not files:
             print("No files found.")
@@ -37,5 +37,5 @@ def main(root_dir):
         print("Concatenated content saved to concatenated_mean_agent_0.md")
 
 if __name__ == "__main__":
-    root_dir = 'data_hetero_1k_combinations_no_arch_dropout/ToySGD'  # Replace with your root directory
+    root_dir = 'data_hetero_256_mixed_60k/ToySGD'  # Replace with your root directory
     main(root_dir)

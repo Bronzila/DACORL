@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -p bosch_cpu-cascadelake # metaadm_cpu-test gki_cpu-caskadelake     # partition (queue)
+#SBATCH -p mlhiwidlc_gpu-rtx2080 # bosch_cpu-cascadelake # metaadm_cpu-test gki_cpu-caskadelake     # partition (queue)
 #SBATCH -o logs/%A[%a].%N.out       # STDOUT  (the folder log has to exist) %A will be replaced by the SLURM_ARRAY_JOB_ID value
 #SBATCH -e logs/%A[%a].%N.err       # STDERR  (the folder log has to exist) %A will be replaced by the SLURM_ARRAY_JOB_ID value
 #SBATCH -J Teacher_HPO              # sets the job name. 
@@ -11,8 +11,11 @@ cd /work/dlclarge1/fixj-thesis/MTORL-DAC
 source ~/.bashrc
 conda activate MTORL-DAC
 
+# For reproducibility
+export CUBLAS_WORKSPACE_CONFIG=:4096:8
+
 NUM_RUNS=1
-RESULTS_DIR="SGD_data/teacher_hpo_MNIST_0.002_bosch_test"
+RESULTS_DIR="SGD_data/teacher_hpo_MNIST_0.002_20epochs_test123"
 
 # Print some information about the job to STDOUT
 echo "Workingdir: $(pwd)";

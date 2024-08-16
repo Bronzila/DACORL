@@ -82,6 +82,9 @@ def generate_dataset(
     if not (save_run_data or save_rep_buffer):
         input("You are not saving any results. Enter a key to continue anyway.")
 
+    print(f"Environment: {env_config}")
+    print(f"Teacher: {agent_config}", flush=True)
+
     # Get types
     environment_type = env_config["type"]
     agent_type = agent_config["type"]

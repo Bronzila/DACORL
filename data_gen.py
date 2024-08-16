@@ -60,6 +60,18 @@ if __name__ == "__main__":
         default=0,
         help="Timeout in sec. 0 -> no timeout",
     )
+    parser.add_argument(
+        "--checkpointing_freq",
+        type=int,
+        default=0,
+        help="How frequent we want to checkpoint. Default 0 means no checkpoints",
+    )
+    parser.add_argument(
+        "--checkpoint",
+        type=int,
+        default=0,
+        help="Specify which checkpoint (run number) you want to load. Default 0 means no loading",
+    )
 
     args = parser.parse_args()
     start = time.time()
@@ -88,7 +100,7 @@ if __name__ == "__main__":
         if args.instance_mode:
             env_config["instance_mode"] = args.instance_mode
 
-    generate_dataset(
+    agg_run_data = generate_dataset(
         agent_config=agent_config,
         env_config=env_config,
         num_runs=args.num_runs,
@@ -97,6 +109,8 @@ if __name__ == "__main__":
         results_dir=args.results_dir,
         save_run_data=args.save_run_data,
         save_rep_buffer=args.save_rep_buffer,
+        checkpointing_freq=args.checkpointing_freq,
+        checkpoint=args.checkpoint,
     )
 
     end = time.time()

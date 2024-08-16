@@ -159,6 +159,8 @@ def get_agent(
             # TD3 + BC
             "alpha": alpha,
         }
+        print("Agent Config:")
+        print(kwargs)
         return td3_bc.TD3_BC(**kwargs)
 
     raise NotImplementedError(
@@ -249,8 +251,9 @@ def concat_runs(agent_paths):
 
         if combined_buffer == None and combined_run_info == None:
             combined_buffer = temp_buffer
+            starting_points = run_info.get("starting_points", None)
             combined_run_info = {"environment": run_info["environment"],
-                                 "starting_points": run_info["starting_points"],
+                                 "starting_points": starting_points,
                                  "seed": run_info["seed"],
                                  "num_runs": run_info["num_runs"],
                                  "num_batches": run_info["num_batches"],
