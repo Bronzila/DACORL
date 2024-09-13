@@ -174,7 +174,10 @@ def load_agent(agent_type: str, agent_config: dict, agent_path: Path) -> Any:
     hp_conf_path = agent_path / "config.json"
     with hp_conf_path.open("r") as f:
         hyperparameters = json.load(f)
+
+    print("Loaded agent with following hyperparameters:")
     print(hyperparameters)
+
     agent = get_agent(agent_type, agent_config, hyperparameters)
     state_dict = agent.state_dict()
     new_state_dict = {}
