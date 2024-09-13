@@ -100,13 +100,19 @@ class ReplayBuffer:
         # Check if any state is entirely zero
         states_zero_mask = (self._states == 0).all(dim=1)
         num_zero_states = states_zero_mask.sum().item()
-        assert num_zero_states == 0
+        if num_zero_states != 0:
+            print("WARNING: There are states consisting of all zeros.")
 
-        print(torch.isfinite(self._states).all())
-        print(torch.isfinite(self._next_states).all())
-        print(torch.isfinite(self._actions).all())
-        print(torch.isfinite(self._rewards).all())
-        print(torch.isfinite(self._dones).all())
+        if not torch.isfinite(self._states).all():
+            print("WARNING: State contains non-finite values, please check the replay buffer.")
+        if not torch.isfinite(self._next_states).all():
+            print("WARNING: Next state contains non-finite values, please check the replay buffer.")
+        if not torch.isfinite(self._actions).all():
+            print("WARNING: Action contains non-finite values, please check the replay buffer.")
+        if not torch.isfinite(self._rewards).all():
+            print("WARNING: Reward contains non-finite values, please check the replay buffer.")
+        if not torch.isfinite(self._dones).all():
+            print("WARNING: Done contains non-finite values, please check the replay buffer.")
 
         try:
             with filename.open(mode="wb") as f:

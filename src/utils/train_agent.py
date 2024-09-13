@@ -69,6 +69,7 @@ def train_agent(
     logs = {"actor_loss": [], "critic_loss": []}
     inc_value = None
 
+    print("Starting training with the following configuration...")
     print(f"Batch size: {batch_size}")
     print(f"HP config: {hyperparameters}")
     for t in range(int(num_train_iter)):
@@ -159,7 +160,7 @@ def train_agent(
                         inc_value = test_acc_mean
                     else:
                         inc_value = np.max([inc_value, test_acc_mean])
-                    
+
                 if np.isnan(inc_value):
                     print(dict(hyperparameters))
 
