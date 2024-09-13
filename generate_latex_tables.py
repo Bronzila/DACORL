@@ -1,6 +1,7 @@
 import argparse
 from pathlib import Path
-from src.utils.general import calculate_statistics
+
+from src.utils.run_statistics import calculate_statistics
 
 single_name_mapping = {
     "teacher": {

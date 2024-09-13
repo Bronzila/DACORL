@@ -4,7 +4,7 @@ from pathlib import Path
 
 from markdown_table_generator import generate_markdown, table_from_string_list
 
-from src.utils.general import calculate_statistics
+from src.utils.run_statistics import calculate_statistics
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate tables")
