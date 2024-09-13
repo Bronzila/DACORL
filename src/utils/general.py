@@ -22,34 +22,6 @@ from src.agents import (
 from src.utils.replay_buffer import ReplayBuffer
 
 
-def init_xavier_uniform(m):
-    if isinstance(m, nn.Linear):
-        nn.init.xavier_uniform_(m.weight, nn.init.calculate_gain("relu"))
-
-def init_xavier_normal(m):
-    if isinstance(m, nn.Linear):
-        nn.init.xavier_normal_(m.weight, nn.init.calculate_gain("relu"))
-
-def init_kaiming_uniform(m):
-    if isinstance(m, nn.Linear):
-        nn.init.kaiming_uniform_(m.weight, nonlinearity="relu")
-
-def init_kaiming_normal(m):
-    if isinstance(m, nn.Linear):
-        nn.init.kaiming_normal_(m.weight, nonlinearity="relu")
-
-def init_orthogonal(m):
-    if isinstance(m, nn.Linear):
-        nn.init.orthogonal_(m.weight, nn.init.calculate_gain("relu"))
-
-init_map = {
-    "xavier_uniform": init_xavier_uniform,
-    "xavier_normal": init_xavier_normal,
-    "kaiming_uniform": init_kaiming_uniform,
-    "kaiming_normal": init_kaiming_normal,
-    "orthogonal": init_orthogonal,
-}
-
 # Time out related class and function
 class OutOfTimeError(Exception):
     pass
@@ -103,18 +75,14 @@ def get_agent(
 
         alpha = hyperparameters.get("alpha", config.alpha)
 
-        initialization = hyperparameters.get("initialization", None)
-        if initialization:
-            initialization = init_map[hyperparameters["initialization"]]
         actor = td3_bc.Actor(
             state_dim,
             action_dim,
             max_action,
-            get_activation(hyperparameters.get("activation", "ReLU")),
+            activation=nn.ReLU,
             hidden_dim=hyperparameters.get("hidden_dim", 64),
             hidden_layers=hyperparameters.get("hidden_layers", 1),
             dropout_rate=hyperparameters.get("dropout_rate", 0.2),
-            initialization=initialization,
         ).to(device)
         print(f"hidden_dim: {hyperparameters.get('hidden_dim', 64)}")
         actor_optimizer = torch.optim.Adam(
@@ -191,15 +159,6 @@ def get_environment(env_config: dict) -> Any:
             f"No environment of type {env_config['type']} found.",
         )
 
-
-def get_activation(activation: str) -> nn.Module:
-    if activation == "ReLU":
-        return nn.ReLU
-    if activation == "LeakyReLU":
-        return nn.LeakyReLU
-    if activation == "Tanh":
-        return nn.Tanh
-    return None
 
 
 def save_agent(state_dicts: dict, results_dir: Path, iteration: int, seed: int=0) -> None:
