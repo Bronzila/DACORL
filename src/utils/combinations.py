@@ -125,7 +125,7 @@ def get_run_ids_by_agent_path(path_data_mapping, combination_strategy, total_siz
 
         print("Used paths and percentage of data in final buffer:")
         for path, data in path_data_mapping.items():
-            print(f"{path}: {len(data["run_ids"]) / n_runs}")
+            print(f"{path}: {len(data['run_ids']) / n_runs}")
         return path_data_mapping
     else:
         raise NotImplementedError()
