@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import json
 import math
-from pathlib import Path
 import time
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -292,7 +292,7 @@ def generate_dataset(
                 state = next_state
                 if done:
                     break
-            
+
             end = time.time()
             print(f"Run {run} took {end - start} sec.")
 

@@ -5,6 +5,7 @@ from src.utils.general import get_config_space
 from src.utils.train_agent import train_agent as train_offline
 from src.utils.train_agent_online import train_agent as train_online
 from train_hpo import Optimizee
+from pathlib import Path
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train any offline agent ")
@@ -66,7 +67,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--tanh_scaling",
         action=argparse.BooleanOptionalAction,
-        default=True,
+        default=False,
     )
     parser.add_argument("--eval_seed", type=int, default=123)
     parser.add_argument(
@@ -95,6 +96,10 @@ if __name__ == "__main__":
     else:
         train_agent = train_offline
 
+    # data = Path(args.data_dir) / "results" / args.agent_type / str(args.seed) / str(30000) / "eval_data.csv"
+    # if args.agent_type in ["lb_sac", "sac_n", "edac"] and data.exists():
+    #         print(f"Found at folder at {data}")
+    # else:
     train_agent(
         data_dir=args.data_dir,
         agent_type=args.agent_type,
