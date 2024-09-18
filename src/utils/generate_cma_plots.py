@@ -39,6 +39,19 @@ teacher_name_mapping = {
     "constant": "Constant",
 }
 
+f_name = {
+    12: "BentCigar",
+    11: "Discus",
+    2: "Ellipsoid",
+    23: "Katsuura",
+    15: "Rastrigin",
+    8: "Rosenbrock",
+    17: "Schaffers",
+    20: "Schwefel",
+    1: "Sphere",
+    16: "Weierstrass",
+}
+
 
 def get_problem_from_name(function_name) -> Any:
     if function_name == "Rosenbrock":
@@ -56,15 +69,11 @@ def load_data(paths: list, num_runs: int = 1000):
     aggregated_df = pd.DataFrame()
     length = 0
     for idx, path in enumerate(paths):
+        print(f"Loading from path {idx}: {path}")
         # Read run data
-        print(path)
         df = pd.read_csv(path)
         length += len(df.index)
 
-        if "action" in df:
-            df["action"] = df["action"].map(lambda x: 10**x)
-        else:
-            df["action"] = df["actions"].map(lambda x: 10**x)
         df["run"] += idx * num_runs
 
         aggregated_df = pd.concat([aggregated_df, df], ignore_index=True)
@@ -292,37 +301,27 @@ def plot_actions(
     title: str = "",
     heterogeneous: bool = False,
 ) -> None:
-    plt.clf()
     run_data_path = []
-    if seed:
-        run_data_path.append(
-            Path(dir_path)
-            / "results"
-            / agent_type
-            / f"{seed}"
-            / fidelity
-            / "eval_data.csv",
-        )
-        filename = f"action_{agent_type}_{seed}_{fidelity}"
-    elif seed is None:
-        dir_path = Path(dir_path)
-        teacher_name = dir_path.parents[1].name
-        filename = f"action_{labels[1]}_{dir_path.name}_{teacher_name}_aggregate_{fidelity}"
-        for path in (Path(dir_path) / "results" / agent_type).rglob(
-            "*/eval_data.csv",
-        ):
-            run_data_path.append(path)
+    # if seed:
+    #     run_data_path.append(
+    #         / "results"
+    #         / agent_type
+    #         / f"{seed}"
+    #         / fidelity
+    #         / "eval_data.csv",
+    dir_path = Path(dir_path)
+    dir_path.parents[1].name
+    for path in (Path(dir_path) / "results" / agent_type).rglob(
+        f"*/{fidelity}/eval_data.csv",
+    ):
+        run_data_path.append(path)
 
-    run_info_path = Path(dir_path, "run_info.json")
+    run_info_path = dir_path / "run_info.json"
 
     # Get exemplatory teacher run for plotting
     if teacher:
         run_data_teacher_path = Path(dir_path, "aggregated_run_data.csv")
         run_data_teacher = pd.read_csv(run_data_teacher_path)
-        run_data_teacher["action"] = 10 ** run_data_teacher["action"]
-
-        #     "run"
-        # ].unique()
 
         # Get run info from file
         with Path.open(run_info_path) as file:
@@ -346,95 +345,86 @@ def plot_actions(
     drawstyle = "default"
     aggregated_df = load_data(run_data_path, run_info["num_runs"])
 
-    if num_runs > 0:
-        for data in list(aggregated_df.groupby("run")):
+    for function_df, teacher_df in zip(
+        aggregated_df.groupby("function_id"),
+        run_data_teacher.groupby("function_id"),
+    ):
+        fid = int(function_df[1]["function_id"].mean())
+        filename = (
+            f"action_{labels[1]}_{f_name[fid]}_{labels[0]}_aggregate_{fidelity}"
+        )
+
+        plt.clf()
+        # if num_runs > 0:
+        #     for data in list(aggregated_df.groupby("run")):
+        #         if reward:
+        #             sns.lineplot(
+        #         if teacher:
+        #             sns.lineplot(
+
+        if aggregate:
+            plt.clf()
+            if teacher:
+                ax = sns.lineplot(
+                    data=teacher_df[1],
+                    x="batch",
+                    y="action",
+                    drawstyle=teacher_drawstyle,
+                    label=labels[0],
+                    errorbar=("pi", 80),
+                )
             ax = sns.lineplot(
-                data=data,
+                data=function_df[1],
                 x="batch",
                 y="action",
                 drawstyle=drawstyle,
-                label=agent_type.upper(),
+                label=labels[1],
+                errorbar=("pi", 80),
             )
             if reward:
                 ax2 = ax.twinx()
                 sns.lineplot(
-                    data=data,
+                    data=function_df[1],
                     x="batch",
                     y="reward",
-                    drawstyle=drawstyle,
+                    color="g",
                     label="Reward",
                     ax=ax2,
                 )
-            if teacher:
-                sns.lineplot(
-                    data=run_data_teacher,
-                    x="batch",
-                    y="action",
-                    drawstyle=teacher_drawstyle,
-                    label="Teacher",
-                )
 
-    if aggregate:
-        plt.clf()
-        if teacher:
-            ax = sns.lineplot(
-                data=run_data_teacher,
-                x="batch",
-                y="action",
-                drawstyle=teacher_drawstyle,
-                label=labels[0],
-                errorbar=("pi", 80),
-            )
-        ax = sns.lineplot(
-            data=aggregated_df,
-            x="batch",
-            y="action",
-            drawstyle=drawstyle,
-            label=labels[1],
-            errorbar=("pi", 80),
-        )
-        if reward:
-            ax2 = ax.twinx()
-            sns.lineplot(
-                data=aggregated_df,
-                x="batch",
-                y="reward",
-                color="g",
-                label="Reward",
-                ax=ax2,
-            )
-
-        if title:
-            plt.title(title, fontsize=BIGGER_SIZE)
-        plt.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
-        ax.set(xlabel="Step $i$", ylabel="Learning Rate $\\alpha_i$")
-        # Show or save the plot
-        if show:
-            plt.show()
-        else:
-            dir_path = Path(dir_path)
-            if not heterogeneous:
-                save_path = Path(
-                    dir_path.parents[2],  # PROJECT/ToySGD/
-                    "figures",
-                    dir_path.name,  # FUNCTION/
-                    dir_path.parents[1].name,  # TEACHER/
-                )
+            if title:
+                plt.title(title, fontsize=BIGGER_SIZE)
+            plt.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
+            ax.set(xlabel="Step $i$", ylabel="Learning Rate $\\alpha_i$")
+            # Show or save the plot
+            if show:
+                plt.show()
             else:
-                save_path = Path(
-                    dir_path.parents[1],  # PROJECT/ToySGD/
-                    "figures",
-                    dir_path.name,  # FUNCTION/
-                    dir_path.parents[0].name,  # TEACHER/
-                )
+                dir_path = Path(dir_path)
+                if not heterogeneous:
+                    save_path = Path(
+                        dir_path.parents[2],  # PROJECT/ToySGD/
+                        "figures",
+                        f_name[fid],  # FUNCTION/
+                        labels[0],  # TEACHER/
+                    )
+                else:
+                    save_path = Path(
+                        dir_path.parents[1],  # PROJECT/ToySGD/
+                        "figures",
+                        f_name[fid],  # FUNCTION/
+                        labels[0],  # TEACHER/
+                    )
 
-            if not save_path.exists():
-                save_path.mkdir(parents=True)
-            print(f"Saving figure to {save_path / f'{filename}_aggregate.pdf'}")
-            plt.savefig(
-                save_path / f"{filename}_aggregate.pdf",
-                bbox_inches="tight",
-            )
+                if not save_path.exists():
+                    save_path.mkdir(parents=True)
+                print(
+                    f"Saving figure to {save_path / f'{filename}_aggregate.pdf'}",
+                )
+                plt.savefig(
+                    save_path / f"{filename}_aggregate.pdf",
+                    bbox_inches="tight",
+                )
 
 
 def plot_comparison(
@@ -460,14 +450,13 @@ def plot_comparison(
         teacher_name = dir_path.parents[1].name
         if teacher_name not in teacher_name_mapping:  # heterogeneous case
             teacher_name = dir_path.parents[0].name
-        func_name = dir_path.name
         teacher_data = None
         agent_data = None
         if teacher:
             if teacher_path == "":
                 teacher_path = dir_path / "aggregated_run_data.csv"
             else:
-                teacher_path = teacher_path / "aggregated_run_data.csv"
+                teacher_path = Path(teacher_path) / "aggregated_run_data.csv"
             teacher_data = load_data([teacher_path], run_info["num_runs"])
 
             if teacher_label == "":
@@ -477,238 +466,101 @@ def plot_comparison(
         dir_path = Path(dir_path)
         teacher_name = dir_path.parents[1].name
         for path in (Path(dir_path) / "results" / agent_type).rglob(
-            "*/eval_data.csv",
+            f"*{fidelity}/eval_data.csv",
         ):
-            print(f"Found path: {path}")
             run_data_path.append(path)
 
         agent_data = load_data(run_data_path, run_info["num_runs"])
-        if metric == "f_cur":
 
-            def fill_missing_values(group, metric):
-                last_value = group[metric].iloc[-1]
+        def fill_missing_values(group, metric):
+            last_value = group[metric].iloc[-1]
 
-                # Create full run
-                all_steps = pd.DataFrame({"batch": range(101)})
+            # Create full run
+            all_steps = pd.DataFrame({"batch": range(101)})
 
-                # Merge group with full run
-                filled_group = pd.merge(
-                    all_steps,
-                    group,
-                    on="batch",
-                    how="left",
-                )
+            # Merge group with full run
+            filled_group = pd.merge(all_steps, group, on="batch", how="left")
 
-                filled_group["run"] = group["run"].iloc[0]
-                filled_group[metric] = filled_group[metric].fillna(last_value)
+            filled_group["run"] = group["run"].iloc[0]
+            filled_group[metric] = filled_group[metric].fillna(last_value)
 
-                return filled_group
+            return filled_group
 
-            agent_required_df = agent_data[[metric, "run", "batch"]]
-            teacher_required_df = teacher_data[[metric, "run", "batch"]]
+        agent_required_df = agent_data[[metric, "run", "batch", "function_id"]]
+        teacher_required_df = teacher_data[
+            [metric, "run", "batch", "function_id"]
+        ]
 
-            agent_df_filled = (
-                agent_required_df.groupby("run")
-                .apply(fill_missing_values, metric)
-                .reset_index(drop=True)
-            )
-            teacher_df_filled = (
-                teacher_required_df.groupby("run")
-                .apply(fill_missing_values, metric)
-                .reset_index(drop=True)
-            )
-        else:
-            teacher_df_filled = teacher_data
-            agent_df_filled = agent_data
-
-        if teacher_data is not None:
-            ax = sns.lineplot(
-                teacher_df_filled,
-                x="batch",
-                y=metric,
-                errorbar=("ci", 99),
-                label=teacher_label,
-            )
-        if agent_data is not None:
-            ax = sns.lineplot(
-                agent_df_filled,
-                x="batch",
-                y=metric,
-                errorbar=("ci", 99),
-                label=agent_label,
-            )
-    if func_name in ["Rosenbrock", "Sphere"]:
-        ax.set_yscale("log")
-    else:
-        plt.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
-    ax.set_xlabel("Step $i$")
-    ax.set_ylabel("$f(\\theta_i)$")
-    if title:
-        plt.title(title, fontsize=BIGGER_SIZE)
-
-    if show:
-        plt.show()
-    else:
-        save_path = Path(
-            dir_path.parents[2],  # PROJECT/ToySGD/
-            "figures",
-            # "comparison",
-            dir_path.name,
-            dir_path.parents[1].name,
+        agent_df_filled = (
+            agent_required_df.groupby("run")
+            .apply(fill_missing_values, metric)
+            .reset_index(drop=True)
         )
-        if not save_path.exists():
-            save_path.mkdir(parents=True)
-        file_name = (
-            f"comparison_{agent_label}_{dir_path.name}.pdf"
-            if len(dir_paths) == 0
-            else f"trajectory_comparison_agents_{agent_label}_{teacher_label}.pdf"
+        teacher_df_filled = (
+            teacher_required_df.groupby("run")
+            .apply(fill_missing_values, metric)
+            .reset_index(drop=True)
         )
-        print(f"Saving figure to {save_path / file_name}")
-        plt.savefig(save_path / file_name, bbox_inches="tight")
 
-
-def plot_actions_sgd(
-    dir_path: str,
-    agent_type: str,
-    fidelity: int,
-    seed: int | None,
-    show: bool = False,
-    num_runs: int = 1,
-    aggregate: bool = True,
-    teacher: bool = True,
-    reward: bool = False,
-    labels: list = [],
-    title: str = "",
-) -> None:
-    plt.clf()
-    run_data_path = []
-    if seed:
-        run_data_path.append(
-            Path(dir_path)
-            / "results"
-            / agent_type
-            / seed
-            / fidelity
-            / "eval_data.csv",
-        )
-        filename = f"action_{agent_type}_{seed}_{fidelity}"
-    elif seed is None:
-        dir_path = Path(dir_path)
-        teacher_name = dir_path.parents[0].name
-        filename = f"action_{agent_type}_{teacher_name}_aggregate_{fidelity}"
-        for path in (Path(dir_path) / "results" / agent_type).rglob(
-            f"*/{fidelity}/eval_data.csv",
+        for function_df, teacher_df in zip(
+            agent_df_filled.groupby("function_id"),
+            teacher_df_filled.groupby("function_id"),
         ):
-            run_data_path.append(path)
+            plt.clf()
+            fid = int(function_df[1]["function_id"].mean())
+            func_name = f_name[fid]
 
-    run_info_path = Path(dir_path, "run_info.json")
-
-    # Get exemplatory teacher run for plotting
-    if teacher:
-        run_data_teacher_path = Path(dir_path, "aggregated_run_data.csv")
-        run_data_teacher = pd.read_csv(run_data_teacher_path)
-        run_data_teacher["action"] = 10 ** run_data_teacher["action"]
-
-        # Get run info from file
-        with Path.open(run_info_path) as file:
-            run_info = json.load(file)
-            teacher_drawstyle = "default"
-            if run_info["agent"]["type"] == "step_decay":
-                teacher_drawstyle = "steps-post"
-                # Only use single step_decay teacher for plotting, otherwise it adds weird
-                # Semi transparent line
-                if len(run_data_teacher) <= 200000:  # single teacher case
-                    completed_runs_ids = run_data_teacher[
-                        run_data_teacher["batch"] == 9000
-                    ]["run"].unique()
-                    completed_runs = run_data_teacher[
-                        run_data_teacher["run"].isin(completed_runs_ids)
-                    ]
-                    single_teacher_run = completed_runs[
-                        completed_runs["run"] == completed_runs_ids[0]
-                    ]
-                    run_data_teacher = single_teacher_run
-
-    drawstyle = "default"
-    aggregated_df = load_data(run_data_path, run_info["num_runs"])
-
-    if num_runs > 0:
-        for data in list(aggregated_df.groupby("run")):
-            ax = sns.lineplot(
-                data=data,
-                x="batch",
-                y="action",
-                drawstyle=drawstyle,
-                label=agent_type.upper(),
-            )
-            if reward:
-                ax2 = ax.twinx()
-                sns.lineplot(
-                    data=data,
+            if teacher_data is not None:
+                ax = sns.lineplot(
+                    teacher_df[1],
                     x="batch",
-                    y="reward",
-                    drawstyle=drawstyle,
-                    label="Reward",
-                    ax=ax2,
+                    y="f_cur",
+                    errorbar=("ci", 99),
+                    label=teacher_label,
                 )
-            if teacher:
-                sns.lineplot(
-                    data=run_data_teacher,
+            if agent_data is not None:
+                ax = sns.lineplot(
+                    function_df[1],
                     x="batch",
-                    y="action",
-                    drawstyle=teacher_drawstyle,
-                    label="Teacher",
+                    y="f_cur",
+                    errorbar=("ci", 99),
+                    label=agent_label,
                 )
 
-    if aggregate:
-        plt.clf()
-        if teacher:
-            ax = sns.lineplot(
-                data=run_data_teacher,
-                x="batch",
-                y="action",
-                drawstyle=teacher_drawstyle,
-                label=labels[0],
-                errorbar=("ci", 99),
-            )
-        ax = sns.lineplot(
-            data=aggregated_df,
-            x="batch",
-            y="action",
-            drawstyle=drawstyle,
-            label=labels[1][0],
-            errorbar=("ci", 99),
-        )
-        if reward:
-            ax2 = ax.twinx()
-            sns.lineplot(
-                data=aggregated_df,
-                x="batch",
-                y="reward",
-                color="g",
-                label="Reward",
-                ax=ax2,
-            )
+            if func_name in ["Ellipsoid", "BentCigar", "Schwefel", "Discus"]:
+                ax.set_yscale("log")
+            elif func_name in [
+                "Rosenbrock",
+                "Rastrigin",
+                "Katsuura",
+                "Sphere",
+                "Weierstrass",
+                "Schaffers",
+            ]:
+                ax.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
+            ax.set_xlabel("Step $i$")
+            ax.set_ylabel("$f(\\theta_i)$")
+            if title:
+                plt.title(title, fontsize=BIGGER_SIZE)
 
-        if title:
-            plt.title(title, fontsize=BIGGER_SIZE)
-        plt.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
-        ax.set(xlabel="Batch $i$", ylabel="Learning Rate $\\alpha_i$")
-        # Show or save the plot
-        if show:
-            plt.show()
-        else:
-            dir_path = Path(dir_path)
-            save_path = Path(
-                dir_path.parents[1],  # PROJECT/ToySGD/
-                "figures",
-                "action",
-            )
-
-            if not save_path.exists():
-                save_path.mkdir(parents=True)
-            print(f"Saving figure to {save_path / f'{filename}.pdf'}")
-            plt.savefig(save_path / f"{filename}.pdf", bbox_inches="tight")
+            if show:
+                plt.show()
+            else:
+                save_path = Path(
+                    dir_path.parents[2],  # PROJECT/ToySGD/
+                    "figures",
+                    func_name,
+                    teacher_label,
+                )
+                if not save_path.exists():
+                    save_path.mkdir(parents=True)
+                file_name = (
+                    f"comparison_{agent_label}_{dir_path.name}.pdf"
+                    if len(dir_paths) == 0
+                    else f"trajectory_comparison_agents_{agent_label}_{teacher_label}.pdf"
+                )
+                print(f"Saving figure to {save_path / file_name}")
+                plt.savefig(save_path / file_name, bbox_inches="tight")
 
 
 def plot_teacher_actions(

@@ -2,9 +2,8 @@ import argparse
 import json
 from pathlib import Path
 
-from src.utils.generate_plots import (
+from src.utils.generate_cma_plots import (
     plot_actions,
-    plot_actions_sgd,
     plot_comparison,
     plot_optimization_trace,
     plot_teacher_actions,
@@ -12,10 +11,8 @@ from src.utils.generate_plots import (
 )
 
 map_teacher_label = {
-    "exponential_decay": "Exponential Decay",
-    "step_decay": "Step Decay",
-    "sgdr": "SGDR",
-    "constant": "Constant",
+    "csa": "CSA",
+    "cmaes_constant": "Constant",
 }
 
 map_agent_label = {
@@ -168,23 +165,47 @@ if __name__ == "__main__":
     agent_label = [map_agent_label[args.agent]]
     teacher_label = map_teacher_label[args.teacher_type]
 
-    benchmark = Path(args.data_dir).parents[1].name
-    if benchmark == "SGD":
-        if args.action:
-            plot_actions_sgd(
-                dir_path=args.data_dir,
-                agent_type=args.agent,
-                fidelity=args.fidelity,
-                seed=args.seed,
-                show=args.show,
-                num_runs=args.num_runs,
-                aggregate=args.aggregate,
-                teacher=args.teacher,
-                reward=args.reward,
-                labels=[teacher_label, agent_label],
-                title=args.title,
-            )
-        if args.comparison:
+    # if args.optim_trace:
+    #     plot_optimization_trace(
+    #         args.data_dir,
+    #         args.agent_path,
+    #         args.show,
+    #         args.num_runs,
+    #     )
+    if args.action:
+        plot_actions(
+            args.data_dir,
+            args.agent,
+            args.fidelity,
+            args.seed,
+            args.show,
+            args.num_runs,
+            args.aggregate,
+            args.teacher,
+            args.reward,
+            [teacher_label, agent_label[0]],
+            args.title,
+            args.heterogeneous,
+        )
+    if args.plot_type:
+        plot_type(
+            args.plot_type,
+            args.data_dir,
+            args.fidelity,
+            args.seed,
+            args.show,
+            args.teacher,
+        )
+    if args.action_teacher:
+        plot_teacher_actions(
+            args.data_dir,
+            args.show,
+            args.reward,
+            args.single_plot,
+            args.function,
+        )
+    if args.comparison:
+        if args.data_dir:
             plot_comparison(
                 dir_paths=[args.data_dir],
                 agent_type=args.agent,
@@ -195,61 +216,4 @@ if __name__ == "__main__":
                 title=args.title,
                 teacher_path=args.teacher_dir,
                 teacher_label=teacher_label,
-                metric="valid_acc")
-    elif benchmark == "ToySGD":
-        if args.optim_trace:
-            plot_optimization_trace(
-                args.data_dir,
-                args.agent_path,
-                args.show,
-                args.num_runs,
             )
-        if args.action:
-            plot_actions(
-                args.data_dir,
-                args.agent,
-                args.fidelity,
-                args.seed,
-                args.show,
-                args.num_runs,
-                args.aggregate,
-                args.teacher,
-                args.reward,
-                [teacher_label, agent_label[0]],
-                args.title,
-                args.heterogeneous,
-            )
-        if args.plot_type:
-            plot_type(
-                args.plot_type,
-                args.data_dir,
-                args.fidelity,
-                args.seed,
-                args.show,
-                args.teacher,
-            )
-        if args.action_teacher:
-            plot_teacher_actions(
-                args.data_dir,
-                args.show,
-                args.reward,
-                args.single_plot,
-                args.function,
-            )
-        if args.comparison:
-            if args.data_dir:
-                plot_comparison(
-                    dir_paths=[args.data_dir],
-                    agent_type=args.agent,
-                    fidelity=args.fidelity,
-                    agent_labels=agent_label,
-                    teacher=args.teacher,
-                    show=args.show,
-                    title=args.title,
-                    teacher_path=args.teacher_dir,
-                    teacher_label=teacher_label,
-                )
-    else:
-        print(f"Unsupported type {benchmark}")
-
-    
