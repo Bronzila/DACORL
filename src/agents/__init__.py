@@ -1,3 +1,4 @@
+from src.agents.cmaes_constant import ConstantCMAES
 from src.agents.constant import ConstantAgent
 from src.agents.csa import CSA
 from src.agents.exponential_decay import ExponentialDecayAgent
@@ -11,6 +12,7 @@ __all__ = [
     "StepDecayAgent",
     "SGDRAgent",
     "ConstantAgent",
+    "ConstantCMAES",
     "TD3_BC",
     "CSA",
     "TD3",
