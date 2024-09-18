@@ -35,9 +35,9 @@ def get_grouped_df(paths: Path | list[Path], num_runs: int) -> pd.DataFrame:
     return df
 
 def format_number(num):
-    if 1 <= num <= 999:
+    if 1 <= np.abs(num) <= 999:
         return f"{num:.2f}"
-    elif 0.1 <= num < 1:
+    elif 0.1 <= np.abs(num) < 1:
         return f"{num:.3f}"
     else:
         formatted_num = f"{num:.2e}"
@@ -152,13 +152,14 @@ if __name__ == "__main__":
             if agent in args.teacher:
                 agent_path = base_path / agent / str(args.ids[0]) / "aggregated_run_data.csv"
             else:
-                agent_path = base_path / teacher / str(args.ids[0]) / "results" / agent / str(args.ids[0])
+                agent_path = base_path / teacher / str(args.ids[0]) / "results" / agent
                 agent_paths = list(agent_path.rglob(f"*{args.hpo_budget}/eval_data.csv"))
                 agent_path = agent_paths if agent_paths else None
 
+            print(agent)
             metrics[agent] = compute_metrics_for_agent(agent, agent_path, cma_es_function, objective, args.num_runs)
 
-        for agent in args.args.agents:
+        for agent in args.agents:
             agent_str = f"\\acrshort{{{agent}}}"
 
             row_mean_uni = [agent_str]
@@ -186,7 +187,7 @@ if __name__ == "__main__":
                     iqm_str = f"{format_number(iqm_mean_a)} {pm} {format_number(iqm_std_a)}"
                     if mean_a < teacher_metrics["mean"][0]:
                         mean_str = f"\\textbf{{{mean_str}}}"
-                    if iqm_a < teacher_metrics["iqm"][0]:
+                    if iqm_mean_a < teacher_metrics["iqm"][0]:
                         iqm_str = f"\\textbf{{{iqm_str}}}"
                     
                     row_mean_uni.append(mean_str)
@@ -222,7 +223,11 @@ if __name__ == "__main__":
                     mean_str = f"{format_number(mean_a)} {pm} {format_number(std_a)}"
                     iqm_mean_a, iqm_std_a = agent_metrics["iqm"]
                     iqm_str = f"{format_number(iqm_mean_a)} {pm} {format_number(iqm_std_a)}"
-                    
+                    if mean_a < teacher_metrics["mean"][0]:
+                        mean_str = f"\\textbf{{{mean_str}}}"
+                    if iqm_mean_a < teacher_metrics["iqm"][0]:
+                        iqm_str = f"\\textbf{{{iqm_str}}}"
+
                     row_mean_multi_1.append(mean_str)
                     row_iqm_multi_1.append(iqm_str)
                     if mean_a < mean_min_multi_1[0][2]:
@@ -233,7 +238,8 @@ if __name__ == "__main__":
                 if args.lowest:
                     lowest_a = agent_metrics["lowest"]
                     lowest_str = f"{format_number(lowest_a)}"
-                    
+                    if lowest_a < teacher_metrics["lowest"]:
+                        lowest_str = f"\\textbf{{{lowest_str}}}" 
                     row_lowest_multi_1.append(lowest_str)
                     if lowest_a < lowest_min_multi_1[0][2]:
                         lowest_min_multi_1[0] = [len(rows_lowest_multimodal_1), len(row_lowest_multi_1) - 1, lowest_a]
@@ -241,7 +247,8 @@ if __name__ == "__main__":
                 if args.auc:
                     auc_mean_a, auc_std_a = agent_metrics["auc"]
                     auc_str = f"{format_number(auc_mean_a)} {pm} {format_number(auc_std_a)}"
-                    
+                    if lowest_a < teacher_metrics["auc"][0]:
+                        auc_str = f"\\textbf{{{auc_str}}}" 
                     row_auc_multi_1.append(auc_str)
                     if auc_mean_a < auc_min_multi_1[0][2]:
                         auc_min_multi_1[0] = [len(rows_auc_multimodal_1), len(row_auc_multi_1) - 1, auc_mean_a]
@@ -253,7 +260,11 @@ if __name__ == "__main__":
                     mean_str = f"{format_number(mean_a)} {pm} {format_number(std_a)}"
                     iqm_mean_a, iqm_std_a = agent_metrics["iqm"]
                     iqm_str = f"{format_number(iqm_mean_a)} {pm} {format_number(iqm_std_a)}"
-                    
+                    if mean_a < teacher_metrics["mean"][0]:
+                        mean_str = f"\\textbf{{{mean_str}}}"
+                    if iqm_mean_a < teacher_metrics["iqm"][0]:
+                        iqm_str = f"\\textbf{{{iqm_str}}}"
+
                     row_mean_multi_2.append(mean_str)
                     row_iqm_multi_2.append(iqm_str)
                     if mean_a < mean_min_multi_2[0][2]:
@@ -264,7 +275,8 @@ if __name__ == "__main__":
                 if args.lowest:
                     lowest_a = agent_metrics["lowest"]
                     lowest_str = f"{format_number(lowest_a)}"
-                    
+                    if lowest_a < teacher_metrics["lowest"]:
+                        lowest_str = f"\\textbf{{{lowest_str}}}" 
                     row_lowest_multi_2.append(lowest_str)
                     if lowest_a < lowest_min_multi_2[0][2]:
                         lowest_min_multi_2[0] = [len(rows_lowest_multimodal_2), len(row_lowest_multi_2) - 1, lowest_a]
@@ -272,7 +284,8 @@ if __name__ == "__main__":
                 if args.auc:
                     auc_mean_a, auc_std_a = agent_metrics["auc"]
                     auc_str = f"{format_number(auc_mean_a)} {pm} {format_number(auc_std_a)}"
-                    
+                    if lowest_a < teacher_metrics["auc"][0]:
+                        auc_str = f"\\textbf{{{auc_str}}}" 
                     row_auc_multi_2.append(auc_str)
                     if auc_mean_a < auc_min_multi_2[0][2]:
                         auc_min_multi_2[0] = [len(rows_auc_multimodal_2), len(row_auc_multi_2) - 1, auc_mean_a]
@@ -296,48 +309,64 @@ if __name__ == "__main__":
                 rows_auc_multimodal_2.append(row_auc_multi_2)
 
         if args.mean:
-            table_result_path = generate_file_path(base_path, "mean", "unimodal", args.format)
+            table_result_path = generate_file_path(base_path / teacher, "mean", "unimodal", args.format)
             table_content = generate_table(rows_mean_unimodal, args.format, mean_min_uni)
             with table_result_path.open("w") as f:
                 f.write(table_content)
             
-            table_result_path = generate_file_path(base_path, "iqm", "unimodal", args.format)
+            table_result_path = generate_file_path(base_path / teacher, "iqm", "unimodal", args.format)
             table_content = generate_table(rows_iqm_unimodal, args.format, iqm_min_uni)
             with table_result_path.open("w") as f:
                 f.write(table_content)
             
-            table_result_path = generate_file_path(base_path, "mean", "multimodal_1", args.format)
+            table_result_path = generate_file_path(base_path / teacher, "mean", "multimodal_1", args.format)
             table_content = generate_table(rows_mean_multimodal_1, args.format, mean_min_multi_1)
             with table_result_path.open("w") as f:
                 f.write(table_content)
             
-            table_result_path = generate_file_path(base_path, "iqm", "multimodal_1", args.format)
+            table_result_path = generate_file_path(base_path / teacher, "iqm", "multimodal_1", args.format)
             table_content = generate_table(rows_iqm_multimodal_1, args.format, iqm_min_multi_1)
             with table_result_path.open("w") as f:
                 f.write(table_content)
             
-            table_result_path = generate_file_path(base_path, "mean", "multimodal_2", args.format)
+            table_result_path = generate_file_path(base_path / teacher, "mean", "multimodal_2", args.format)
             table_content = generate_table(rows_mean_multimodal_2, args.format, mean_min_multi_2)
             with table_result_path.open("w") as f:
                 f.write(table_content)
             
-            table_result_path = generate_file_path(base_path, "iqm", "multimodal_2", args.format)
+            table_result_path = generate_file_path(base_path / teacher, "iqm", "multimodal_2", args.format)
             table_content = generate_table(rows_iqm_multimodal_2, args.format, iqm_min_multi_2)
             with table_result_path.open("w") as f:
                 f.write(table_content)
         
         if args.lowest:
-            table_result_path = generate_file_path(base_path, "lowest", "unimodal", args.format)
+            table_result_path = generate_file_path(base_path / teacher, "lowest", "unimodal", args.format)
             table_content = generate_table(rows_lowest_unimodal, args.format, lowest_min_uni)
             with table_result_path.open("w") as f:
                 f.write(table_content)
             
-            table_result_path = generate_file_path(base_path, "lowest", "multimodal_1", args.format)
+            table_result_path = generate_file_path(base_path / teacher, "lowest", "multimodal_1", args.format)
             table_content = generate_table(rows_lowest_multimodal_1, args.format, lowest_min_multi_1)
             with table_result_path.open("w") as f:
                 f.write(table_content)
             
-            table_result_path = generate_file_path(base_path, "lowest", "multimodal_2", args.format)
+            table_result_path = generate_file_path(base_path / teacher, "lowest", "multimodal_2", args.format)
             table_content = generate_table(rows_lowest_multimodal_2, args.format, lowest_min_multi_2)
+            with table_result_path.open("w") as f:
+                f.write(table_content)
+
+        if args.auc:
+            table_result_path = generate_file_path(base_path / teacher, "auc", "unimodal", args.format)
+            table_content = generate_table(rows_auc_unimodal, args.format, auc_min_uni)
+            with table_result_path.open("w") as f:
+                f.write(table_content)
+            
+            table_result_path = generate_file_path(base_path / teacher, "auc", "multimodal_1", args.format)
+            table_content = generate_table(rows_auc_multimodal_1, args.format, auc_min_multi_1)
+            with table_result_path.open("w") as f:
+                f.write(table_content)
+            
+            table_result_path = generate_file_path(base_path / teacher, "auc", "multimodal_2", args.format)
+            table_content = generate_table(rows_auc_multimodal_2, args.format, auc_min_multi_2)
             with table_result_path.open("w") as f:
                 f.write(table_content)

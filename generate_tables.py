@@ -94,7 +94,7 @@ if __name__ == "__main__":
         "--agents",
         help="Specify which agents to generate the table for",
         nargs="+",
-        default=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac", "iql", "td3"],
+        default=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac", "iql"],# "td3"],
     )
     parser.add_argument(
         "--functions",
@@ -133,7 +133,7 @@ if __name__ == "__main__":
     if base_path.name == "ToySGD":
         objective = "f_cur"
     elif base_path.name == "SGD":
-        objective = "valid_acc"
+        objective = "test_acc"
     elif base_path.name == "CMAES":
         objective = "f_cur"
     else:
@@ -169,8 +169,11 @@ if __name__ == "__main__":
                 row_lowest = [agent_str]
 
                 for j, teacher in enumerate(args.teacher):
+                    main_path = base_path / teacher / str(agent_id) 
+                    if base_path.name == "ToySGD":
+                        main_path = main_path / function
                     if agent == "teacher":
-                        path = base_path / teacher / str(agent_id) / function / "aggregated_run_data.csv"
+                        path = base_path / teacher / str(agent_id) / "aggregated_run_data.csv"
                         mean, std, lowest, iqm, iqm_std, min_path, auc, auc_std = (
                             calculate_single_seed_statistics(
                                 objective=objective, path=path, results=False, verbose=args.verbose, calc_auc=args.auc
@@ -181,7 +184,7 @@ if __name__ == "__main__":
                         teacher_lowest[j] = lowest.to_numpy()[0]
                         teacher_auc[j] = auc
                     else:
-                        path = base_path / teacher / str(agent_id) / function / "results" / agent
+                        path = base_path / teacher / str(agent_id) / "results" / agent
                         mean, std, lowest, iqm, iqm_std, min_path, auc, auc_std = (
                             calculate_multi_seed_statistics(
                                 objective=objective,
