@@ -112,17 +112,20 @@ def test_agent(
     else:
         for run_id in range(n_runs):
             print(f"Evaluating run {run_id}")
-            run_logs = run_batches(
-                actor,
-                env,
-                n_batches,
-                run_id,
-            )
-            for k, v in run_logs.items():
-                if k not in logs:
-                    logs[k] = []
+            try:
+                run_logs = run_batches(
+                    actor,
+                    env,
+                    n_batches,
+                    run_id,
+                )
+                for k, v in run_logs.items():
+                    if k not in logs:
+                        logs[k] = []
 
-                logs[k].extend(v)
+                    logs[k].extend(v)
+            except:
+                print(f"failed run {run_id}.")
 
     actor.train()
     return pd.DataFrame(logs)

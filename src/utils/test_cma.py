@@ -33,7 +33,7 @@ def run_batches(actor, env, n_batches, run_id):
     batches.append(0)
     function_id.append(env.fid)
     for batch_id in range(1, n_batches + 1):
-        action = actor.act(state)
+        action = actor.act(state) + 1e-10
         next_state, reward, done, _, _ = env.step(action.item())
         state = next_state
 
@@ -51,6 +51,7 @@ def run_batches(actor, env, n_batches, run_id):
         if done:
             break
 
+    print(all(a == 0 for a in actions))
     return {
         "action": actions,
         "reward": rewards,
