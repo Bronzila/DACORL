@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH -p mlhiwidlc_gpu-rtx2080 # bosch_cpu-cascadelake #gki_cpu-caskadelake # relea_gpu-rtx2080 mlhiwidlc_gpu-rtx2080     # partition (queue)
-#SBATCH -t 1-00:00:00
+#SBATCH -p bosch_cpu-cascadelake #mlhiwidlc_gpu-rtx2080 # bosch_cpu-cascadelake #gki_cpu-caskadelake # relea_gpu-rtx2080 mlhiwidlc_gpu-rtx2080     # partition (queue)
+#SBATCH -t 4-00:00:00
 #SBATCH -o logs/%A.%N.o       # STDOUT  (the folder log has to exist) %A will be replaced by the SLURM_ARRAY_JOB_ID value
 #SBATCH -e logs/%A.%N.e       # STDERR  (the folder log has to exist) %A will be replaced by the SLURM_ARRAY_JOB_ID value
 #SBATCH -J data_gen # sets the job name.
@@ -14,9 +14,9 @@ source activate DACORL
 RESULTS_DIR=${1:-data}
 TEACHER=${2:-exponential_decay}
 BENCH=${3:-SGD}
-DATASET=${4:-cifar10}
+DATASET=${4:-mnist}
 ID=0
-NUM_RUNS=10
+NUM_RUNS=20
 FC1=Ackley
 FC2=Rastrigin
 FC3=Rosenbrock
