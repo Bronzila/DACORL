@@ -21,7 +21,7 @@ class CSA:
                 - 1
             ),
         )
-        return sigma
+        return sigma + 1e-10
 
-    def reset(self):
+    def reset(self) -> None:
         pass

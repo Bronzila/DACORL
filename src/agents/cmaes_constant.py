@@ -11,10 +11,9 @@ class ConstantCMAES:
         pass
 
     def act(self, env: AbstractMADACEnv) -> None:
-        print(env.es.parameters.used_budget)
         if env.es.parameters.used_budget == env.es.parameters.lambda_:
-            self._sigma = env.es.parameters.sigma
+            self._sigma = env.es.parameters.sigma + 1e-10
         return self._sigma
 
-    def reset(self):
+    def reset(self) -> None:
         pass
