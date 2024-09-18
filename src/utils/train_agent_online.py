@@ -19,7 +19,6 @@ from src.utils.test_agent import test_agent as test_toy
 from src.utils.test_cma import test_agent as test_cma
 from src.utils.test_sgd import test_agent as test_sgd
 
-
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
@@ -56,7 +55,11 @@ def train_agent(
 
     env_type = run_info["environment"]["type"]
     env = get_environment(run_info["environment"].copy())
-    num_batches = run_info["num_batches"] if env_type == "SGD" else run_info["environment"]["num_batches"]
+    num_batches = (
+        run_info["num_batches"]
+        if env_type == "SGD"
+        else run_info["environment"]["num_batches"]
+    )
 
     state = env.reset()[0]
     state_dim = state.shape[0]
@@ -67,12 +70,11 @@ def train_agent(
             # if SGD env, translates num_batches to num_epochs
             batches_per_epoch = len(env.train_loader)
             print(f"One epoch consists of {batches_per_epoch} batches.")
-            # num_batches *= batches_per_epoch
         else:
             print("Currently running in epoch mode.")
     print(f"One run contains {num_batches} iterations")
 
-    buffer_size = num_train_iter# * num_batches
+    buffer_size = num_train_iter  # * num_batches
     replay_buffer = ReplayBuffer(
         state_dim=state_dim,
         action_dim=1,
@@ -84,9 +86,11 @@ def train_agent(
     if env_type == "CMAES":
         max_action = 10
         min_action = 0
+        use_cmaes = True
     else:
         max_action = 0
         min_action = -10
+        use_cmaes = False
     agent_config.update(
         {
             "state_dim": state_dim,
@@ -101,6 +105,7 @@ def train_agent(
         agent_config,
         tanh_scaling=False,
         hyperparameters=hyperparameters,
+        cmaes=use_cmaes,
     )
 
     if (not debug) and use_wandb:
@@ -137,7 +142,9 @@ def train_agent(
                 ).astype(np.float32)
             ).clip(min_action, max_action)
 
-        if env_type != "CMAES":
+        if env_type == "CMAES":
+            action += 1e-10
+        else:
             action = torch.from_numpy(action)
 
         # Perform action

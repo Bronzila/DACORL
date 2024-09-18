@@ -97,6 +97,7 @@ def get_agent(
     tanh_scaling: bool,
     hyperparameters: dict[str, Any] = {},
     device: str = "cpu",
+    cmaes: bool = False,
 ) -> Any:
     if hyperparameters.get("hidden_dim", None) is not None:
         print(
@@ -122,6 +123,7 @@ def get_agent(
             max_action=max_action,
             min_action=min_action,
             tanh_scaling=tanh_scaling,
+            action_positive=cmaes,
         ).to(device)
         actor_optimizer = torch.optim.Adam(
             actor.parameters(),
@@ -185,6 +187,7 @@ def get_agent(
             max_action=max_action,
             min_action=min_action,
             tanh_scaling=tanh_scaling,
+            action_positive=cmaes,
             dropout_rate=hyperparameters["dropout_rate"],
         ).to(device)
         actor_optimizer = torch.optim.Adam(
@@ -210,6 +213,7 @@ def get_agent(
             max_action=max_action,
             min_action=min_action,
             tanh_scaling=tanh_scaling,
+            action_positive=cmaes,
             n_hidden_layers=hyperparameters["hidden_layers_actor"],
             activation=get_activation(hyperparameters["activation"]),
             log_std_multiplier=config.policy_log_std_multiplier,
@@ -291,6 +295,7 @@ def get_agent(
             max_action=max_action,
             min_action=min_action,
             tanh_scaling=tanh_scaling,
+            action_positive=cmaes,
         ).to(device)
         actor_optimizer = torch.optim.Adam(
             actor.parameters(),
@@ -486,6 +491,7 @@ def get_agent(
                 max_action,
                 min_action,
                 tanh_scaling=tanh_scaling,
+                action_positive=cmaes,
                 hidden_dim=hyperparameters["actor_hidden_dim"],
                 n_hidden=hyperparameters["hidden_layers_actor"],
                 dropout=hyperparameters["dropout_rate"],
@@ -497,6 +503,7 @@ def get_agent(
                 max_action,
                 min_action,
                 tanh_scaling=tanh_scaling,
+                action_positive=cmaes,
                 hidden_dim=hyperparameters["actor_hidden_dim"],
                 n_hidden=hyperparameters["hidden_layers_actor"],
                 dropout_rate=hyperparameters["dropout_rate"],
@@ -543,6 +550,8 @@ def get_agent(
             min_action=min_action,
             dropout_rate=hyperparameters["dropout_rate"],
             hidden_dim=hyperparameters["actor_hidden_dim"],
+            tanh_scaling=tanh_scaling,
+            action_positive=cmaes,
         ).to(device)
         actor_optimizer = torch.optim.Adam(
             actor.parameters(),

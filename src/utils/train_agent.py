@@ -78,7 +78,14 @@ def train_agent(
             "min_action": -10 if env_type != "CMAES" else 0,
         },
     )
-    agent = get_agent(agent_type, agent_config, tanh_scaling, hyperparameters)
+    use_cmaes = env_type == "CMAES"
+    agent = get_agent(
+        agent_type,
+        agent_config,
+        tanh_scaling,
+        hyperparameters,
+        cmaes=use_cmaes,
+    )
 
     # if agent_type == "bc":
     #     from CORL.algorithms.offline.any_percent_bc import (
@@ -180,6 +187,7 @@ def train_agent(
                     print(
                         f"Mean validation_acc at iteration {t+1}: {val_acc_mean}",
                     )
+                    fbest_mean = val_acc_mean
                 else:
                     fbests = final_evaluations["f_cur"]
                     fbest_mean = fbests.mean()
