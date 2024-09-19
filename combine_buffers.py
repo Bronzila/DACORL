@@ -2,7 +2,7 @@ import argparse
 import json
 from pathlib import Path
 
-from src.utils.general import combine_runs, get_homogeneous_agent_paths
+from src.utils.run_statistics import combine_runs
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

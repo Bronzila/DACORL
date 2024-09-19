@@ -2,7 +2,7 @@ import argparse
 from pathlib import Path
 import numpy as np
 import pandas as pd
-from src.utils.general import (
+from src.utils.run_statistics import (
     calc_mean_and_std_dev,
     compute_AuC,
     compute_iqm,

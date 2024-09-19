@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from src.utils.general import (
+from src.utils.run_statistics import (
     calculate_multi_seed_statistics,
     calculate_single_seed_statistics,
 )
