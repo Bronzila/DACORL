@@ -1,16 +1,12 @@
 from __future__ import annotations
 
-import json
-import os
 import random
 import signal
-import warnings
 from pathlib import Path
 from typing import Any
 
 import ConfigSpace
 import numpy as np
-import pandas as pd
 import torch
 from ConfigSpace import (
     Categorical,
@@ -43,7 +39,6 @@ from src.agents import (
 from src.utils.agent_components import (
     ConfigurableCritic,
 )
-from src.utils.replay_buffer import ReplayBuffer
 
 
 # Time out related class and function
@@ -118,7 +113,7 @@ def get_agent(
             action_dim=action_dim,
             hidden_dim=hyperparameters["actor_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_actor"],
-            activation=get_activation(hyperparameters["activation"]),
+            activation=nn.ReLU(),
             dropout_rate=hyperparameters["dropout_rate"],
             max_action=max_action,
             min_action=min_action,
@@ -135,7 +130,7 @@ def get_agent(
             action_dim=action_dim,
             hidden_layers=hyperparameters["hidden_layers_critic"],
             hidden_dim=hyperparameters["critic_hidden_dim"],
-            activation=get_activation(hyperparameters["activation"]),
+            activation=nn.ReLU(),
         ).to(device)
         critic_1_optimizer = torch.optim.Adam(
             critic_1.parameters(),
@@ -147,7 +142,7 @@ def get_agent(
             action_dim=action_dim,
             hidden_layers=hyperparameters["hidden_layers_critic"],
             hidden_dim=hyperparameters["critic_hidden_dim"],
-            activation=get_activation(hyperparameters["activation"]),
+            activation=nn.ReLU(),
         ).to(device)
         critic_2_optimizer = torch.optim.Adam(
             critic_2.parameters(),
@@ -183,7 +178,7 @@ def get_agent(
             action_dim=action_dim,
             hidden_dim=hyperparameters["actor_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_actor"],
-            activation=get_activation(hyperparameters["activation"]),
+            activation=nn.ReLU(),
             max_action=max_action,
             min_action=min_action,
             tanh_scaling=tanh_scaling,
@@ -215,7 +210,7 @@ def get_agent(
             tanh_scaling=tanh_scaling,
             action_positive=cmaes,
             n_hidden_layers=hyperparameters["hidden_layers_actor"],
-            activation=get_activation(hyperparameters["activation"]),
+            activation=nn.ReLU(),
             log_std_multiplier=config.policy_log_std_multiplier,
             orthogonal_init=config.orthogonal_init,
             no_tanh=True,
@@ -229,7 +224,7 @@ def get_agent(
             state_dim=state_dim,
             action_dim=action_dim,
             hidden_dim=hyperparameters["critic_hidden_dim"],
-            activation=get_activation(hyperparameters["activation"]),
+            activation=nn.ReLU(),
             orthogonal_init=config.orthogonal_init,
             n_hidden_layers=hyperparameters["hidden_layers_critic"],
         ).to(device)
@@ -242,7 +237,7 @@ def get_agent(
             state_dim=state_dim,
             action_dim=action_dim,
             hidden_dim=hyperparameters["critic_hidden_dim"],
-            activation=get_activation(hyperparameters["activation"]),
+            activation=nn.ReLU(),
             orthogonal_init=config.orthogonal_init,
             n_hidden_layers=hyperparameters["hidden_layers_critic"],
         ).to(device)
@@ -290,7 +285,7 @@ def get_agent(
             action_dim=action_dim,
             hidden_dim=hyperparameters["actor_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_actor"],
-            activation=get_activation(hyperparameters["activation"]),
+            activation=nn.ReLU(),
             dropout_rate=hyperparameters["dropout_rate"],
             max_action=max_action,
             min_action=min_action,
@@ -307,7 +302,7 @@ def get_agent(
             action_dim=action_dim,
             hidden_dim=hyperparameters["critic_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_critic"],
-            activation=get_activation(hyperparameters["activation"]),
+            activation=nn.ReLU(),
         ).to(device)
         critic_1_optimizer = torch.optim.Adam(
             critic_1.parameters(),
@@ -319,7 +314,7 @@ def get_agent(
             action_dim=action_dim,
             hidden_dim=hyperparameters["critic_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_critic"],
-            activation=get_activation(hyperparameters["activation"]),
+            activation=nn.ReLU(),
         ).to(device)
         critic_2_optimizer = torch.optim.Adam(
             critic_2.parameters(),
@@ -346,7 +341,7 @@ def get_agent(
             action_dim=action_dim,
             hidden_dim=hyperparameters["actor_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_actor"],
-            activation=get_activation(hyperparameters["activation"]),
+            activation=nn.ReLU(),
             dropout_rate=hyperparameters["dropout_rate"],
             max_action=max_action,
             min_action=min_action,
@@ -361,7 +356,7 @@ def get_agent(
             action_dim=action_dim,
             hidden_dim=hyperparameters["critic_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_critic"],
-            activation=get_activation(hyperparameters["activation"]),
+            activation=nn.ReLU(),
             num_critics=config.num_critics,
         ).to(device)
         critic_optimizer = torch.optim.Adam(
@@ -389,7 +384,7 @@ def get_agent(
             action_dim=action_dim,
             hidden_dim=hyperparameters["actor_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_actor"],
-            activation=get_activation(hyperparameters["activation"]),
+            activation=nn.ReLU(),
             dropout_rate=hyperparameters["dropout_rate"],
             max_action=max_action,
             min_action=min_action,
@@ -404,7 +399,7 @@ def get_agent(
             action_dim=action_dim,
             hidden_dim=hyperparameters["critic_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_critic"],
-            activation=get_activation(hyperparameters["activation"]),
+            activation=nn.ReLU(),
             num_critics=config.num_critics,
         ).to(device)
         critic_optimizer = torch.optim.Adam(
@@ -432,7 +427,7 @@ def get_agent(
             action_dim=action_dim,
             hidden_dim=hyperparameters["actor_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_actor"],
-            activation=get_activation(hyperparameters["activation"]),
+            activation=nn.ReLU(),
             dropout_rate=hyperparameters["dropout_rate"],
             max_action=max_action,
             min_action=min_action,
@@ -448,7 +443,7 @@ def get_agent(
             action_dim=action_dim,
             hidden_dim=hyperparameters["critic_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_critic"],
-            activation=get_activation(hyperparameters["activation"]),
+            activation=nn.ReLU(),
             num_critics=config.num_critics,
             layernorm=config.critic_layernorm,
             edac_init=config.edac_init,
@@ -720,11 +715,6 @@ def get_config_space(config_type: str) -> ConfigSpace:
             [2, 4, 8, 16, 32, 64, 128, 256],
             default=256,
         )
-        activation = Categorical(
-            "activation",
-            ["ReLU", "LeakyReLU"],
-            default="ReLU",
-        )
         # Dropout
         dropout_rate = Constant("dropout_rate", 0.2)
 
@@ -752,7 +742,6 @@ def get_config_space(config_type: str) -> ConfigSpace:
         hidden_layers_critic = Constant("hidden_layers_critic", 1)
         actor_hidden_dim = Constant("actor_hidden_dim", 64)
         critic_hidden_dim = Constant("critic_hidden_dim", 64)
-        activation = Constant("activation", "ReLU")
         # Dropout
         dropout_rate = Categorical(
             "dropout_rate",
@@ -796,7 +785,6 @@ def get_config_space(config_type: str) -> ConfigSpace:
             [2, 4, 8, 16, 32, 64, 128, 256],
             default=64,
         )
-        activation = Constant("activation", "ReLU")
 
         # Dropout
         dropout_rate = Constant("dropout_rate", 0.2)
@@ -837,7 +825,6 @@ def get_config_space(config_type: str) -> ConfigSpace:
             [2, 4, 8, 16, 32, 64, 128, 256],
             default=64,
         )
-        activation = Constant("activation", "ReLU")
 
         # Dropout
         dropout_rate = Categorical(
@@ -871,7 +858,6 @@ def get_config_space(config_type: str) -> ConfigSpace:
         hidden_layers_critic = Constant("hidden_layers_critic", 1)
         actor_hidden_dim = Constant("actor_hidden_dim", 64)
         critic_hidden_dim = Constant("critic_hidden_dim", 64)
-        activation = Constant("activation", "ReLU")
         # Dropout
         dropout_rate = Constant("dropout_rate", 0.2)
 
@@ -900,7 +886,6 @@ def get_config_space(config_type: str) -> ConfigSpace:
         hidden_layers_critic = Constant("hidden_layers_critic", 1)
         actor_hidden_dim = Constant("actor_hidden_dim", 64)
         critic_hidden_dim = Constant("critic_hidden_dim", 64)
-        activation = Constant("activation", "ReLU")
         # Dropout
         dropout_rate = Categorical(
             "dropout_rate",
@@ -932,7 +917,6 @@ def get_config_space(config_type: str) -> ConfigSpace:
         hidden_layers_critic = Constant("hidden_layers_critic", 1)
         actor_hidden_dim = Constant("actor_hidden_dim", 256)
         critic_hidden_dim = Constant("critic_hidden_dim", 256)
-        activation = Constant("activation", "ReLU")
         # Dropout
         dropout_rate = Categorical(
             "dropout_rate",
@@ -951,7 +935,6 @@ def get_config_space(config_type: str) -> ConfigSpace:
             hidden_layers_critic,
             actor_hidden_dim,
             critic_hidden_dim,
-            activation,
             dropout_rate,
         ],
     )
