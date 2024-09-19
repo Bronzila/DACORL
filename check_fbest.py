@@ -1,6 +1,6 @@
 import argparse
 
-from src.utils.general import calculate_statistics
+from src.utils.run_statistics import calculate_statistics
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process data from a CSV file.")
@@ -46,6 +46,6 @@ if __name__ == "__main__":
 
     print("Overall lowest statistics:")
     print(f"Found for path {min_path}")
-    print("Mean +- Std {mean:.3e} ± {std:.3e}".format(mean=min_mean, std=min_std))
+    print("Mean +- Std {mean:.2e} ± {std:.2e}".format(mean=min_mean, std=min_std))
     print("Lowest values:")
     print(lowest_vals_of_min_mean)

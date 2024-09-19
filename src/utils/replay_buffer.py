@@ -48,13 +48,16 @@ class ReplayBuffer:
         self._device = device
         self.rng = np.random.default_rng(seed)
 
+    def seed(self, seed: int) -> None:
+        self.rng = np.random.default_rng(seed)
+
     def _to_tensor(self, data: np.ndarray) -> torch.Tensor:
         return torch.tensor(data, dtype=torch.float32, device=self._device)
 
     def sample(self, batch_size: int) -> list[torch.tensor]:
         indices = self.rng.integers(
             0,
-            min(self._size, self._pointer),
+            self._size,
             size=batch_size,
         )
         states = self._states[indices]
@@ -85,6 +88,43 @@ class ReplayBuffer:
             print("Buffer full. Transitions will now start to be overwritten.")
 
     def save(self, filename: Path) -> None:
+        # Only save actual collected data, not zeros
+        self._states = self._states[:(self._size)]
+        self._actions = self._actions[:(self._size)]
+        self._next_states = self._next_states[:(self._size)]
+        self._rewards = self._rewards[:(self._size)]
+        self._dones = self._dones[:(self._size)]
+        self._buffer_size = self._size
+        self._pointer = self._pointer % self._buffer_size
+
+        # Check if any state is entirely zero
+        states_zero_mask = (self._states == 0).all(dim=1)
+        num_zero_states = states_zero_mask.sum().item()
+        if num_zero_states != 0:
+            print("WARNING: There are states consisting of all zeros.")
+
+        if not torch.isfinite(self._states).all():
+            print("WARNING: State contains non-finite values, please check the replay buffer.")
+        if not torch.isfinite(self._next_states).all():
+            print("WARNING: Next state contains non-finite values, please check the replay buffer.")
+        if not torch.isfinite(self._actions).all():
+            print("WARNING: Action contains non-finite values, please check the replay buffer.")
+        if not torch.isfinite(self._rewards).all():
+            print("WARNING: Reward contains non-finite values, please check the replay buffer.")
+        if not torch.isfinite(self._dones).all():
+            print("WARNING: Done contains non-finite values, please check the replay buffer.")
+
+        try:
+            with filename.open(mode="wb") as f:
+                pickle.dump(self, f)
+        except FileNotFoundError:
+            if not filename.parent.exists():
+                filename.parent.mkdir(parents=True)
+                with filename.open(mode="wb") as f:
+                    pickle.dump(self, f)
+
+    def checkpoint(self, filename: Path) -> None:
+        """Saves the ReplayBuffer without cutting its size."""
         try:
             with filename.open(mode="wb") as f:
                 pickle.dump(self, f)

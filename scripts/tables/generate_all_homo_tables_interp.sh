@@ -1,0 +1,3 @@
+sbatch scripts/tables/generate_homo_tables_interp.sh data_homo_256_60k/ data_teacher_eval_66316748/ --bosch
+sbatch scripts/tables/generate_homo_tables_interp.sh data_homo_256_perf_based_60k/ data_teacher_eval_66316748 --bosch
+sbatch scripts/tables/generate_homo_tables_interp.sh data_homo_256_expert_60k/ data_teacher_eval_66316748 --bosch

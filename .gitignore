@@ -1,4 +1,5 @@
 # Ours
+teach_*
 data/*
 wandb/
 .vscode/
@@ -6,6 +7,9 @@ logs/
 *.csv
 *.csv_
 *.svg
+config.json
+*.tex
+*.pdf
 run_info.json
 rep_buffer
 agent_actor
@@ -15,6 +19,10 @@ agent_critic_1_optimizer
 agent_critic_2
 agent_critic_2_optimizer
 agent_total_it
+smac*
+logs*
+data*
+SGD_data/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

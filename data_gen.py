@@ -7,9 +7,16 @@ from src.utils.generate_data import generate_dataset
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Run any agent on the ToySGD benchmark"
+        description="Run any agent on benchmarks"
     )
-    parser.add_argument("--num_runs", type=int, default=1)
+    parser.add_argument("--benchmark", type=str, default="ToySGD")
+    parser.add_argument(
+        "--env",
+        type=str,
+        help="Config file to define the benchmark env",
+        default="default",
+    )
+    parser.add_argument("--num_runs", type=int, default=1000)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument(
         "--agent",
@@ -18,16 +25,16 @@ if __name__ == "__main__":
         default="step_decay",
     )
     parser.add_argument(
-        "--env",
-        type=str,
-        help="Environment function for data generation",
-        default="Rosenbrock_default",
-    )
-    parser.add_argument(
         "--results_dir",
         type=str,
         default="",
         help="path to the directory where replay_buffer and info about the replay_buffer are stored",
+    )
+    parser.add_argument(
+        "--instance_mode",
+        type=str,
+        default=None,
+        help="Select the instance mode for SGD Benchmark.",
     )
     parser.add_argument(
         "--save_run_data",
@@ -43,8 +50,8 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--id",
-        type=int,
-        default=0,
+        type=str,
+        default="0",
         help="Agent ID",
     )
     parser.add_argument(
@@ -53,18 +60,30 @@ if __name__ == "__main__":
         default=0,
         help="Timeout in sec. 0 -> no timeout",
     )
+    parser.add_argument(
+        "--checkpointing_freq",
+        type=int,
+        default=0,
+        help="How frequent we want to checkpoint. Default 0 means no checkpoints",
+    )
+    parser.add_argument(
+        "--checkpoint",
+        type=int,
+        default=0,
+        help="Specify which checkpoint (run number) you want to load. Default 0 means no loading",
+    )
 
     args = parser.parse_args()
     start = time.time()
 
-    agent_name = "default" if args.id == 0 else str(args.id)
+    agent_name = "default" if args.id == "0" else str(args.id)
     # Read agent config from file
     agent_config_path = Path("configs", "agents", args.agent, f"{agent_name}.json")
     with agent_config_path.open() as file:
         agent_config = json.load(file)
 
     # Read environment config from file
-    env_config_path = Path("configs", "environment", f"{args.env}.json")
+    env_config_path = Path("configs", "environment", f"{args.benchmark}", f"{args.env}.json")
     with env_config_path.open() as file:
         env_config = json.load(file)
 
@@ -77,7 +96,11 @@ if __name__ == "__main__":
     elif agent_config["type"] == "constant":
         env_config["initial_learning_rate"] = agent_config["params"]["learning_rate"]
 
-    generate_dataset(
+    if env_config["type"] == "SGD":
+        if args.instance_mode:
+            env_config["instance_mode"] = args.instance_mode
+
+    agg_run_data = generate_dataset(
         agent_config=agent_config,
         env_config=env_config,
         num_runs=args.num_runs,
@@ -86,6 +109,8 @@ if __name__ == "__main__":
         results_dir=args.results_dir,
         save_run_data=args.save_run_data,
         save_rep_buffer=args.save_rep_buffer,
+        checkpointing_freq=args.checkpointing_freq,
+        checkpoint=args.checkpoint,
     )
 
     end = time.time()

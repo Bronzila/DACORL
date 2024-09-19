@@ -1,0 +1,3 @@
+sbatch scripts/tables/generate_hetero_tables_interp.sh data_hetero_256_mixed_60k/ data_teacher_eval_66316748_mixed/ --bosch
+sbatch scripts/tables/generate_hetero_tables_interp.sh data_hetero_256_mixed_perf_based_60k/ data_teacher_eval_66316748_mixed/ --bosch
+sbatch scripts/tables/generate_hetero_tables_interp.sh data_hetero_256_mixed_expert_60k/ data_teacher_eval_66316748_mixed/ --bosch
