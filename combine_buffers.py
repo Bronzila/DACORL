@@ -2,6 +2,7 @@ import argparse
 import json
 from pathlib import Path
 
+from src.utils.combination import get_homogeneous_agent_paths
 from src.utils.run_statistics import combine_runs
 
 if __name__ == "__main__":

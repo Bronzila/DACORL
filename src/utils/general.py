@@ -638,16 +638,6 @@ def get_environment(env_config: dict) -> Any:
         )
 
 
-def get_activation(activation: str) -> nn.Module:
-    if activation == "ReLU":
-        return nn.ReLU
-    if activation == "LeakyReLU":
-        return nn.LeakyReLU
-    if activation == "Tanh":
-        return nn.Tanh
-    return None
-
-
 def save_agent(
     state_dicts: dict,
     results_dir: Path,
