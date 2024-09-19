@@ -1,6 +1,6 @@
 import argparse
 
-from src.utils.general import calculate_statistics
+from src.utils.run_statistics import calculate_statistics
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process data from a CSV file.")
