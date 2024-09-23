@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 import math
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from torch import Tensor
 
 
 class ConstantAgent:
@@ -10,8 +14,8 @@ class ConstantAgent:
     ) -> None:
         self.learning_rate = learning_rate
 
-    def act(self, state):
+    def act(self, _: Tensor) -> float:
         return math.log10(self.learning_rate)
 
-    def reset(self):
+    def reset(self) -> None:
         pass

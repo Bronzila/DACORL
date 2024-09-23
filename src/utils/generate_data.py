@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import math
+import time
 from pathlib import Path
 
 import numpy as np
@@ -9,8 +10,8 @@ import pandas as pd
 
 from src.utils.general import (
     OutOfTimeError,
-    get_agent,
     get_environment,
+    get_teacher,
     set_seeds,
     set_timeout,
 )
@@ -18,21 +19,28 @@ from src.utils.replay_buffer import ReplayBuffer
 
 
 def save_data(
-    save_run_data,
-    aggregated_run_data,
-    save_rep_buffer,
-    replay_buffer,
-    results_dir,
-    run_info,
-    starting_points,
+    save_run_data: bool,
+    aggregated_run_data: pd.DataFrame,
+    save_rep_buffer: bool,
+    replay_buffer: ReplayBuffer,
+    results_dir: Path,
+    run_info: dict,
+    starting_points: list,
     checkpoint: bool = False,
 ) -> None:
+    if not results_dir.exists():
+        results_dir.mkdir(parents=True)
+
     if not results_dir.exists():
         results_dir.mkdir(parents=True)
 
     run_info["starting_points"] = starting_points
     save_path = Path(results_dir, "rep_buffer")
     if save_rep_buffer:
+        if checkpoint:
+            replay_buffer.checkpoint(save_path)
+        else:
+            replay_buffer.save(save_path)
         if checkpoint:
             replay_buffer.checkpoint(save_path)
         else:
@@ -44,6 +52,7 @@ def save_data(
         aggregated_run_data.to_csv(
             Path(results_dir, "aggregated_run_data.csv"),
         )
+
 
 def load_checkpoint(
     checkpoint_dir: Path,
@@ -62,18 +71,20 @@ def load_checkpoint(
 
     return checkpoint_run_data, rb, run_info
 
+
 def generate_dataset(
     agent_config: dict,
     env_config: dict,
     num_runs: int,
     seed: int,
-    results_dir: str,
+    results_dir: str | Path,
     timeout: int,
-    save_run_data: bool,
-    save_rep_buffer: bool,
     checkpointing_freq: int,
     checkpoint: int,
-    verbose: bool=False,
+    save_run_data: bool,
+    save_rep_buffer: bool,
+    check_if_exists: bool = False,
+    verbose: bool = False,
 ) -> None:
     set_timeout(timeout)
     set_seeds(seed)
@@ -81,6 +92,9 @@ def generate_dataset(
 
     if not (save_run_data or save_rep_buffer):
         input("You are not saving any results. Enter a key to continue anyway.")
+
+    print(f"Environment: {env_config}")
+    print(f"Teacher: {agent_config}", flush=True)
 
     print(f"Environment: {env_config}")
     print(f"Teacher: {agent_config}", flush=True)
@@ -105,18 +119,23 @@ def generate_dataset(
         )
     if environment_type == "ToySGD":
         results_dir = results_dir / env_config["function"]
-
-    # if results_dir.exists():
-    #     print(f"Data already exists: {results_dir}")
-    #     return
-
-    if environment_type == "ToySGD":
         num_batches = env_config["num_batches"]
+
+    if environment_type == "CMAES":
+        num_batches = env_config["num_batches"]
+
+    if check_if_exists and (results_dir.exists() and checkpoint == 0):
+        print(f"Data already exists: {results_dir}")
+        return None
 
     env = get_environment(env_config.copy())
     env.reset()
     phase = "batch"
+
+    phase = "batch"
+    batches_per_epoch = 1
     if environment_type == "SGD":
+        print(f"Generating data for {env_config['dataset_name']}")
         if env.epoch_mode is False:
             num_epochs = env_config["num_epochs"]
             # if SGD env, translates num_batches to num_epochs
@@ -130,7 +149,9 @@ def generate_dataset(
 
     env = get_environment(env_config.copy())
     state = env.reset()[0]
-    env.seed(seed) # Reseed environment here to allow for proper starting point generation
+    env.seed(
+        seed,
+    )  # Reseed environment here to allow for proper starting point generation
     state_dim = state.shape[0]
 
     buffer_size = num_runs * num_batches
@@ -141,7 +162,7 @@ def generate_dataset(
         seed=seed,
     )
 
-    agent = get_agent(agent_type, agent_config)
+    agent = get_teacher(agent_type, agent_config)
 
     aggregated_run_data = []
     run_info = {
@@ -154,6 +175,8 @@ def generate_dataset(
 
     start_run = 0
     starting_points = []
+
+    start_run = 0
 
     if checkpoint != 0:
         checkpoint_dir = Path(results_dir, "checkpoints", str(checkpoint))
@@ -178,6 +201,9 @@ def generate_dataset(
         assert run_info == checkpoint_run_info
 
         aggregated_run_data.append(checkpoint_data)
+    if environment_type == "CMAES":
+        # Start with instance 0
+        env.instance_index = -1
 
     try:
         for run in range(start_run, num_runs):
@@ -192,13 +218,19 @@ def generate_dataset(
                     x_curs = []
                 elif environment_type == "SGD":
                     train_loss = []
-                    train_acc = []
                     valid_loss = []
+                    train_acc = []
                     valid_acc = []
                     test_loss = []
                     test_acc = []
+                elif environment_type == "CMAES":
+                    lambdas = []
+                    f_curs = []
+                    population = []
+                    target_value = []
+                    fid = []
             state, meta_info = env.reset()
-            if environment_type == "ToySGD":
+            if environment_type == ("ToySGD"):
                 starting_points.append(meta_info["start"])
             agent.reset()
             if save_run_data:
@@ -218,15 +250,26 @@ def generate_dataset(
                     valid_acc.append(env.validation_accuracy)
                     test_loss.append(env.test_loss)
                     test_acc.append(env.test_accuracy)
+                if environment_type == "CMAES":
+                    actions.append(env.es.parameters.sigma)
+                    lambdas.append(env.es.parameters.lambda_)
+                    f_curs.append(env.es.parameters.fopt)
+                    population.append(env.es.parameters.population.f)
+                    target_value.append(env.target)
+                    fid.append(env.fid)
 
-            for batch in range(1, num_batches + 1): # As we start with batch 1 and not 0, add 1
+            start = time.time()
+            for batch in range(1, num_batches + 1):
                 if verbose:
                     print(
                         f"Starting {phase} {batch}/{num_batches} of run {run}. \
                         Total {batch + run * num_batches}/{num_runs * num_batches}",
                     )
 
-                action = agent.act(state)
+                if agent_type == "csa" or agent_type == "cmaes_constant":
+                    action = agent.act(env)
+                else:
+                    action = agent.act(state)
                 next_state, reward, done, truncated, info = env.step(action)
                 replay_buffer.add_transition(
                     state,
@@ -253,10 +296,19 @@ def generate_dataset(
                         valid_acc.append(env.validation_accuracy)
                         test_loss.append(env.test_loss)
                         test_acc.append(env.test_accuracy)
+                    if environment_type == "CMAES":
+                        lambdas.append(env.es.parameters.lambda_)
+                        f_curs.append(env.es.parameters.fopt)
+                        population.append(env.es.parameters.population.f)
+                        target_value.append(env.target)
+                        fid.append(env.fid)
 
                 state = next_state
                 if done:
                     break
+
+            end = time.time()
+            print(f"Run {run} took {end - start} sec.")
 
             if save_run_data:
                 data = {
@@ -284,11 +336,20 @@ def generate_dataset(
                             "test_acc": test_acc,
                         },
                     )
+                if environment_type == "CMAES":
+                    data.update(
+                        {
+                            "lambdas": lambdas,
+                            "f_cur": f_curs,
+                            "population": population,
+                            "target_value": target_value,
+                            "function_id": fid,
+                        },
+                    )
                 run_data = pd.DataFrame(data)
                 aggregated_run_data.append(run_data)
-            
-            if checkpointing_freq != 0 and (run + 1) % checkpointing_freq == 0:
 
+            if checkpointing_freq != 0 and (run + 1) % checkpointing_freq == 0:
                 checkpoint_dir = Path(results_dir, "checkpoints", str(run))
                 if not checkpoint_dir.exists():
                     checkpoint_dir.mkdir(parents=True)
@@ -297,7 +358,7 @@ def generate_dataset(
                     raise UserWarning(
                         "Are you sure you want to checkpoint ToySGD?",
                     )
-                elif environment_type == "SGD":
+                if environment_type == "SGD":
                     run_info.update(
                         {
                             "checkpoint_info": {
@@ -307,7 +368,7 @@ def generate_dataset(
                             },
                         },
                     )
-                elif environment_type == "CMAES":
+                if environment_type == "CMAES":
                     raise UserWarning(
                         "Are you sure you want to checkpoint ToySGD?",
                     )
@@ -351,5 +412,5 @@ def generate_dataset(
         msg += "rep_buffer " if save_rep_buffer else ""
         msg += "run_data " if save_run_data else ""
         print(f"{msg}to {results_dir}")
-    
+
     return pd.concat(aggregated_run_data)

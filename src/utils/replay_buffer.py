@@ -54,7 +54,7 @@ class ReplayBuffer:
     def _to_tensor(self, data: np.ndarray) -> torch.Tensor:
         return torch.tensor(data, dtype=torch.float32, device=self._device)
 
-    def sample(self, batch_size: int) -> list[torch.tensor]:
+    def sample(self, batch_size: int) -> list[torch.Tensor]:
         indices = self.rng.integers(
             0,
             self._size,
@@ -89,11 +89,11 @@ class ReplayBuffer:
 
     def save(self, filename: Path) -> None:
         # Only save actual collected data, not zeros
-        self._states = self._states[:(self._size)]
-        self._actions = self._actions[:(self._size)]
-        self._next_states = self._next_states[:(self._size)]
-        self._rewards = self._rewards[:(self._size)]
-        self._dones = self._dones[:(self._size)]
+        self._states = self._states[: (self._size)]
+        self._actions = self._actions[: (self._size)]
+        self._next_states = self._next_states[: (self._size)]
+        self._rewards = self._rewards[: (self._size)]
+        self._dones = self._dones[: (self._size)]
         self._buffer_size = self._size
         self._pointer = self._pointer % self._buffer_size
 
@@ -104,15 +104,25 @@ class ReplayBuffer:
             print("WARNING: There are states consisting of all zeros.")
 
         if not torch.isfinite(self._states).all():
-            print("WARNING: State contains non-finite values, please check the replay buffer.")
+            print(
+                "WARNING: State contains non-finite values, please check the replay buffer.",
+            )
         if not torch.isfinite(self._next_states).all():
-            print("WARNING: Next state contains non-finite values, please check the replay buffer.")
+            print(
+                "WARNING: Next state contains non-finite values, please check the replay buffer.",
+            )
         if not torch.isfinite(self._actions).all():
-            print("WARNING: Action contains non-finite values, please check the replay buffer.")
+            print(
+                "WARNING: Action contains non-finite values, please check the replay buffer.",
+            )
         if not torch.isfinite(self._rewards).all():
-            print("WARNING: Reward contains non-finite values, please check the replay buffer.")
+            print(
+                "WARNING: Reward contains non-finite values, please check the replay buffer.",
+            )
         if not torch.isfinite(self._dones).all():
-            print("WARNING: Done contains non-finite values, please check the replay buffer.")
+            print(
+                "WARNING: Done contains non-finite values, please check the replay buffer.",
+            )
 
         try:
             with filename.open(mode="wb") as f:
@@ -134,7 +144,7 @@ class ReplayBuffer:
                 with filename.open(mode="wb") as f:
                     pickle.dump(self, f)
 
-    def merge(self, other: ReplayBuffer):
+    def merge(self, other: ReplayBuffer) -> None:
         self._buffer_size += other._buffer_size
         self._size = self._size + other._size
         self._pointer = self._pointer + other._pointer

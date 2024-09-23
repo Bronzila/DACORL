@@ -9,7 +9,7 @@ class StepDecayAgent:
         self._gamma = gamma
         self._step = 0
 
-    def act(self, state):
+    def act(self, state) -> float:
         self._step += 1
         # Since log learning rate is given in state, transform first
         learning_rate = 10 ** state[1]

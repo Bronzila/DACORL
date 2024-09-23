@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
@@ -9,8 +9,17 @@ import torch
 
 from src.utils.general import set_seeds
 
+if TYPE_CHECKING:
+    from DACBench.dacbench import AbstractMADACEnv
+    from torch.nn import Module
 
-def run_batches(actor, env, n_batches, run_id):
+
+def run_batches(
+    actor: Module,
+    env: AbstractMADACEnv,
+    n_batches: int,
+    run_id: int,
+) -> tuple:
     actions = []
     rewards = []
     x_curs = []
@@ -45,13 +54,14 @@ def run_batches(actor, env, n_batches, run_id):
 
     return actions, rewards, x_curs, f_curs, states, runs, batches
 
+
 def test_agent(
     actor: Any,
     env: Any,
     n_runs: int,
     n_batches: int,
     seed: int,
-    starting_points: np.ndarray=None,
+    starting_points: np.ndarray | None = None,
 ) -> pd.DataFrame:
     env.seed(seed)
     set_seeds(seed)
@@ -67,12 +77,18 @@ def test_agent(
 
     if starting_points is not None:
         for run_id, starting_point in enumerate(starting_points[:n_runs]):
-            env.reset(seed=None, options={
-                "starting_point": torch.tensor(starting_point),
+            env.reset(
+                seed=None,
+                options={
+                    "starting_point": torch.tensor(starting_point),
                 },
             )
-            r_a, r_r, r_x, r_f, r_s, r_runs, r_b = run_batches(actor, env,
-                                                               n_batches, run_id)
+            r_a, r_r, r_x, r_f, r_s, r_runs, r_b = run_batches(
+                actor,
+                env,
+                n_batches,
+                run_id,
+            )
             actions.extend(r_a)
             rewards.extend(r_r)
             x_curs.extend(r_x)
@@ -83,8 +99,12 @@ def test_agent(
     else:
         for run_id in range(n_runs):
             env.reset()
-            r_a, r_r, r_x, r_f, r_s, r_runs, r_b = run_batches(actor, env,
-                                                            n_batches, run_id)
+            r_a, r_r, r_x, r_f, r_s, r_runs, r_b = run_batches(
+                actor,
+                env,
+                n_batches,
+                run_id,
+            )
             actions.extend(r_a)
             rewards.extend(r_r)
             x_curs.extend(r_x)
@@ -106,7 +126,8 @@ def test_agent(
         },
     )
 
-def test_agent_SGD(
+
+def test_agent_sgd(
     actor: Any,
     env: Any,
     n_runs: int,
@@ -145,8 +166,10 @@ def test_agent_SGD(
         test_loss.append(env.test_loss)
         test_acc.append(env.test_accuracy)
 
-        for batch in range(1, n_batches + 1): # As we start with batch 1 and not 0, add 1
-
+        for batch in range(
+            1,
+            n_batches + 1,
+        ):  # As we start with batch 1 and not 0, add 1
             action = actor.act(state)
             next_state, reward, done, truncated, info = env.step(action)
 
@@ -165,7 +188,6 @@ def test_agent_SGD(
             state = next_state
             if done:
                 break
-
 
     actor.train()
     return pd.DataFrame(
