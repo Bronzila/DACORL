@@ -53,7 +53,7 @@ def generate_file_path(base_path: Path, metric: str, agent_id: str | int, format
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate tables")
-    parser.add_argument("--path", type=str, help="Base path", default="data/SGD")
+    parser.add_argument("--base_path", type=Path, help="Base path", default="data/SGD")
     parser.add_argument("--lowest", help="Get fbest table", action="store_true")
     parser.add_argument("--mean", help="Get mean and std deviation table", action="store_true")
     parser.add_argument("--auc", help="Get mean and std deviation table of AuC", action="store_true", default=True)
@@ -68,7 +68,6 @@ if __name__ == "__main__":
 
 
     args.agents.insert(0, "teacher")
-    base_path = Path(args.path)
 
     pm = "$\pm$" if args.format == "latex" else "±"
 
@@ -98,7 +97,7 @@ if __name__ == "__main__":
             row_lowest = [agent_str]
 
             for j, teacher in enumerate(args.teacher):
-                main_path = base_path / teacher / str(agent_id) 
+                main_path = args.base_path / teacher / str(agent_id) 
                 if agent == "teacher":
                     path = main_path / "aggregated_run_data.csv"
                     mean, std, lowest, iqm, iqm_std, min_path, auc, auc_std = (
@@ -173,22 +172,22 @@ if __name__ == "__main__":
 
         if args.mean:
             # Regular mean
-            table_result_path = generate_file_path(base_path, "mean", agent_id, args.format)
+            table_result_path = generate_file_path(args.base_path, "mean", agent_id, args.format)
             table_content = generate_table(rows_mean, args.format, [item for sublist in mean_min.values() for item in sublist])
             with table_result_path.open("w") as f:
                 f.write(table_content)
             # IQM
-            table_result_path = generate_file_path(base_path, "iqm", agent_id, args.format)
+            table_result_path = generate_file_path(args.base_path, "iqm", agent_id, args.format)
             table_content = generate_table(rows_iqm, args.format, [item for sublist in iqm_min.values() for item in sublist])
             with table_result_path.open("w") as f:
                 f.write(table_content)
         if args.lowest:
-            table_result_path = generate_file_path(base_path, "lowest", agent_id, args.format)
+            table_result_path = generate_file_path(args.base_path, "lowest", agent_id, args.format)
             table_content = generate_table(rows_lowest, args.format, [item for sublist in lowest_min.values() for item in sublist])
             with table_result_path.open("w") as f:
                 f.write(table_content)
         if args.auc:
-            table_result_path = generate_file_path(base_path, "auc", agent_id, args.format)
+            table_result_path = generate_file_path(args.base_path, "auc", agent_id, args.format)
             table_content = generate_table(rows_auc, args.format, [item for sublist in auc_min.values() for item in sublist])
             with table_result_path.open("w") as f:
                 f.write(table_content)

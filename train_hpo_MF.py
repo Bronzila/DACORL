@@ -22,7 +22,7 @@ warnings.filterwarnings("ignore")
 class Optimizee:
     def __init__(
         self,
-        data_dir: str,
+        data_dir: Path,
         agent_type: str,
         debug: bool,
         budget: int,
@@ -110,7 +110,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="HPO for any agent")
     parser.add_argument(
         "--data_dir",
-        type=str,
+        type=Path,
         default="data",
         help="path to the directory where replay_buffer and info about the replay_buffer are stored",
     )
@@ -127,7 +127,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--output_path",
-        type=str,
+        type=Path,
         help="Path where optimization logs are saved",
         default="smac"
     )
@@ -160,10 +160,10 @@ if __name__ == "__main__":
         seed=args.seed,
         tanh_scaling=args.tanh_scaling,
     )
-    output_path = Path(args.output_path)
+    
     scenario = Scenario(
         get_config_space(args.cs_type),
-        output_directory=output_path,
+        output_directory=args.output_path,
         walltime_limit=60 * 60 * args.time_limit,  # convert hours into seconds
         n_trials=500,
         min_budget=3,
@@ -193,9 +193,9 @@ if __name__ == "__main__":
     print(incumbent)
     print(f"Final score: {smac.validate(incumbent)}")
 
-    plot_trajectory(smac, output_path)
+    plot_trajectory(smac, args.output_path)
 
-    save_config_dir = Path(args.data_dir) / "results" / args.agent_type
+    save_config_dir = args.data_dir / "results" / args.agent_type
     save_config_dir.mkdir(exist_ok=True)
     path = save_config_dir / "incumbent.json"
     print(f"Saving incumbent to : {path}")

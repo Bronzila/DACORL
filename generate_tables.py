@@ -61,7 +61,7 @@ def calculate_percentage_change(reference, current):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate tables")
     parser.add_argument(
-        "--path", type=str, help="Base path", default="data/ToySGD"
+        "--base_path", type=Path, help="Base path", default="data/ToySGD"
     )
     parser.add_argument(
         "--lowest",
@@ -129,15 +129,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     args.agents.insert(0, "teacher")
-    base_path = Path(args.path)
-    if base_path.name == "ToySGD":
+    if args.base_path.name == "ToySGD":
         objective = "f_cur"
-    elif base_path.name == "SGD":
+    elif args.base_path.name == "SGD":
         objective = "test_acc"
-    elif base_path.name == "CMAES":
+    elif args.base_path.name == "CMAES":
         objective = "f_cur"
     else:
-        raise NotImplementedError(f"Currently the benchmark {base_path.name} is not implemented.")
+        raise NotImplementedError(f"Currently the benchmark {args.base_path.name} is not implemented.")
 
     pm = "$\pm$" if args.format == "latex" else "±"
 
@@ -169,11 +168,11 @@ if __name__ == "__main__":
                 row_lowest = [agent_str]
 
                 for j, teacher in enumerate(args.teacher):
-                    main_path = base_path / teacher / str(agent_id) 
-                    if base_path.name == "ToySGD":
+                    main_path = args.base_path / teacher / str(agent_id) 
+                    if args.base_path.name == "ToySGD":
                         main_path = main_path / function
                     if agent == "teacher":
-                        path = base_path / teacher / str(agent_id) / "aggregated_run_data.csv"
+                        path = args.base_path / teacher / str(agent_id) / "aggregated_run_data.csv"
                         mean, std, lowest, iqm, iqm_std, min_path, auc, auc_std = (
                             calculate_single_seed_statistics(
                                 objective=objective, path=path, results=False, verbose=args.verbose, calc_auc=args.auc
@@ -184,7 +183,7 @@ if __name__ == "__main__":
                         teacher_lowest[j] = lowest.to_numpy()[0]
                         teacher_auc[j] = auc
                     else:
-                        path = base_path / teacher / str(agent_id) / "results" / agent
+                        path = args.base_path / teacher / str(agent_id) / "results" / agent
                         mean, std, lowest, iqm, iqm_std, min_path, auc, auc_std = (
                             calculate_multi_seed_statistics(
                                 objective=objective,
@@ -240,22 +239,22 @@ if __name__ == "__main__":
 
             if args.mean:
                 # Regular mean
-                table_result_path = generate_file_path(base_path, "mean", function, agent_id, args.format)
+                table_result_path = generate_file_path(args.base_path, "mean", function, agent_id, args.format)
                 table_content = generate_table(rows_mean, args.format, mean_min)
                 with table_result_path.open("w") as f:
                     f.write(table_content)
                 # IQM
-                table_result_path = generate_file_path(base_path, "iqm", function, agent_id, args.format)
+                table_result_path = generate_file_path(args.base_path, "iqm", function, agent_id, args.format)
                 table_content = generate_table(rows_iqm, args.format, iqm_min)
                 with table_result_path.open("w") as f:
                     f.write(table_content)
             if args.lowest:
-                table_result_path = generate_file_path(base_path, "lowest", function, agent_id, args.format)
+                table_result_path = generate_file_path(args.base_path, "lowest", function, agent_id, args.format)
                 table_content = generate_table(rows_lowest, args.format, lowest_min)
                 with table_result_path.open("w") as f:
                     f.write(table_content)
             if args.auc:
-                table_result_path = generate_file_path(base_path, "auc", function, agent_id, args.format)
+                table_result_path = generate_file_path(args.base_path, "auc", function, agent_id, args.format)
                 table_content = generate_table(rows_auc, args.format, auc_min)
                 with table_result_path.open("w") as f:
                     f.write(table_content)

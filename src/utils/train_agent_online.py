@@ -23,7 +23,7 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def train_agent(
-    data_dir: str,
+    data_dir: Path,
     agent_type: str,
     agent_config: dict,
     num_train_iter: int,
@@ -36,11 +36,13 @@ def train_agent(
     hyperparameters: dict,
     eval_protocol: str,
     eval_seed: int,
+    num_eval_runs: int,
     start_timesteps: int = 2560,  # 25e3  <-- Find good default value
     tanh_scaling: bool = False,
     use_wandb: bool = False,
-    num_eval_runs: int | None = None,
-) -> None:
+) -> tuple[dict, float]:
+    assert isinstance(data_dir, Path)
+
     if debug:
         num_train_iter = 5
         val_freq = 5
@@ -49,8 +51,8 @@ def train_agent(
     set_seeds(seed)
     rng = np.random.default_rng(seed)
 
-    results_dir = Path(data_dir, "results", agent_type)
-    with Path(data_dir, "run_info.json").open(mode="rb") as f:
+    results_dir = data_dir / "results" / agent_type
+    with (data_dir / "run_info.json").open(mode="rb") as f:
         run_info = json.load(f)
 
     env_type = run_info["environment"]["type"]
@@ -123,7 +125,7 @@ def train_agent(
     episode_timesteps = 0
     episode_reward = 0
     episode_num = 0
-    min_fbest = np.inf
+    min_fbest: float = np.inf
     print(f"Batch Size: {batch_size}")
     for t in range(int(num_train_iter)):
         episode_timesteps += 1
@@ -169,7 +171,7 @@ def train_agent(
             log_dict.update({"episode_reward": episode_reward})
 
             if (not debug) and use_wandb:
-                wandb.log(log_dict, agent.total_it)
+                wandb.log(log_dict, agent.total_it)  #  type: ignore
 
         # if we run out of bounds or reached max optimization iters
         if done or episode_timesteps == num_batches:
@@ -177,7 +179,7 @@ def train_agent(
                 f"Total T: {t+1}/{int(num_train_iter)} Episode Num: {episode_num+1} Episode T: {episode_timesteps} Reward: {episode_reward:.3f}",
             )
             # Reset environment
-            (state, meta_info), done = env.reset(), False
+            (state, _), done = env.reset(), False
             episode_reward = 0
             episode_timesteps = 0
             episode_num += 1

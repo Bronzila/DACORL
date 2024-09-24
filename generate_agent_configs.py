@@ -63,7 +63,7 @@ def generate_exponential_agent(agent_id):
 
     return agent
 
-def save_agents(agent_configs, agent_type):
+def save_agents(agent_configs: list[dict], agent_type: str):
     save_path = Path(
         "configs",
         "agents",

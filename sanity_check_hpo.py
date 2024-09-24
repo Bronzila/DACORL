@@ -6,7 +6,7 @@ from utils.general import set_seeds
 from train_hpo import Optimizee
 
 
-def run_hpo(data_dir: str):
+def run_hpo(data_dir: Path) -> tuple:
     set_seeds(0)
 
     optimizee = Optimizee(
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="HPO for any agent")
     parser.add_argument(
         "--data_dir",
-        type=str,
+        type=Path,
         default="data",
     )
     args = parser.parse_args()

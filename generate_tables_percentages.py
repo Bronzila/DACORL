@@ -41,7 +41,7 @@ def calculate_percentage_change(reference, current):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate percentage change tables")
     parser.add_argument(
-        "--path", type=str, help="Base path", default="data/ToySGD"
+        "--base_path", type=Path, help="Base path", default="data/ToySGD"
     )
     parser.add_argument(
         "--verbose",
@@ -93,15 +93,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     args.agents.insert(0, "teacher")
-    base_path = Path(args.path)
-    if base_path.name == "ToySGD":
+    if args.base_path.name == "ToySGD":
         objective = "f_cur"
-    elif base_path.name == "SGD":
+    elif args.base_path.name == "SGD":
         objective = "valid_acc"
-    elif base_path.name == "CMAES":
+    elif args.base_path.name == "CMAES":
         objective = "f_cur"
     else:
-        raise NotImplementedError(f"Currently the benchmark {base_path.name} is not implemented.")
+        raise NotImplementedError(f"Currently the benchmark {args.base_path.name} is not implemented.")
 
     for function in args.functions:
         for agent_id in args.ids:
@@ -120,7 +119,7 @@ if __name__ == "__main__":
                 row_auc = [agent_str]
                 for j, teacher in enumerate(args.teacher):
                     if agent == "teacher":
-                        path = base_path / teacher / str(agent_id) / function / "aggregated_run_data.csv"
+                        path = args.base_path / teacher / str(agent_id) / function / "aggregated_run_data.csv"
                         mean, std, lowest, iqm, iqm_std, min_path, auc, auc_std = (
                             calculate_single_seed_statistics(
                                 objective=objective, path=path, results=False, verbose=args.verbose, calc_auc=True
@@ -131,7 +130,7 @@ if __name__ == "__main__":
                         teacher_lowest = lowest
                         teacher_auc = auc
                     else:
-                        path = base_path / teacher / str(agent_id) / function / "results" / agent
+                        path = args.base_path / teacher / str(agent_id) / function / "results" / agent
                         mean, std, lowest, iqm, iqm_std, min_path, auc, auc_std = (
                             calculate_multi_seed_statistics(
                                 objective=objective,
@@ -174,25 +173,25 @@ if __name__ == "__main__":
                 rows_auc.append(row_auc)
 
             # Mean percentage change
-            table_result_path = generate_file_path(base_path, "mean_percentage_change", function, agent_id, args.format)
+            table_result_path = generate_file_path(args.base_path, "mean_percentage_change", function, agent_id, args.format)
             table_content = generate_table(rows_mean, args.format)
             with table_result_path.open("w") as f:
                 f.write(table_content)
             
             # IQM percentage change
-            table_result_path = generate_file_path(base_path, "iqm_percentage_change", function, agent_id, args.format)
+            table_result_path = generate_file_path(args.base_path, "iqm_percentage_change", function, agent_id, args.format)
             table_content = generate_table(rows_iqm, args.format)
             with table_result_path.open("w") as f:
                 f.write(table_content)
 
             # Lowest percentage change
-            table_result_path = generate_file_path(base_path, "lowest_percentage_change", function, agent_id, args.format)
+            table_result_path = generate_file_path(args.base_path, "lowest_percentage_change", function, agent_id, args.format)
             table_content = generate_table(rows_lowest, args.format)
             with table_result_path.open("w") as f:
                 f.write(table_content)
             
             # AUC percentage change
-            table_result_path = generate_file_path(base_path, "auc_percentage_change", function, agent_id, args.format)
+            table_result_path = generate_file_path(args.base_path, "auc_percentage_change", function, agent_id, args.format)
             table_content = generate_table(rows_auc, args.format)
             with table_result_path.open("w") as f:
                 f.write(table_content)

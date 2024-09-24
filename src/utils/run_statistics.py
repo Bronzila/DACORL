@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 import warnings
 from pathlib import Path
 
@@ -11,20 +10,20 @@ import pandas as pd
 from src.utils.replay_buffer import ReplayBuffer
 
 
-def combine_runs(agent_paths):
-    combined_buffer = None
-    combined_run_info = None
+def combine_runs(
+    agent_paths: list[Path],
+) -> tuple[ReplayBuffer, dict, pd.DataFrame]:
     combined_run_data = []
     for idx, root_path in enumerate(agent_paths):
-        replay_path = Path(root_path, "rep_buffer")
-        run_info_path = Path(root_path, "run_info.json")
-        run_data_path = Path(root_path, "aggregated_run_data.csv")
+        replay_path = root_path / "rep_buffer"
+        run_info_path = root_path / "run_info.json"
+        run_data_path = root_path / "aggregated_run_data.csv"
 
         with run_info_path.open(mode="rb") as f:
             run_info = json.load(f)
         temp_buffer = ReplayBuffer.load(replay_path)
 
-        if combined_buffer is None and combined_run_info is None:
+        if idx == 0:
             combined_buffer = temp_buffer
             combined_run_info = {
                 "environment": run_info["environment"],
@@ -48,13 +47,12 @@ def combine_runs(agent_paths):
 
 
 def combine_run_data(
-    data_paths: list[str],
+    data_paths: list[Path],
     num_runs: int = 100,
 ) -> pd.DataFrame:
     combined_run_data = []
-    for idx, root_path in enumerate(data_paths):
-        print(root_path)
-        run_data_path = Path(root_path)
+    for idx, run_data_path in enumerate(data_paths):
+        print(run_data_path)
         try:
             df = pd.read_csv(run_data_path)
         except pd.errors.EmptyDataError:
@@ -67,17 +65,18 @@ def combine_run_data(
     return pd.concat(combined_run_data, ignore_index=True)
 
 
-def find_lowest_values(df, column_name, n=10):
+def find_lowest_value(
+    df: pd.DataFrame,
+    column_name: str,
+) -> float:
     final_evaluations = df.groupby("run").last()
-
-    # Sort the DataFrame by the specified column in ascending order
-    sorted_df = final_evaluations.sort_values(by=column_name)
-
-    # Get the lowest n values from the sorted DataFrame
-    return sorted_df.head(n)
+    return float(final_evaluations[column_name].min())
 
 
-def calc_mean_and_std_dev(df: pd.DataFrame, objective: str) -> float:
+def calc_mean_and_std_dev(
+    df: pd.DataFrame,
+    objective: str,
+) -> tuple[float, float]:
     final_evaluations = df.groupby("run").last()
 
     fbests = final_evaluations[objective]
@@ -85,30 +84,25 @@ def calc_mean_and_std_dev(df: pd.DataFrame, objective: str) -> float:
 
 
 def calculate_single_seed_statistics(
+    path: Path,
     objective: str,
     calc_mean: bool = True,
     calc_lowest: bool = True,
     calc_auc: bool = True,
     n_lowest: int = 1,
-    path: str | None | None = None,
     results: bool = True,
     verbose: bool = False,
-) -> tuple[float, float, float, float, float, Path]:
-    paths = []
-    if results:
-        for folder_path, _, _ in os.walk(path):
-            paths.extend(Path(folder_path).glob("*/eval_data.csv"))
-    else:
-        paths.append(path)
+) -> tuple[float, float, float, float, float, Path, float, float]:
+    paths = list(path.rglob("*/eval_data.csv")) if results else [path]
     # Load data
-    min_mean = np.inf
-    min_std = np.inf
-    min_iqm = np.inf
-    min_iqm_std = np.inf
-    min_auc = np.inf
-    min_auc_std = np.inf
-    min_path = ""
-    lowest_vals_of_min_mean = []
+    min_mean: float = np.inf
+    min_std: float = np.inf
+    min_iqm: float = np.inf
+    min_iqm_std: float = np.inf
+    min_auc: float = np.inf
+    min_auc_std: float = np.inf
+    min_path = Path("")
+    lowest_val_of_min_mean: float = np.inf
     assert (
         len(paths) == 1
     ), "There are more than 1 paths given. Are you sure, you want to only use the lowest checkpoint?"
@@ -133,16 +127,16 @@ def calculate_single_seed_statistics(
             if verbose:
                 print(f"Mean +- Std {mean:.3e} ± {std:.3e}")
         if calc_lowest:
-            lowest_vals = find_lowest_values(df, objective, n_lowest)
+            lowest_val = find_lowest_value(df, objective)
             if incumbent_changed:
-                lowest_vals_of_min_mean = lowest_vals[objective]
+                lowest_val_of_min_mean = lowest_val
             if verbose:
-                print("Lowest values:")
-                print(lowest_vals[objective])
+                print("Lowest value:")
+                print(lowest_val)
     return (
         min_mean,
         min_std,
-        lowest_vals_of_min_mean,
+        lowest_val_of_min_mean,
         min_iqm,
         min_iqm_std,
         min_path,
@@ -152,25 +146,20 @@ def calculate_single_seed_statistics(
 
 
 def calculate_multi_seed_statistics(
+    path: Path,
     objective: str,
     calc_mean: bool = True,
     calc_lowest: bool = True,
     calc_auc: bool = True,
     n_iterations: int = 15000,
     n_lowest: int = 1,
-    path: str | None = None,
     results: bool = True,
     verbose: bool = False,
     num_runs: int = 100,
-) -> tuple[float, float, float, float, float, Path]:
+) -> tuple[float, float, float, float, float, Path, float, float]:
     # TODO here we currently assume, that we only have one training
     # folder and eval file in results/td3_bc/<seed>/
-    paths = []
-    if results:
-        for seed_path in Path(path).rglob(f"*{n_iterations}/eval_data.csv"):
-            paths.append(seed_path)
-    else:
-        paths.append(path)
+    paths = list(path.rglob("*/eval_data.csv")) if results else [path]
 
     combined_data = combine_run_data(paths, num_runs=num_runs)
     if calc_mean:
@@ -179,15 +168,13 @@ def calculate_multi_seed_statistics(
         std = float(f"{std:.3e}")
         iqm, iqm_std = compute_iqm(combined_data, objective)
     if calc_auc:
-        auc, auc_std = compute_AuC(combined_data)
+        auc, auc_std = compute_AuC(combined_data, objective)
     if calc_lowest:
-        lowest_vals = find_lowest_values(combined_data, objective, n_lowest)[
-            objective
-        ]
+        lowest_val = find_lowest_value(combined_data, objective)
     return (
         mean,
         std,
-        lowest_vals,
+        lowest_val,
         iqm,
         iqm_std,
         paths[0],
@@ -197,42 +184,45 @@ def calculate_multi_seed_statistics(
 
 
 def calculate_statistics(
+    path: Path,
     calc_mean: bool = True,
     calc_lowest: bool = True,
+    calc_auc: bool = True,
     n_iterations: int = 15000,
     n_lowest: int = 1,
-    path: str | None = None,
     results: bool = True,
     verbose: bool = False,
     multi_seed: bool = False,
     num_runs: int = 100,
     objective: str = "f_cur",
-) -> tuple[float, float, float, float, float, Path]:
+) -> tuple[float, float, float, float, float, Path, float, float]:
     if multi_seed:
         return calculate_multi_seed_statistics(
+            path,
             objective,
             calc_mean,
             calc_lowest,
+            calc_auc,
             n_iterations,
             n_lowest,
-            path,
             results,
             verbose,
             num_runs,
         )
     else:
         return calculate_single_seed_statistics(
+            path,
             objective,
             calc_mean,
             calc_lowest,
+            calc_auc,
             n_lowest,
-            path,
             results,
             verbose,
         )
 
 
-def compute_iqm(df: pd.DataFrame, objective: str):
+def compute_iqm(df: pd.DataFrame, objective: str) -> tuple[float, float]:
     final_evaluations = df.groupby("run").last()
     df_sorted = final_evaluations.sort_values(by=objective)
 
@@ -247,7 +237,7 @@ def compute_iqm(df: pd.DataFrame, objective: str):
 
 
 def compute_AuC(df: pd.DataFrame, objective: str) -> tuple[float, float]:
-    def fill_missing_values(group):
+    def fill_missing_values(group: pd.DataFrame) -> pd.DataFrame:
         last_value = group[objective].iloc[-1]
 
         # Create full run
@@ -274,9 +264,9 @@ def compute_AuC(df: pd.DataFrame, objective: str) -> tuple[float, float]:
         drop=True,
     )
 
-    def calculate_auc(run):
+    def calculate_auc(run: pd.DataFrame) -> pd.Series:
         auc = np.trapz(run[objective], run["batch"])
-        return pd.Series({"run": run["run"].iloc[0], "auc": auc})
+        return pd.Series({"run": run["run"].iloc[0], "auc": auc}, dtype=float)
 
     auc_per_run = (
         df_filled.groupby("run").apply(calculate_auc).reset_index(drop=True)

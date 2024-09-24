@@ -1,11 +1,14 @@
+from __future__ import annotations
+
 from pathlib import Path
 
+
 def get_homogeneous_agent_paths(
-    root_dir: str,
+    root_dir: Path,
     teacher: str,
     function: str,
 ) -> list[str]:
-    root_path = Path(root_dir, "ToySGD", teacher)
+    root_path = root_dir / "ToySGD" / teacher
     # Sort directories to ensure same sequence for reproducibility
     agent_dirs = sorted(
         [

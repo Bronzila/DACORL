@@ -6,8 +6,7 @@ def read_markdown_table(file_path):
     with file_path.open('r') as file:
         return file.read()
 
-def main(experiments_path: str, id: str):
-    experiments_path = Path(experiments_path)
+def main(experiments_path: Path, id: str):
     tables_path = experiments_path / "ToySGD" / "tables"
     
     if not tables_path.exists():
@@ -42,7 +41,7 @@ def main(experiments_path: str, id: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Compile experiment results into a markdown file.")
-    parser.add_argument("experiments_path", type=str, help="Path to the experiments folder.")
+    parser.add_argument("experiments_path", type=Path, help="Path to the experiments folder.")
     parser.add_argument("id", type=str, help="ID of teacher trained on.", default=0)
     args = parser.parse_args()
     

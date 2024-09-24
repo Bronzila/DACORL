@@ -1,7 +1,8 @@
+from pathlib import Path
 import pandas as pd
 import argparse
 
-def calculate_accumulated_change(csv_path):
+def calculate_accumulated_change(csv_path: Path):
     # Load the CSV file
     df = pd.read_csv(csv_path)
     
@@ -25,7 +26,7 @@ def print_accumulated_change_per_run(df):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Calculate accumulated change in validation loss per batch.')
-    parser.add_argument('csv_path', type=str, help='Path to the CSV file')
+    parser.add_argument('csv_path', type=Path, help='Path to the CSV file')
     
     args = parser.parse_args()
     

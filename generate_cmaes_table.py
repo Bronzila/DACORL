@@ -86,7 +86,7 @@ def compute_metrics_for_agent(agent, agent_path, functions, objective, num_runs)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate tables")
-    parser.add_argument("--path", type=str, help="Base path", default="data/ToySGD")
+    parser.add_argument("--path", type=Path, help="Base path", default="data/ToySGD")
     parser.add_argument("--lowest", help="Get fbest table", action="store_true")
     parser.add_argument("--mean", help="Get mean and std deviation table", action="store_true")
     parser.add_argument("--auc", help="Get mean and std deviation table of AuC", action="store_true", default=True)

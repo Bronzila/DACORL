@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pickle
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 import torch
@@ -54,7 +55,7 @@ class ReplayBuffer:
     def _to_tensor(self, data: np.ndarray) -> torch.Tensor:
         return torch.tensor(data, dtype=torch.float32, device=self._device)
 
-    def sample(self, batch_size: int) -> list[torch.tensor]:
+    def sample(self, batch_size: int) -> list[torch.Tensor]:
         indices = self.rng.integers(
             0,
             self._size,
@@ -89,7 +90,7 @@ class ReplayBuffer:
 
     def save(self, filename: Path) -> None:
         # Only save actual collected data, not zeros
-        self._states = self._states[: (self._size)]
+        self._states = self._states[: self._size]
         self._actions = self._actions[: (self._size)]
         self._next_states = self._next_states[: (self._size)]
         self._rewards = self._rewards[: (self._size)]
@@ -122,7 +123,7 @@ class ReplayBuffer:
                 with filename.open(mode="wb") as f:
                     pickle.dump(self, f)
 
-    def merge(self, other: ReplayBuffer):
+    def merge(self, other: ReplayBuffer) -> None:
         self._buffer_size += other._buffer_size
         self._size = self._size + other._size
         self._pointer = self._pointer + other._pointer
@@ -136,4 +137,4 @@ class ReplayBuffer:
     @classmethod
     def load(cls, filename: Path) -> ReplayBuffer:
         with filename.open(mode="rb") as f:
-            return pickle.load(f)
+            return cast(ReplayBuffer, pickle.load(f))

@@ -28,7 +28,7 @@ warnings.filterwarnings("ignore")
 class Optimizee:
     def __init__(
         self,
-        data_dir: str,
+        data_dir: Path,
         agent_type: str,
         debug: bool,
         budget: Optional[int],
@@ -48,7 +48,7 @@ class Optimizee:
             self.train_agent = train_online
         else:
             self.train_agent = train_offline
-        with Path(self.data_dir, "run_info.json").open(mode="rb") as f:
+        with (self.data_dir / "run_info.json").open(mode="rb") as f:
             self.run_info = json.load(f)
 
     def train(self, config: Configuration, seed: int = 0) -> float:
@@ -107,13 +107,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="HPO for any agent")
     parser.add_argument(
         "--data_dir",
-        type=str,
+        type=Path,
         default="data",
         help="path to the directory where replay_buffer and info about the replay_buffer are stored",
     )
     parser.add_argument(
         "--output_path",
-        type=str,
+        type=Path,
         help="Path where optimization logs are saved",
         default="smac",
     )
@@ -173,11 +173,10 @@ if __name__ == "__main__":
         tanh_scaling=args.tanh_scaling,
     )
 
-    output_path = Path(args.output_path)
     cs = get_config_space(args.cs_type)
     scenario = Scenario(
         cs,
-        output_directory=output_path,
+        output_directory=args.output_path,
         n_trials=400,
         n_workers=1,
         deterministic=False,
@@ -204,10 +203,10 @@ if __name__ == "__main__":
     print(incumbent)
     print(f"Final score: {smac.validate(incumbent)}")
 
-    plot_trajectory(smac, output_path)
+    plot_trajectory(smac, args.output_path)
 
     if args.save_incumbent:
-        save_config_dir = Path(args.data_dir) / "results" / args.agent_type
+        save_config_dir = args.data_dir / "results" / args.agent_type
         save_config_dir.mkdir(exist_ok=True)
         path = save_config_dir / "incumbent.json"
         print(f"Saving incumbent to : {path}")

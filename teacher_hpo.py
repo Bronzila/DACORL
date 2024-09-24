@@ -27,7 +27,7 @@ warnings.filterwarnings("ignore")
 class TD3BC_Optimizee:
     def __init__(
         self,
-        data_dir: str,
+        data_dir: Path,
         agent_type: str,
         env: str,
     ) -> None:

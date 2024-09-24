@@ -38,8 +38,8 @@ def calculate_percentage_change(val1, val2):
     return float("inf")
 
 
-def compare_experiments(exp1_path: str, exp2_path: str, id1: str, id2: str):
-    experiments_paths = [Path(exp1_path), Path(exp2_path)]
+def compare_experiments(exp1_path: Path, exp2_path: Path, id1: str, id2: str):
+    experiments_paths = [exp1_path, exp2_path]
     tables_path = "tables"
 
     statistics_types = ["iqm", "mean", "lowest"]
@@ -165,10 +165,10 @@ if __name__ == "__main__":
         description="Compare experiment results between two experiments."
     )
     parser.add_argument(
-        "exp1_path", type=str, help="Path to the first experiments folder."
+        "exp1_path", type=Path, help="Path to the first experiments folder."
     )
     parser.add_argument(
-        "exp2_path", type=str, help="Path to the second experiments folder."
+        "exp2_path", type=Path, help="Path to the second experiments folder."
     )
     parser.add_argument(
         "id1",

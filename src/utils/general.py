@@ -3,7 +3,7 @@ from __future__ import annotations
 import random
 import signal
 from pathlib import Path
-from typing import Any
+from typing import Any, Union
 
 import ConfigSpace
 import numpy as np
@@ -39,6 +39,16 @@ from src.agents import (
 from src.utils.agent_components import (
     ConfigurableCritic,
 )
+
+ActorType = Union[
+    bc.Actor,
+    td3_bc.Actor,
+    td3.Actor,
+    awac.Actor,
+    edac.Actor,
+    sac_n.Actor,
+    lb_sac.Actor,
+]
 
 
 # Time out related class and function
@@ -104,6 +114,8 @@ def get_agent(
     action_dim = agent_config["action_dim"]
     max_action = agent_config["max_action"]
     min_action = agent_config["min_action"]
+
+    actor: ActorType
 
     if agent_type == "td3_bc":
         config = td3_bc.TrainConfig
@@ -665,11 +677,11 @@ def load_agent(
 
 
 def get_homogeneous_agent_paths(
-    root_dir: str,
+    root_dir: Path,
     teacher: str,
     function: str,
 ) -> list[str]:
-    root_path = Path(root_dir, "ToySGD", teacher)
+    root_path = root_dir / "ToySGD" / teacher
     # Sort directories to ensure same sequence for reproducibility
     agent_dirs = sorted(
         [

@@ -36,6 +36,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--data_dir",
+        type=Path,
         help="Path to the directory including the run information and run data",
     )
     parser.add_argument(
@@ -127,7 +128,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--custom_paths",
-        type=str,
+        type=Path,
         help="Path to json file containing all base paths to plot for",
     )
     parser.add_argument(
@@ -141,7 +142,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--teacher_dir",
-        type=str,
+        type=Path,
         help="Path to teacher/baseline. Used for comparison plot if the baseline differs from the teacher it has been trained on.",
         default="",
     )
@@ -168,7 +169,7 @@ if __name__ == "__main__":
     agent_label = [map_agent_label[args.agent]]
     teacher_label = map_teacher_label[args.teacher_type]
 
-    benchmark = Path(args.data_dir).parents[1].name
+    benchmark = args.data_dir.parents[1].name
     if benchmark == "SGD":
         if args.action:
             plot_actions_sgd(

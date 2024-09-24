@@ -34,7 +34,7 @@ cma_es_function = {
 
 
 def train_agent(
-    data_dir: str,
+    data_dir: Path,
     agent_type: str,
     agent_config: dict,
     num_train_iter: int,
@@ -50,7 +50,8 @@ def train_agent(
     tanh_scaling: bool,
     use_wandb: bool = False,
     num_eval_runs: int | None = None,
-) -> None:
+) -> tuple[dict, float]:
+    assert isinstance(data_dir, Path)
     if debug:
         num_train_iter = 5
         val_freq = 5
@@ -59,13 +60,13 @@ def train_agent(
     set_seeds(seed)
     print(f"Seed in trianing: {seed}")
 
-    results_dir = Path(data_dir, "results", agent_type)
-    with Path(data_dir, "run_info.json").open(mode="rb") as f:
+    results_dir = data_dir / "results" / agent_type
+    with (data_dir / "run_info.json").open(mode="rb") as f:
         run_info = json.load(f)
 
     env_type = run_info["environment"]["type"]
 
-    replay_buffer = ReplayBuffer.load(Path(data_dir, "rep_buffer"))
+    replay_buffer = ReplayBuffer.load(data_dir / "rep_buffer")
     replay_buffer.seed(seed)
     state, _, _, _, _ = replay_buffer.sample(1)
     state_dim = state.shape[1]
@@ -109,7 +110,7 @@ def train_agent(
         )
 
     logs: dict = {}
-    min_fbest = np.inf
+    min_fbest: float = np.inf
     print(f"Batch Size: {batch_size}")
     for t in range(int(num_train_iter)):
         print(f"{t}/{int(num_train_iter)}")
@@ -122,7 +123,7 @@ def train_agent(
                 logs[k].append(v)
 
         if (not debug) and use_wandb:
-            wandb.log(log_dict, agent.total_it)
+            wandb.log(log_dict, agent.total_it)  # type: ignore
 
         if val_freq != 0 and (t + 1) % val_freq == 0:
             if env_type == "CMAES":

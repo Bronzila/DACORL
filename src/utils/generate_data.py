@@ -19,13 +19,13 @@ from src.utils.replay_buffer import ReplayBuffer
 
 
 def save_data(
-    save_run_data,
-    aggregated_run_data,
-    save_rep_buffer,
-    replay_buffer,
-    results_dir,
-    run_info,
-    starting_points,
+    save_run_data: bool,
+    aggregated_run_data: pd.DataFrame,
+    save_rep_buffer: bool,
+    replay_buffer: ReplayBuffer,
+    results_dir: Path,
+    run_info: dict,
+    starting_points: list,
     checkpoint: bool = False,
 ) -> None:
     if not results_dir.exists():
@@ -70,7 +70,7 @@ def generate_dataset(
     env_config: dict,
     num_runs: int,
     seed: int,
-    results_dir: str,
+    results_dir: Path,
     timeout: int,
     checkpointing_freq: int,
     checkpoint: int,
@@ -92,20 +92,9 @@ def generate_dataset(
     environment_type = env_config["type"]
     agent_type = agent_config["type"]
 
-    if results_dir == "":
-        results_dir: Path = Path(
-            "data",
-            environment_type,
-            agent_type,
-            str(agent_config["id"]),
-        )
-    else:
-        results_dir = Path(
-            results_dir,
-            environment_type,
-            agent_type,
-            str(agent_config["id"]),
-        )
+    results_dir = (
+        results_dir / environment_type / agent_type / str(agent_config["id"])
+    )
     if environment_type == "ToySGD":
         results_dir = results_dir / env_config["function"]
         num_batches = env_config["num_batches"]
