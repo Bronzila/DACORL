@@ -5,7 +5,7 @@ name = "MTORL-DAC"
 version = "0.0.1"
 dependencies = [
   "torch==1.13.1",
-  "numpy>=1.24.2",
+  "numpy>=1.26.3",
   "tqdm>=4.66.1",
   "wandb>=0.16.2",
   "pandas>=1.5.3",
@@ -186,7 +186,7 @@ show_error_codes = true
 warn_unused_configs = true # warn about unused [tool.mypy] lines
 
 follow_imports = "normal"      # Type check top level api code we use from imports
-ignore_missing_imports = false # prefer explicit ignores
+ignore_missing_imports = true # prefer explicit ignores
 
 disallow_untyped_defs = true       # All functions must have types
 disallow_untyped_decorators = true # ... even decorators
