@@ -3,6 +3,8 @@ import argparse
 from pathlib import Path
 import pandas as pd
 
+from tap import Tap
+
 
 def find_config_files(root_path: Path, id: str, budget: int) -> list[str]:
     config_files = list(
@@ -61,26 +63,11 @@ def main(folder_path: str, id: str, budget: int) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Parse config.json files into a pandas DataFrame."
-    )
-    parser.add_argument(
-        "folder_path",
-        type=str,
-        help="Path to the root folder containing the experiments.",
-    )
-    parser.add_argument(
-        "--id",
-        type=str,
-        default="0",
-        help="ID which teacher instantiation was used",
-    )
-    parser.add_argument(
-        "--budget",
-        type=int,
-        default=10000,
-        help="On which budget the agent was trained on",
-    )
-    args = parser.parse_args()
+    class IncumbentStatisticsParser(Tap):
+        folder_path: Path # Path to the root folder containing the experiments.
+        id: str = "0" # ID which teacher instantiation was used.
+        budget: int = 30000 # On which budget the agent was trained on.
+
+    args = IncumbentStatisticsParser().parse_args()
 
     main(args.folder_path, args.id, args.budget)

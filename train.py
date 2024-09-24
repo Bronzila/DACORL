@@ -1,83 +1,34 @@
 import argparse
 import time
+from typing import Literal
 
 from src.utils.general import get_config_space
 from src.utils.train_agent import train_agent as train_offline
 from src.utils.train_agent_online import train_agent as train_online
 from train_hpo import Optimizee
 from pathlib import Path
+from tap import Tap
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Train any offline agent ")
-    parser.add_argument(
-        "--data_dir",
-        type=str,
-        default="data",
-        help="path to the directory where replay_buffer and info about the replay_buffer are stored",
-    )
-    parser.add_argument(
-        "--agent_type",
-        type=str,
-        default="td3_bc",
-        choices=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac", "iql", "td3"],
-    )
-    parser.add_argument(
-        "--agent_config",
-        default={},
-        help="Not functional yet. Change configuration of the respective agent.",
-    )
-    parser.add_argument("--num_train_iter", type=int, default=2000)
-    parser.add_argument("--num_eval_runs", type=int, default=1000)
-    parser.add_argument("--batch_size", type=int, default=256)
-    parser.add_argument(
-        "--val_freq",
-        type=int,
-        help="how many training steps until the next validation sequence runs",
-        default=2000,
-    )
-    parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument(
-        "--wandb_group",
-        type=str,
-        default=None,
-        help="Use to group certain runs in wandb.",
-    )
-    parser.add_argument(
-        "--timeout",
-        type=int,
-        default=0,
-        help="Timeout in sec. 0 -> no timeout",
-    )
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        help="Run for max. 5 iterations and don't log in wanbd.",
-    )
-    parser.add_argument(
-        "--wandb",
-        action=argparse.BooleanOptionalAction,
-        default=True,
-    )
-    parser.add_argument(
-        "--eval_protocol",
-        type=str,
-        default="train",
-        choices=["train", "interpolation"],
-    )
-    parser.add_argument(
-        "--tanh_scaling",
-        action=argparse.BooleanOptionalAction,
-        default=False,
-    )
-    parser.add_argument("--eval_seed", type=int, default=123)
-    parser.add_argument(
-        "--cs_type",
-        type=str,
-        help="Which config space to use",
-        default="reduced_no_arch_dropout"
-    )
+    class TrainParser(Tap):
+        data_dir: Path # Path to the ReplayBuffer
+        agent_type: str = "td3_bc"
+        agent_config: dict = {}
+        num_train_iter: int = 30000
+        num_eval_runs: int = 1000
+        batch_size: int = 256
+        val_freq: int = 10000
+        seed: int = 0
+        wandb_group: str = None
+        timeout: int = 0 # Timeout in sec. 0 -> no timeout
+        debug: bool = False # Run for max. 5 iterations and don't log in wanbd.7
+        wandb: bool = False
+        eval_protocol: Literal["train", "interpolation"] = "train"
+        tanh_scaling: bool = False
+        eval_seed: int = 123
+        cs_type: str = "reduced_no_arch_dropout"
 
-    args = parser.parse_args()
+    args = TrainParser().parse_args()
     start = time.time()
 
     cs = Optimizee(

@@ -1,101 +1,60 @@
-import argparse
 import json
 from pathlib import Path
 import time
+from tap import Tap
 
 from src.utils.generate_data import generate_dataset
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Run any agent on benchmarks"
-    )
-    parser.add_argument("--benchmark", type=str, default="SGD")
-    parser.add_argument(
-        "--env",
-        type=str,
-        help="Config file to define the benchmark env",
-        default="default",
-    )
-    parser.add_argument("--num_runs", type=int, default=1000)
-    parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument(
-        "--agent",
-        type=str,
-        help="Agent for data generation",
-        default="step_decay",
-    )
-    parser.add_argument(
-        "--results_dir",
-        type=str,
-        default="",
-        help="path to the directory where replay_buffer and info about the replay_buffer are stored",
-    )
-    parser.add_argument(
-        "--instance_mode",
-        type=str,
-        default=None,
-        help="Select the instance mode for SGD Benchmark.",
-    )
-    parser.add_argument(
-        "--save_run_data",
-        action=argparse.BooleanOptionalAction,
-        default=False,
-        help="Save all the run data in a csv",
-    )
-    parser.add_argument(
-        "--save_rep_buffer",
-        action=argparse.BooleanOptionalAction,
-        default=False,
-        help="Save the rep buffer",
-    )
-    parser.add_argument(
-        "--id",
-        type=int,
-        default=0,
-        help="Agent ID",
-    )
-    parser.add_argument(
-        "--timeout",
-        type=int,
-        default=0,
-        help="Timeout in sec. 0 -> no timeout",
-    )
-    parser.add_argument(
-        "--checkpointing_freq",
-        type=int,
-        default=0,
-        help="How frequent we want to checkpoint. Default 0 means no checkpoints",
-    )
-    parser.add_argument(
-        "--checkpoint",
-        type=int,
-        default=0,
-        help="Specify which checkpoint (run number) you want to load. Default 0 means no loading",
-    ),
-    parser.add_argument(
-        "--check_if_exists",
-        action=argparse.BooleanOptionalAction,
-        default=False,
-    )
 
-    args = parser.parse_args()
+    class DataArgumentParser(Tap):
+        benchmark: str = "SGD"
+        env: str = "default"  # Config file to define the benchmark env
+        num_runs: int = 1000
+        seed: int = 0
+        agent: str = "step_decay"  # Agent for data generation
+        results_dir: Path = ""
+        """Path to the directory where replay_buffer + info are stored"""
+        instance_mode: str = None
+        """Select the instance mode for the SGD Benchmark"""
+        save_run_data: bool = True
+        save_rep_buffer: bool = True
+        id: int = 0  # Agent ID
+        timeout: int = 0  # Timeout in sec. 0 -> no timeout
+        checkpointing_freq: int = 0
+        """How frequent we want to checkpoint. Default 0 means no checkpoints"""
+        checkpoint: int = 0
+        """Specify which checkpoint (run number) you want to load. Default 0 means no loading"""
+        check_if_exists: bool = False
+
+    args = DataArgumentParser().parse_args()
     start = time.time()
 
     agent_name = "default" if args.id == 0 else str(args.id)
     # Read agent config from file
-    agent_config_path = Path("configs", "agents", args.agent, f"{args.benchmark}", f"{agent_name}.json")
+    agent_config_path = Path(
+        "configs",
+        "agents",
+        args.agent,
+        f"{args.benchmark}",
+        f"{agent_name}.json",
+    )
     with agent_config_path.open() as file:
         agent_config = json.load(file)
 
     # Read environment config from file
-    env_config_path = Path("configs", "environment", f"{args.benchmark}", f"{args.env}.json")
+    env_config_path = Path(
+        "configs", "environment", f"{args.benchmark}", f"{args.env}.json"
+    )
     with env_config_path.open() as file:
         env_config = json.load(file)
 
     # Add initial learning rate to agent config for SGDR
     if agent_config["type"] == "sgdr":
-        agent_config["params"]["initial_learning_rate"] = env_config["initial_learning_rate"]
-    
+        agent_config["params"]["initial_learning_rate"] = env_config[
+            "initial_learning_rate"
+        ]
+
     if env_config["type"] == "SGD":
         if args.instance_mode:
             env_config["instance_mode"] = args.instance_mode

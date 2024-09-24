@@ -5,6 +5,8 @@ from pathlib import Path
 
 import numpy as np
 import torch.nn as nn
+
+from tap import Tap
 from ConfigSpace import (
     Configuration,
     ConfigurationSpace,
@@ -134,37 +136,24 @@ class TD3BC_Optimizee:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="HPO for any agent")
-    parser.add_argument(
-        "--data_dir",
-        type=str,
-        default="data",
-        help="path to the directory where replay_buffer and info about the replay_buffer are stored",
-    )
-    parser.add_argument(
-        "--agent_type", type=str, default="exponential_decay", choices=["exponential_decay", "step_decay", "sgdr", "constant"]
-    )
-    parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--env", default=None, type=str, help="Environment to tune HPs on, if None, tune for all environments.")
-    parser.add_argument(
-        "--output_path",
-        type=str,
-        help="Path where optimization logs are saved",
-        default="smac",
-    )
+    class TeacherHPOParser(Tap):
+        data_dir: Path # Path to the RelayBuffer
+        agent_type: str = "exponential_decay"
+        seed: int = 0
+        env_config: str # Environment to tune HPs on, if None, tune for all environments.
+        output_path: Path = "smac"
 
-    args = parser.parse_args()
+    args = TeacherHPOParser().parse_args()
     set_seeds(args.seed)
 
     optimizee = TD3BC_Optimizee(
         data_dir=args.data_dir,
         agent_type=args.agent_type,
-        env=args.env,
+        env=args.env_config,
     )
-    output_path = Path(args.output_path)
     scenario = Scenario(
         optimizee.configspace,
-        output_directory=output_path,
+        output_directory=args.output_path,
         n_trials=30,
         n_workers=1,
         deterministic=False,
@@ -186,17 +175,17 @@ if __name__ == "__main__":
     print(incumbent)
     print(f"Final score: {smac.validate(incumbent)}")
 
-    with (output_path / "inc.json").open("w") as f:
+    with (args.output_path / "inc.json").open("w") as f:
         json.dump(dict(incumbent), f)
 
     lowest_val_confs = smac.runhistory.get_configs(sort_by="cost")[:15]
-    lowest_val_path = output_path / "lowest"
+    lowest_val_path = args.output_path / "lowest"
     lowest_val_path.mkdir(exist_ok=True)
     for id, config in enumerate(lowest_val_confs):
         with (lowest_val_path / f"{id}.json").open("w") as f:
             json.dump(dict(config), f)
 
-    rejected_path = output_path / "rejected_incs"
+    rejected_path = args.output_path / "rejected_incs"
     rejected_path.mkdir(exist_ok=True)
     for id, config in enumerate(smac.intensifier.get_rejected_configs()):
         with (rejected_path / f"{id + 1}.json").open("w") as f:
