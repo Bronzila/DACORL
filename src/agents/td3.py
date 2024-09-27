@@ -56,7 +56,7 @@ class Actor(nn.Module):
         self._pos_act = action_positive
 
     def forward(self, state: torch.Tensor) -> torch.Tensor:
-        action = self.net(state)
+        action: torch.Tensor = self.net(state)
         if self._tanh_scaling:
             tanh_action = torch.tanh(action)
             # instead of [-1,1] -> [self.min_action, self.max_action]
@@ -83,7 +83,12 @@ class Actor(nn.Module):
 
 
 class Critic(nn.Module):
-    def __init__(self, state_dim, action_dim, hidden_dim) -> None:
+    def __init__(
+        self,
+        state_dim: int,
+        action_dim: int,
+        hidden_dim: int,
+    ) -> None:
         super().__init__()
 
         self.net = nn.Sequential(
@@ -132,6 +137,7 @@ class TD3:
         self.critic_2_optimizer = critic_2_optimizer
 
         self.max_action = max_action
+        self.min_action = min_action
         self.discount = discount
         self.tau = tau
         self.policy_noise = policy_noise
@@ -139,10 +145,12 @@ class TD3:
         self.policy_freq = policy_freq
 
         self.total_it = 0
+        self.device = device
 
-    def select_action(self, state):
+    def select_action(self, state: torch.Tensor) -> np.ndarray:
         state = state.reshape(1, -1)
-        return self.actor(state).cpu().data.numpy().flatten()
+        out: torch.Tensor = self.actor(state)
+        return out.cpu().data.numpy().flatten()
 
     def train(self, batch: TensorBatch) -> dict[str, float]:
         log_dict = {}
@@ -159,7 +167,7 @@ class TD3:
             )
 
             next_action = (self.actor_target(next_state) + noise).clamp(
-                -self.max_action,
+                -self.min_action,
                 self.max_action,
             )
 
@@ -217,7 +225,7 @@ class TD3:
             "total_it": self.total_it,
         }
 
-    def load_state_dict(self, state_dict: dict[str, Any]):
+    def load_state_dict(self, state_dict: dict[str, Any]) -> None:
         self.critic_1.load_state_dict(state_dict["critic_1"])
         self.critic_1_optimizer.load_state_dict(
             state_dict["critic_1_optimizer"],

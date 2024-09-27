@@ -4,7 +4,8 @@ import json
 import random
 import signal
 from pathlib import Path
-from typing import Any
+from types import FrameType
+from typing import Any, Union
 
 import ConfigSpace
 import numpy as np
@@ -35,9 +36,26 @@ from src.agents import (
     StepDecay,
     td3,
 )
-from src.utils.agent_components import (
-    ConfigurableCritic,
-)
+
+ActorType = Union[
+    bc.Actor,
+    td3_bc.Actor,
+    td3.Actor,
+    edac.Actor,
+    sac_n.Actor,
+    lb_sac.Actor,
+]
+
+CriticType = Union[
+    td3_bc.Critic,
+    td3.Critic,
+    awac.Critic,
+    cql.FullyConnectedQFunction,
+    edac.VectorizedCritic,
+    sac_n.VectorizedCritic,
+    lb_sac.VectorizedCritic,
+    iql.TwinQ,
+]
 
 
 # Time out related class and function
@@ -45,7 +63,7 @@ class OutOfTimeError(Exception):
     pass
 
 
-def timeouthandler(_) -> None:
+def timeouthandler(_signum: int, _frame: FrameType | None) -> Any:
     raise OutOfTimeError
 
 
@@ -103,8 +121,13 @@ def get_agent(
     max_action = agent_config["max_action"]
     min_action = agent_config["min_action"]
 
+    actor: torch.nn.Module
+    critic: CriticType
+    critic_1: CriticType
+    critic_2: CriticType
+
     if agent_type == "td3_bc":
-        config = td3_bc.TrainConfig
+        td3_bc_config = td3_bc.TrainConfig
 
         actor = td3_bc.Actor(
             state_dim=state_dim,
@@ -123,7 +146,7 @@ def get_agent(
             lr=hyperparameters.get("lr_actor", 3e-4),
         )
 
-        critic_1 = ConfigurableCritic(
+        critic_1 = td3_bc.Critic(
             state_dim=state_dim,
             action_dim=action_dim,
             hidden_layers=hyperparameters["hidden_layers_critic"],
@@ -134,7 +157,7 @@ def get_agent(
             lr=hyperparameters.get("lr_critic", 3e-4),
         )
 
-        critic_2 = ConfigurableCritic(
+        critic_2 = td3_bc.Critic(
             state_dim=state_dim,
             action_dim=action_dim,
             hidden_layers=hyperparameters["hidden_layers_critic"],
@@ -158,19 +181,17 @@ def get_agent(
             "tau": hyperparameters["target_update_rate"],
             "device": device,
             # TD3
-            "policy_noise": config.policy_noise,
-            "noise_clip": config.noise_clip,
-            "policy_freq": config.policy_freq,
+            "policy_noise": td3_bc_config.policy_noise,
+            "noise_clip": td3_bc_config.noise_clip,
+            "policy_freq": td3_bc_config.policy_freq,
             # TD3 + BC
-            "alpha": config.alpha,
+            "alpha": td3_bc_config.alpha,
         }
         print("Agent Config:")
         print(kwargs)
         return td3_bc.TD3_BC(**kwargs)
 
     if agent_type == "bc":
-        config = bc.TrainConfig
-
         actor = bc.Actor(
             state_dim=state_dim,
             action_dim=action_dim,
@@ -196,7 +217,7 @@ def get_agent(
         return bc.BC(**kwargs)
 
     if agent_type == "cql":
-        config = cql.TrainConfig
+        cql_config = cql.TrainConfig
         actor = cql.TanhGaussianPolicy(
             state_dim=state_dim,
             action_dim=action_dim,
@@ -207,8 +228,8 @@ def get_agent(
             tanh_scaling=tanh_scaling,
             action_positive=cmaes,
             n_hidden_layers=hyperparameters["hidden_layers_actor"],
-            log_std_multiplier=config.policy_log_std_multiplier,
-            orthogonal_init=config.orthogonal_init,
+            log_std_multiplier=cql_config.policy_log_std_multiplier,
+            orthogonal_init=cql_config.orthogonal_init,
             no_tanh=True,
         ).to(device)
         actor_optimizer = torch.optim.Adam(
@@ -220,7 +241,7 @@ def get_agent(
             state_dim=state_dim,
             action_dim=action_dim,
             hidden_dim=hyperparameters["critic_hidden_dim"],
-            orthogonal_init=config.orthogonal_init,
+            orthogonal_init=cql_config.orthogonal_init,
             n_hidden_layers=hyperparameters["hidden_layers_critic"],
         ).to(device)
         critic_1_optimizer = torch.optim.Adam(
@@ -232,7 +253,7 @@ def get_agent(
             state_dim=state_dim,
             action_dim=action_dim,
             hidden_dim=hyperparameters["critic_hidden_dim"],
-            orthogonal_init=config.orthogonal_init,
+            orthogonal_init=cql_config.orthogonal_init,
             n_hidden_layers=hyperparameters["hidden_layers_critic"],
         ).to(device)
         critic_2_optimizer = torch.optim.Adam(
@@ -252,28 +273,28 @@ def get_agent(
             "device": device,
             # CQL
             "target_entropy": -np.prod(action_dim).item(),
-            "alpha_multiplier": config.alpha_multiplier,
-            "use_automatic_entropy_tuning": config.use_automatic_entropy_tuning,
-            "backup_entropy": config.backup_entropy,
-            "policy_lr": config.policy_lr,
-            "qf_lr": config.qf_lr,
-            "bc_steps": config.bc_steps,
-            "target_update_period": config.target_update_period,
-            "cql_n_actions": config.cql_n_actions,
-            "cql_importance_sample": config.cql_importance_sample,
-            "cql_lagrange": config.cql_lagrange,
-            "cql_target_action_gap": config.cql_target_action_gap,
-            "cql_temp": config.cql_temp,
-            "cql_alpha": config.cql_alpha,
-            "cql_max_target_backup": config.cql_max_target_backup,
-            "cql_clip_diff_min": config.cql_clip_diff_min,
-            "cql_clip_diff_max": config.cql_clip_diff_max,
+            "alpha_multiplier": cql_config.alpha_multiplier,
+            "use_automatic_entropy_tuning": cql_config.use_automatic_entropy_tuning,
+            "backup_entropy": cql_config.backup_entropy,
+            "policy_lr": cql_config.policy_lr,
+            "qf_lr": cql_config.qf_lr,
+            "bc_steps": cql_config.bc_steps,
+            "target_update_period": cql_config.target_update_period,
+            "cql_n_actions": cql_config.cql_n_actions,
+            "cql_importance_sample": cql_config.cql_importance_sample,
+            "cql_lagrange": cql_config.cql_lagrange,
+            "cql_target_action_gap": cql_config.cql_target_action_gap,
+            "cql_temp": cql_config.cql_temp,
+            "cql_alpha": cql_config.cql_alpha,
+            "cql_max_target_backup": cql_config.cql_max_target_backup,
+            "cql_clip_diff_min": cql_config.cql_clip_diff_min,
+            "cql_clip_diff_max": cql_config.cql_clip_diff_max,
         }
 
         return cql.ContinuousCQL(**kwargs)
 
     if agent_type == "awac":
-        config = awac.TrainConfig
+        awac_config = awac.TrainConfig
         actor = awac.Actor(
             state_dim=state_dim,
             action_dim=action_dim,
@@ -321,12 +342,12 @@ def get_agent(
             "critic_2_optimizer": critic_2_optimizer,
             "gamma": hyperparameters["discount_factor"],
             "tau": hyperparameters["target_update_rate"],
-            "awac_lambda": config.awac_lambda,
+            "awac_lambda": awac_config.awac_lambda,
         }
         return awac.AdvantageWeightedActorCritic(**kwargs)
 
     if agent_type == "edac":
-        config = edac.TrainConfig
+        edac_config = edac.TrainConfig
         actor = edac.Actor(
             state_dim=state_dim,
             action_dim=action_dim,
@@ -338,7 +359,7 @@ def get_agent(
         ).to(device)
         actor_optimizer = torch.optim.Adam(
             actor.parameters(),
-            lr=config.actor_learning_rate,
+            lr=edac_config.actor_learning_rate,
         )
 
         critic = edac.VectorizedCritic(
@@ -346,7 +367,7 @@ def get_agent(
             action_dim=action_dim,
             hidden_dim=hyperparameters["critic_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_critic"],
-            num_critics=config.num_critics,
+            num_critics=edac_config.num_critics,
         ).to(device)
         critic_optimizer = torch.optim.Adam(
             critic.parameters(),
@@ -360,14 +381,14 @@ def get_agent(
             "critic_optimizer": critic_optimizer,
             "gamma": hyperparameters["discount_factor"],
             "tau": hyperparameters["target_update_rate"],
-            "eta": config.eta,
-            "alpha_learning_rate": config.alpha_learning_rate,
+            "eta": edac_config.eta,
+            "alpha_learning_rate": edac_config.alpha_learning_rate,
         }
 
         return edac.EDAC(**kwargs)
 
     if agent_type == "sac_n":
-        config = sac_n.TrainConfig()
+        sac_n_config = sac_n.TrainConfig()
         actor = sac_n.Actor(
             state_dim=state_dim,
             action_dim=action_dim,
@@ -387,7 +408,7 @@ def get_agent(
             action_dim=action_dim,
             hidden_dim=hyperparameters["critic_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_critic"],
-            num_critics=config.num_critics,
+            num_critics=sac_n_config.num_critics,
         ).to(device)
         critic_optimizer = torch.optim.Adam(
             critic.parameters(),
@@ -401,14 +422,14 @@ def get_agent(
             "critic_optimizer": critic_optimizer,
             "gamma": hyperparameters["discount_factor"],
             "tau": hyperparameters["target_update_rate"],
-            "alpha_learning_rate": config.alpha_learning_rate,
+            "alpha_learning_rate": sac_n_config.alpha_learning_rate,
             "device": device,
         }
 
         return sac_n.SACN(**kwargs)
 
     if agent_type == "lb_sac":
-        config = lb_sac.TrainConfig()
+        lb_sac_config = lb_sac.TrainConfig()
         actor = lb_sac.Actor(
             state_dim=state_dim,
             action_dim=action_dim,
@@ -417,11 +438,11 @@ def get_agent(
             dropout_rate=hyperparameters["dropout_rate"],
             max_action=max_action,
             min_action=min_action,
-            edac_init=config.edac_init,
+            edac_init=lb_sac_config.edac_init,
         ).to(device)
         actor_optimizer = torch.optim.Adam(
             actor.parameters(),
-            lr=config.actor_learning_rate,
+            lr=lb_sac_config.actor_learning_rate,
         )
 
         critic = lb_sac.VectorizedCritic(
@@ -429,9 +450,9 @@ def get_agent(
             action_dim=action_dim,
             hidden_dim=hyperparameters["critic_hidden_dim"],
             hidden_layers=hyperparameters["hidden_layers_critic"],
-            num_critics=config.num_critics,
-            layernorm=config.critic_layernorm,
-            edac_init=config.edac_init,
+            num_critics=lb_sac_config.num_critics,
+            layernorm=lb_sac_config.critic_layernorm,
+            edac_init=lb_sac_config.edac_init,
         ).to(device)
         critic_optimizer = torch.optim.Adam(
             critic.parameters(),
@@ -445,14 +466,14 @@ def get_agent(
             "critic_optimizer": critic_optimizer,
             "gamma": hyperparameters["discount_factor"],
             "tau": hyperparameters["target_update_rate"],
-            "alpha_learning_rate": config.alpha_learning_rate,
+            "alpha_learning_rate": lb_sac_config.alpha_learning_rate,
             "device": device,
         }
 
         return lb_sac.LBSAC(**kwargs)
 
     if agent_type == "iql":
-        config = iql.TrainConfig
+        iql_config = iql.TrainConfig
         v_network = iql.ValueFunction(
             state_dim=state_dim,
             hidden_dim=hyperparameters["critic_hidden_dim"],
@@ -471,12 +492,11 @@ def get_agent(
                 max_action,
                 min_action,
                 tanh_scaling=tanh_scaling,
-                action_positive=cmaes,
                 hidden_dim=hyperparameters["actor_hidden_dim"],
                 n_hidden=hyperparameters["hidden_layers_actor"],
-                dropout=hyperparameters["dropout_rate"],
+                dropout_rate=hyperparameters["dropout_rate"],
             )
-            if config.iql_deterministic
+            if iql_config.iql_deterministic
             else iql.GaussianPolicy(
                 state_dim,
                 action_dim,
@@ -513,9 +533,9 @@ def get_agent(
             "tau": hyperparameters["target_update_rate"],
             "device": device,
             # IQL
-            "beta": config.beta,
-            "iql_tau": config.iql_tau,
-            "max_steps": config.max_timesteps,
+            "beta": iql_config.beta,
+            "iql_tau": iql_config.iql_tau,
+            "max_steps": iql_config.max_timesteps,
         }
 
         # Initialize actor
