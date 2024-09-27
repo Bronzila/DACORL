@@ -89,11 +89,11 @@ class ReplayBuffer:
 
     def save(self, filename: Path) -> None:
         # Only save actual collected data, not zeros
-        self._states = self._states[: (self._size)]
-        self._actions = self._actions[: (self._size)]
-        self._next_states = self._next_states[: (self._size)]
-        self._rewards = self._rewards[: (self._size)]
-        self._dones = self._dones[: (self._size)]
+        self._states = self._states[: self._size]
+        self._actions = self._actions[: self._size]
+        self._next_states = self._next_states[: self._size]
+        self._rewards = self._rewards[: self._size]
+        self._dones = self._dones[: self._size]
         self._buffer_size = self._size
         self._pointer = self._pointer % self._buffer_size
 
