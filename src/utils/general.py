@@ -12,7 +12,7 @@ import torch
 from ConfigSpace import (
     Categorical,
     ConfigurationSpace,
-    Constant,
+    Constant as ConstantHP,
     Float,
 )
 from CORL.algorithms.offline import (
@@ -28,11 +28,11 @@ from CORL.algorithms.offline import (
 
 from src.agents import (
     CSA,
-    ConstantAgent,
+    SGDR,
+    Constant,
     ConstantCMAES,
-    ExponentialDecayAgent,
-    SGDRAgent,
-    StepDecayAgent,
+    ExponentialDecay,
+    StepDecay,
     td3,
 )
 from src.utils.agent_components import (
@@ -67,13 +67,13 @@ def get_teacher(
     teacher_config: dict[str, Any],
 ) -> Any:
     if teacher_type == "step_decay":
-        return StepDecayAgent(**teacher_config["params"])
+        return StepDecay(**teacher_config["params"])
     if teacher_type == "exponential_decay":
-        return ExponentialDecayAgent(**teacher_config["params"])
+        return ExponentialDecay(**teacher_config["params"])
     if teacher_type == "sgdr":
-        return SGDRAgent(**teacher_config["params"])
+        return SGDR(**teacher_config["params"])
     if teacher_type == "constant":
-        return ConstantAgent(**teacher_config["params"])
+        return Constant(**teacher_config["params"])
     if teacher_type == "csa":
         return CSA(**teacher_config["params"])
     if teacher_type == "cmaes_constant":
@@ -679,10 +679,10 @@ def get_config_space(config_type: str) -> ConfigSpace:
         )
 
         # Arch
-        hidden_layers_actor = Constant("hidden_layers_actor", 1)
-        hidden_layers_critic = Constant("hidden_layers_critic", 1)
-        actor_hidden_dim = Constant("actor_hidden_dim", 256)
-        critic_hidden_dim = Constant("critic_hidden_dim", 256)
+        hidden_layers_actor = ConstantHP("hidden_layers_actor", 1)
+        hidden_layers_critic = ConstantHP("hidden_layers_critic", 1)
+        actor_hidden_dim = ConstantHP("actor_hidden_dim", 256)
+        critic_hidden_dim = ConstantHP("critic_hidden_dim", 256)
         # Dropout
         dropout_rate = Categorical(
             "dropout_rate",
