@@ -77,6 +77,7 @@ def set_timeout(timeout: int) -> None:
 
 def set_seeds(seed: int) -> None:
     torch.manual_seed(seed)
+    np.random.seed(seed)  # noqa: NPY002
     random.seed(seed)
 
 
