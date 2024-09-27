@@ -118,6 +118,7 @@ ignore = [
   "PLR0913", # Too many arguments to function call (15 > 10)
   "TCH003",  # Move stdlib import into TYPE_CHECKING
   "FBT001",  # Boolean positional arg in function definition
+  "N812",     # Lowercase imported as non-lowercase
   # These tend to be lighweight and confuse pyright
   
   # These can or should be revoked
