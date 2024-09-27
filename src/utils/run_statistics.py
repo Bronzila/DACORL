@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -67,7 +68,7 @@ def calculate_single_seed_statistics(
     min_iqm_std = np.inf
     min_auc = np.inf
     min_auc_std = np.inf
-    min_path = ""
+    min_path = Path("")
     lowest_vals_of_min_mean = []
     assert (
         len(paths) == 1
@@ -101,7 +102,7 @@ def calculate_single_seed_statistics(
         if calc_lowest:
             lowest_vals = find_lowest_values(df, metric, n_lowest)
             if incumbent_changed:
-                lowest_vals_of_min_mean = lowest_vals[metric]
+                lowest_vals_of_min_mean = list(lowest_vals[metric])
             if verbose:
                 print("Lowest values:")
                 print(lowest_vals[metric])
@@ -253,7 +254,7 @@ def compute_iqm(df: pd.DataFrame, metric: str = "f_cur") -> tuple[float, float]:
 
 
 def compute_auc(df: pd.DataFrame, metric: str) -> tuple[float, float]:
-    def fill_missing_values(group: pd.Series) -> pd.Series:
+    def fill_missing_values(group: pd.DataFrame) -> pd.DataFrame:
         last_value = group[metric].iloc[-1]
 
         # Create full run
@@ -269,7 +270,7 @@ def compute_auc(df: pd.DataFrame, metric: str) -> tuple[float, float]:
 
     required_fields_df = df[[metric, "run", "batch"]]
 
-    df_filled = (
+    df_filled: pd.DataFrame = (
         required_fields_df.groupby("run")
         .apply(fill_missing_values)
         .reset_index(drop=True)
@@ -280,7 +281,7 @@ def compute_auc(df: pd.DataFrame, metric: str) -> tuple[float, float]:
         drop=True,
     )
 
-    def calculate_auc(run):
+    def calculate_auc(run: pd.DataFrame) -> Any:
         auc = np.trapz(run[metric], run["batch"])
         return pd.Series({"run": run["run"].iloc[0], "auc": auc})
 
