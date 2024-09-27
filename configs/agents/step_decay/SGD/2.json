@@ -1,8 +1,0 @@
-{
-    "params": {
-        "gamma": 0.95,
-        "step_size": 450
-    },
-    "type": "step_decay",
-    "id": 2
-}
