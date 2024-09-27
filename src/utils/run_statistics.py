@@ -129,7 +129,7 @@ def calculate_multi_seed_statistics(
     calc_auc: bool = True,
     metric: str = "f_cur",
 ) -> tuple:
-    seed_dirs: list[Path] = []
+    seed_dirs: set[Path] = set()
     filename = (
         "eval_data_interpolation.csv" if interpolation else "eval_data.csv"
     )
@@ -137,9 +137,9 @@ def calculate_multi_seed_statistics(
         for eval_file in Path(path).rglob(filename):
             # Extract the seed directory
             seed_dir = eval_file.parents[1]
-            seed_dirs.append(seed_dir)
+            seed_dirs.add(seed_dir)
     else:
-        seed_dirs.append(path)
+        seed_dirs.add(path)
 
     print(seed_dirs)
     best_iterations_paths = []
