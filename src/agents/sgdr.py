@@ -3,11 +3,13 @@ from __future__ import annotations
 import math
 from typing import TYPE_CHECKING
 
+from src.agents.teacher import Teacher
+
 if TYPE_CHECKING:
     from torch import Tensor
 
 
-class SGDRAgent:
+class SGDR(Teacher):
     def __init__(
         self,
         initial_learning_rate: float,

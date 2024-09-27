@@ -5,21 +5,19 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 if TYPE_CHECKING:
-    from DACBench.dacbench.benchmarks import CMAESBenchmark
+    from DACBench.dacbench.envs.cma_es import CMAESEnv
 
 
 class CSA:
     def __init__(self) -> None:
         pass
 
-    def act(self, env: CMAESBenchmark) -> None:
-        sigma = env.es.parameters.sigma
+    def act(self, env: CMAESEnv) -> float:
+        params = env.es.parameters  # type: ignore
+        sigma: float = params.sigma
         sigma *= np.exp(
-            (env.es.parameters.cs / env.es.parameters.damps)
-            * (
-                (np.linalg.norm(env.es.parameters.ps) / env.es.parameters.chiN)
-                - 1
-            ),
+            (params.cs / params.damps)
+            * ((np.linalg.norm(params.ps) / params.chiN) - 1),
         )
         return sigma + 1e-10
 

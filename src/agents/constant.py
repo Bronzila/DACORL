@@ -3,11 +3,13 @@ from __future__ import annotations
 import math
 from typing import TYPE_CHECKING
 
+from src.agents.teacher import Teacher
+
 if TYPE_CHECKING:
     from torch import Tensor
 
 
-class ConstantAgent:
+class Constant(Teacher):
     def __init__(
         self,
         learning_rate: float,

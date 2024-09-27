@@ -3,11 +3,13 @@ from __future__ import annotations
 import math
 from typing import TYPE_CHECKING
 
+from src.agents.teacher import Teacher
+
 if TYPE_CHECKING:
     from torch import Tensor
 
 
-class ExponentialDecayAgent:
+class ExponentialDecay(Teacher):
     def __init__(
         self,
         decay_rate: float = 0.96,
