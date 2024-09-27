@@ -31,16 +31,9 @@ def save_data(
     if not results_dir.exists():
         results_dir.mkdir(parents=True)
 
-    if not results_dir.exists():
-        results_dir.mkdir(parents=True)
-
     run_info["starting_points"] = starting_points
     save_path = Path(results_dir, "rep_buffer")
     if save_rep_buffer:
-        if checkpoint:
-            replay_buffer.checkpoint(save_path)
-        else:
-            replay_buffer.save(save_path)
         if checkpoint:
             replay_buffer.checkpoint(save_path)
         else:
@@ -77,7 +70,7 @@ def generate_dataset(
     env_config: dict,
     num_runs: int,
     seed: int,
-    results_dir: str | Path,
+    results_dir: Path,
     timeout: int,
     checkpointing_freq: int,
     checkpoint: int,
@@ -96,15 +89,12 @@ def generate_dataset(
     print(f"Environment: {env_config}")
     print(f"Teacher: {agent_config}", flush=True)
 
-    print(f"Environment: {env_config}")
-    print(f"Teacher: {agent_config}", flush=True)
-
     # Get types
     environment_type = env_config["type"]
     agent_type = agent_config["type"]
 
-    if results_dir == "":
-        results_dir: Path = Path(
+    if results_dir == Path(""):
+        results_dir = Path(
             "data",
             environment_type,
             agent_type,
@@ -175,8 +165,6 @@ def generate_dataset(
 
     start_run = 0
     starting_points = []
-
-    start_run = 0
 
     if checkpoint != 0:
         checkpoint_dir = Path(results_dir, "checkpoints", str(checkpoint))
