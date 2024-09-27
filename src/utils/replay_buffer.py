@@ -59,7 +59,7 @@ class ReplayBuffer:
             0,
             self._size,
             size=batch_size,
-        )
+        ).tolist()
         states = self._states[indices]
         actions = self._actions[indices]
         rewards = self._rewards[indices]
@@ -69,11 +69,11 @@ class ReplayBuffer:
 
     def add_transition(
         self,
-        state: torch.FloatTensor,
-        action: torch.FloatTensor,
-        next_state: torch.FloatTensor,
-        reward: torch.FloatTensor,
-        done: torch.FloatTensor,
+        state: np.ndarray,
+        action: np.ndarray,
+        next_state: np.ndarray,
+        reward: np.ndarray,
+        done: np.ndarray,
     ) -> None:
         self._states[self._pointer] = self._to_tensor(state)
         self._actions[self._pointer] = self._to_tensor(action)
