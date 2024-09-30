@@ -1,6 +1,8 @@
 import argparse
 import json
 from pathlib import Path
+import json
+from pathlib import Path
 
 from src.utils.generate_plots import (
     plot_actions,
@@ -53,6 +55,12 @@ if __name__ == "__main__":
         type=str,
     )
     parser.add_argument(
+        "--plot_type",
+        help="Generate plots for teacher-agent comparison for a specified type",
+        default=None,
+        type=str,
+    )
+    parser.add_argument(
         "--trajectory",
         help="Generate plots for optimization trajectory (function values)",
         default=False,
@@ -67,7 +75,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--num_runs",
         help="Specifies how many individual runs should be plotted.",
+        help="Specifies how many individual runs should be plotted.",
         type=int,
+        default=0,
         default=0,
     )
     parser.add_argument(

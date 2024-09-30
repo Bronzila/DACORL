@@ -1,10 +1,9 @@
 import argparse
 import json
+from typing import Optional
 import warnings
 from pathlib import Path
 
-import numpy as np
-import torch.nn as nn
 from ConfigSpace import (
     Categorical,
     Configuration,
@@ -12,6 +11,7 @@ from ConfigSpace import (
     Constant,
     Float,
     Integer,
+    Constant,
 )
 from matplotlib import pyplot as plt
 from smac import (
@@ -20,13 +20,14 @@ from smac import (
     Scenario,
 )
 
-from src.utils.general import set_seeds
-from src.utils.train_agent import train_agent
+from src.utils.general import set_seeds, get_config_space
+from src.utils.train_agent import train_agent as train_offline
+from src.utils.train_agent_online import train_agent as train_online
 
 warnings.filterwarnings("ignore")
 
 
-class TD3BC_Optimizee:
+class Optimizee:
     def __init__(
         self,
         data_dir: str,
@@ -36,6 +37,7 @@ class TD3BC_Optimizee:
         eval_protocol: str,
         eval_seed: int,
         hidden_dim: int,
+        tanh_scaling: bool,
     ) -> None:
         self.data_dir = data_dir
         self.agent_type = agent_type
@@ -44,7 +46,12 @@ class TD3BC_Optimizee:
         self.eval_protocol = eval_protocol
         self.eval_seed = eval_seed
         self.hidden_dim = hidden_dim
+        self.tanh_scaling = tanh_scaling
 
+        if agent_type == "td3":
+            self.train_agent = train_online
+        else:
+            self.train_agent = train_offline
         with Path(self.data_dir, "run_info.json").open(mode="rb") as f:
             self.run_info = json.load(f)
 
@@ -92,6 +99,8 @@ class TD3BC_Optimizee:
             debug=self.debug,
             eval_protocol=self.eval_protocol,
             eval_seed=self.eval_seed,
+            use_wandb=False,
+            tanh_scaling=self.tanh_scaling,
         )
         print(f"Results for seed {seed}: {eval_mean}")
         return eval_mean
@@ -163,20 +172,35 @@ if __name__ == "__main__":
         help="path to the directory where replay_buffer and info about the replay_buffer are stored",
     )
     parser.add_argument(
-        "--agent_type", type=str, default="td3_bc", choices=["td3_bc"]
+        "--output_path",
+        type=str,
+        help="Path where optimization logs are saved",
+        default="smac",
+    )
+    parser.add_argument(
+        "--agent_type",
+        type=str,
+        default="td3_bc",
+        choices=["bc", "td3_bc", "cql", "awac", "edac", "sac_n", "lb_sac", "iql", "td3"],
     )
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--time_limit", type=int, default=30)
-    parser.add_argument("--budget", type=int, default=15000)
+    parser.add_argument("--budget", type=int, default=30000)
+    parser.add_argument(
+        "--reduced",
+        action="store_true",
+        help="If set, architectural parameters will be constant",
+    )
+    parser.add_argument(
+        "--save_incumbent",
+        action="store_true",
+        default=True,
+        help="Flag if we save the incumbent configuration",
+    )
     parser.add_argument(
         "--debug",
         action="store_true",
         help="Run for max. 5 iterations and don't log in wanbd.",
-    )
-    parser.add_argument(
-        "--arch_cs",
-        action="store_true",
-        help="Use architecture config space.",
     )
     parser.add_argument(
         "--output_path",
@@ -189,11 +213,23 @@ if __name__ == "__main__":
     )
     parser.add_argument("--eval_seed", type=int, default=123)
     parser.add_argument("--hidden_dim", type=int, default=64)
+    parser.add_argument(
+        "--tanh_scaling",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+    )
+    parser.add_argument("--eval_seed", type=int, default=123)
+    parser.add_argument(
+        "--cs_type",
+        type=str,
+        help="Which config space to use",
+        default="reduced_dropout"
+    )
 
     args = parser.parse_args()
     set_seeds(args.seed)
 
-    optimizee = TD3BC_Optimizee(
+    optimizee = Optimizee(
         data_dir=args.data_dir,
         agent_type=args.agent_type,
         debug=args.debug,
@@ -201,9 +237,11 @@ if __name__ == "__main__":
         eval_protocol=args.eval_protocol,
         eval_seed=args.eval_seed,
         hidden_dim=args.hidden_dim,
+        tanh_scaling=args.tanh_scaling,
     )
+
     output_path = Path(args.output_path)
-    cs = optimizee.configspace_arch if args.arch_cs else optimizee.configspace
+    cs = get_config_space(args.cs_type)
     scenario = Scenario(
         cs,
         output_directory=output_path,
@@ -235,6 +273,16 @@ if __name__ == "__main__":
     print(f"Final score: {smac.validate(incumbent)}")
 
     plot_trajectory(smac, output_path)
+
+    if args.save_incumbent:
+        save_config_dir = Path(args.data_dir) / "results" / args.agent_type
+        save_config_dir.mkdir(exist_ok=True)
+        path = save_config_dir / "incumbent.json"
+        print(f"Saving incumbent to : {path}")
+        with path.open("w") as f:
+            json.dump(incumbent.get_dictionary(), f, indent=4)
+
+    print(smac.validate(incumbent))
 
     with (output_path / "inc.json").open("w") as f:
         json.dump(dict(incumbent), f)

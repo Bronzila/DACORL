@@ -5,10 +5,10 @@ name = "MTORL-DAC"
 version = "0.0.1"
 dependencies = [
   "torch==1.13.1",
-  "numpy==1.24.2",
-  "tqdm==4.66.1",
-  "wandb==0.16.2",
-  "pandas==1.5.3",
+  "numpy>=1.24.2",
+  "tqdm>=4.66.1",
+  "wandb>=0.16.2",
+  "pandas>=1.5.3",
 #  "dacbench@git+https://github.com/Bronzila/DACBench.git@ToySGD_MTDAC",
   "gym",
 ]
@@ -41,7 +41,7 @@ line-length = 80
 # https://github.com/charliermarsh/ruff
 [tool.ruff]
 target-version = "py38"
-line-length = 80
+line-length = 100
 show-source = true
 src = ["src"]
 
@@ -117,7 +117,21 @@ ignore = [
   "PLC1901", # "" can be simplified to be falsey
   "PLR0913", # Too many arguments to function call (15 > 10)
   "TCH003",  # Move stdlib import into TYPE_CHECKING
+  "FBT001",  # Boolean positional arg in function definition
+  "N812",     # Lowercase imported as non-lowercase
   # These tend to be lighweight and confuse pyright
+  
+  # These can or should be revoked
+  "T201",     # Print
+  "E501",     # Line too long
+  "FBT002",   # Boolean default value in function def
+  "PLR0915",  # Too many statements
+  "C901",     # too complex
+  "PD901",    # df is a bad variable name
+  "PLR0912",  # too many branches in function
+  "PLR2004",  # Magic values --> use const vars instead
+  "B006",     # mutable data structures as default arg
+  "PLR0911",  # too many return statements 
 ]
 
 exclude = [

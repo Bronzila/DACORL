@@ -1,13 +1,17 @@
-from src.agents.exponential_decay import ExponentialDecayAgent
-from src.agents.sgdr import SGDRAgent
-from src.agents.constant import ConstantAgent
-from src.agents.step_decay import StepDecayAgent
-from src.agents.td3_bc_agent import TD3_BC
+from src.agents.cmaes_constant import ConstantCMAES
+from src.agents.constant import Constant
+from src.agents.csa import CSA
+from src.agents.exponential_decay import ExponentialDecay
+from src.agents.sgdr import SGDR
+from src.agents.step_decay import StepDecay
+from src.agents.td3 import TD3
 
 __all__ = [
-    "ExponentialDecayAgent",
-    "StepDecayAgent",
-    "SGDRAgent",
-    "ConstantAgent",
-    "TD3_BC",
+    "ExponentialDecay",
+    "StepDecay",
+    "SGDR",
+    "Constant",
+    "ConstantCMAES",
+    "CSA",
+    "TD3",
 ]

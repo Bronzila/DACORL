@@ -1,14 +1,19 @@
 from __future__ import annotations
 
 import copy
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, List
 
 import torch
-import torch.nn.functional as F  # noqa: N812
+import torch.nn.functional as F
 from torch import nn
 
 if TYPE_CHECKING:
     import numpy as np
+
+TensorBatch = List[torch.Tensor]
+
+# Implementation of Twin Delayed Deep Deterministic Policy Gradients (TD3)
+# Paper: https://arxiv.org/abs/1802.09477
 
 
 def soft_update(target: nn.Module, source: nn.Module, tau: float) -> None:
@@ -22,21 +27,50 @@ def soft_update(target: nn.Module, source: nn.Module, tau: float) -> None:
 
 
 class Actor(nn.Module):
-    def __init__(self, state_dim: int, action_dim: int, max_action: float):
+    def __init__(
+        self,
+        state_dim: int,
+        action_dim: int,
+        max_action: int,
+        min_action: int,
+        dropout_rate: float,
+        hidden_dim: int,
+        tanh_scaling: bool = False,
+        action_positive: bool = False,
+    ) -> None:
         super().__init__()
 
         self.net = nn.Sequential(
-            nn.Linear(state_dim, 256),
+            nn.Linear(state_dim, hidden_dim),
             nn.ReLU(),
-            nn.Linear(256, 256),
+            nn.Dropout(dropout_rate),
+            nn.Linear(hidden_dim, hidden_dim),
             nn.ReLU(),
-            nn.Linear(256, action_dim),
+            nn.Dropout(dropout_rate),
+            nn.Linear(hidden_dim, action_dim),
         )
 
-        self.max_action = max_action
+        self._max_action = max_action
+        self._min_action = min_action
+        self._tanh_scaling = tanh_scaling
+        self._pos_act = action_positive
 
     def forward(self, state: torch.Tensor) -> torch.Tensor:
-        return self.max_action * self.net(state)
+        action: torch.Tensor = self.net(state)
+        if self._tanh_scaling:
+            tanh_action = torch.tanh(action)
+            # instead of [-1,1] -> [self.min_action, self.max_action]
+            action = (tanh_action - 1) * (
+                (self._max_action - self._min_action) / 2
+            ) + self._max_action
+        else:
+            relu_action = torch.nn.functional.relu(action)
+            if not self._pos_act:
+                relu_action.mul_(-1)
+            relu_action.clamp_(self._min_action, self._max_action)
+            action = relu_action
+
+        return action
 
     @torch.no_grad()
     def act(self, state: np.ndarray, device: str = "cpu") -> np.ndarray:
@@ -49,15 +83,20 @@ class Actor(nn.Module):
 
 
 class Critic(nn.Module):
-    def __init__(self, state_dim: int, action_dim: int):
+    def __init__(
+        self,
+        state_dim: int,
+        action_dim: int,
+        hidden_dim: int,
+    ) -> None:
         super().__init__()
 
         self.net = nn.Sequential(
-            nn.Linear(state_dim + action_dim, 256),
+            nn.Linear(state_dim + action_dim, hidden_dim),
             nn.ReLU(),
-            nn.Linear(256, 256),
+            nn.Linear(hidden_dim, hidden_dim),
             nn.ReLU(),
-            nn.Linear(256, 1),
+            nn.Linear(hidden_dim, 1),
         )
 
     def forward(
@@ -69,10 +108,11 @@ class Critic(nn.Module):
         return self.net(sa)
 
 
-class TD3_BC:
+class TD3:
     def __init__(
         self,
         max_action: float,
+        min_action: float,
         actor: nn.Module,
         actor_optimizer: torch.optim.Optimizer,
         critic_1: nn.Module,
@@ -84,7 +124,6 @@ class TD3_BC:
         policy_noise: float = 0.2,
         noise_clip: float = 0.5,
         policy_freq: int = 2,
-        alpha: float = 2.5,
         device: str = "cpu",
     ):
         self.actor = actor
@@ -98,51 +137,58 @@ class TD3_BC:
         self.critic_2_optimizer = critic_2_optimizer
 
         self.max_action = max_action
+        self.min_action = min_action
         self.discount = discount
         self.tau = tau
         self.policy_noise = policy_noise
         self.noise_clip = noise_clip
         self.policy_freq = policy_freq
-        self.alpha = alpha
 
         self.total_it = 0
         self.device = device
 
-    def train(self, batch: list[torch.Tensor]) -> dict[str, float]:
+    def select_action(self, state: torch.Tensor) -> np.ndarray:
+        state = state.reshape(1, -1)
+        out: torch.Tensor = self.actor(state)
+        return out.cpu().data.numpy().flatten()
+
+    def train(self, batch: TensorBatch) -> dict[str, float]:
         log_dict = {}
         self.total_it += 1
 
-        state, action, reward, next_state, done = batch
-        not_done = 1 - done
+        # Sample replay buffer
+        state, action, reward, next_state, not_done = batch
 
         with torch.no_grad():
-            # Select action according to actor and add clipped noise
+            # Select action according to policy and add clipped noise
             noise = (torch.randn_like(action) * self.policy_noise).clamp(
                 -self.noise_clip,
                 self.noise_clip,
             )
 
             next_action = (self.actor_target(next_state) + noise).clamp(
-                -self.max_action,
+                -self.min_action,
                 self.max_action,
             )
 
             # Compute the target Q value
             target_q1 = self.critic_1_target(next_state, next_action)
             target_q2 = self.critic_2_target(next_state, next_action)
-            target_q = torch.min(target_q1, target_q2)
-            target_q = reward + not_done * self.discount * target_q
+            target_Q = torch.min(target_q1, target_q2).cpu()
+            target_Q = reward + not_done * self.discount * target_Q
 
         # Get current Q estimates
         current_q1 = self.critic_1(state, action)
         current_q2 = self.critic_2(state, action)
 
         # Compute critic loss
-        critic_loss = F.mse_loss(current_q1, target_q) + F.mse_loss(
+        critic_loss = F.mse_loss(current_q1, target_Q) + F.mse_loss(
             current_q2,
-            target_q,
+            target_Q,
         )
+
         log_dict["critic_loss"] = critic_loss.item()
+
         # Optimize the critic
         self.critic_1_optimizer.zero_grad()
         self.critic_2_optimizer.zero_grad()
@@ -150,15 +196,12 @@ class TD3_BC:
         self.critic_1_optimizer.step()
         self.critic_2_optimizer.step()
 
-        # Delayed actor updates
+        # Delayed policy updates
         if self.total_it % self.policy_freq == 0:
-            # Compute actor loss
-            pi = self.actor(state)
-            q = self.critic_1(state, pi)
-            lmbda = self.alpha / q.abs().mean().detach()
-
-            actor_loss = -lmbda * q.mean() + F.mse_loss(pi, action)
+            # Compute actor losse
+            actor_loss = -self.critic_1(state, self.actor(state)).mean()
             log_dict["actor_loss"] = actor_loss.item()
+
             # Optimize the actor
             self.actor_optimizer.zero_grad()
             actor_loss.backward()

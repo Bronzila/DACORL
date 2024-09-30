@@ -17,8 +17,10 @@ from dacbench.envs.env_utils.function_definitions import (
 )
 from matplotlib import rc
 
+font = {"family": "serif", "serif": ["Computer Modern Roman"]}
+
 rc("text", usetex=True)
-rc("font", **{"family": "serif", "serif": ["Computer Modern Roman"]})
+rc("font", **font)
 
 TINY_SIZE = 14
 SMALL_SIZE = 14
@@ -39,6 +41,7 @@ teacher_name_mapping = {
     "constant": "Constant",
 }
 
+
 def get_problem_from_name(function_name) -> Any:
     if function_name == "Rosenbrock":
         problem = Rosenbrock()
@@ -50,7 +53,8 @@ def get_problem_from_name(function_name) -> Any:
         problem = Sphere()
     return problem
 
-def load_data(paths: list, num_runs: int=1000):
+
+def load_data(paths: list, num_runs: int = 1000):
     aggregated_df = pd.DataFrame()
     length = 0
     for idx, path in enumerate(paths):
@@ -102,10 +106,9 @@ def plot_optimization_trace(
     Z = objective_function([torch.Tensor(X), torch.Tensor(Y)]).numpy()
 
     # Use logarithmically spaced contour levels for varying detail
-    if function_name == "Rosenbrock":
-        contour_levels = np.logspace(-3, 3.6, 30)
-    else:
-        contour_levels = 10
+    contour_levels = (
+        np.logspace(-3, 3.6, 30) if function_name == "Rosenbrock" else 10
+    )
 
     # Group data by runs
     grouped_df = df.groupby("run")
@@ -236,7 +239,7 @@ def plot_type(
             label=dir_path.parents[1].name,
         )
     for agent_name, agent_paths in zip(agent_names, run_data_path):
-        aggregated_df = load_data(agent_paths)
+        aggregated_df = load_data(agent_paths, run_info["num_runs"])
 
         print(f"Max {agent_name}: {aggregated_df['action'].max()}")
         print(f"Is inf: {any(np.isinf(aggregated_df['action']))}")
@@ -267,7 +270,10 @@ def plot_type(
         if not save_path.exists():
             save_path.mkdir(parents=True)
         print(f"Saving figure to {save_path / f'{filename}_aggregate.svg'}")
-        plt.savefig(save_path / f"{filename}_aggregate.svg", bbox_inches="tight")
+        plt.savefig(
+            save_path / f"{filename}_aggregate.svg",
+            bbox_inches="tight",
+        )
 
 
 def plot_actions(
@@ -291,15 +297,15 @@ def plot_actions(
             Path(dir_path)
             / "results"
             / agent_type
-            / seed
+            / f"{seed}"
             / fidelity
             / "eval_data.csv",
         )
         filename = f"action_{agent_type}_{seed}_{fidelity}"
     elif seed is None:
         dir_path = Path(dir_path)
-        teacher_name = dir_path.parents[1].name if not heterogeneous else dir_path.parents[0].name
-        filename = f"action_{dir_path.name}_{teacher_name}_aggregate_{fidelity}"
+        teacher_name = dir_path.parents[1].name
+        filename = f"action_{labels[1]}_{dir_path.name}_{teacher_name}_aggregate_{fidelity}"
         for path in (Path(dir_path) / "results" / agent_type).rglob(
             "*/eval_data.csv",
         ):
@@ -307,24 +313,35 @@ def plot_actions(
 
     run_info_path = Path(dir_path, "run_info.json")
 
-    # Get exemplatory teacher run for plotting
     if teacher:
         run_data_teacher_path = Path(dir_path, "aggregated_run_data.csv")
         run_data_teacher = pd.read_csv(run_data_teacher_path)
-        run_data_teacher["action"] = 10 ** run_data_teacher["action"]
+        completed_runs_ids = run_data_teacher[run_data_teacher["batch"] == 99][
+            "run"
+        ].unique()
+        completed_runs = run_data_teacher[
+            run_data_teacher["run"].isin(completed_runs_ids)
+        ]
+        single_teacher_run = completed_runs[
+            completed_runs["run"] == completed_runs_ids[0]
+        ]
+        single_teacher_run["action"] = 10 ** single_teacher_run["action"]
+
+        #     "run"
+        # ].unique()
 
         # Get run info from file
         with Path.open(run_info_path) as file:
             run_info = json.load(file)
             teacher_drawstyle = "default"
-            if run_info["agent"]["type"] == "step_decay" and not heterogeneous:
+            if run_info["agent"]["type"] == "step_decay":
                 teacher_drawstyle = "steps-post"
                 # Only use single step_decay teacher for plotting, otherwise it adds weird
                 # Semi transparent line
-                if len(run_data_teacher) <= 101000: # single teacher case
-                    completed_runs_ids = run_data_teacher[run_data_teacher["batch"] == 100][
-                        "run"
-                    ].unique()
+                if len(run_data_teacher) <= 101000:  # single teacher case
+                    completed_runs_ids = run_data_teacher[
+                        run_data_teacher["batch"] == 100
+                    ]["run"].unique()
                     completed_runs = run_data_teacher[
                         run_data_teacher["run"].isin(completed_runs_ids)
                     ]
@@ -332,7 +349,6 @@ def plot_actions(
                         completed_runs["run"] == completed_runs_ids[0]
                     ]
                     run_data_teacher = single_teacher_run
-
     drawstyle = "default"
     aggregated_df = load_data(run_data_path, run_info["num_runs"])
 
@@ -413,6 +429,7 @@ def plot_actions(
             else:
                 save_path = Path(
                     dir_path.parents[1],  # PROJECT/ToySGD/
+                    dir_path.parents[1],  # PROJECT/ToySGD/
                     "figures",
                     dir_path.name,  # FUNCTION/
                     dir_path.parents[0].name,  # TEACHER/
@@ -421,27 +438,31 @@ def plot_actions(
             if not save_path.exists():
                 save_path.mkdir(parents=True)
             print(f"Saving figure to {save_path / f'{filename}_aggregate.pdf'}")
-            plt.savefig(save_path / f"{filename}_aggregate.pdf", bbox_inches="tight")
+            plt.savefig(
+                save_path / f"{filename}_aggregate.pdf",
+                bbox_inches="tight",
+            )
+
 
 def plot_comparison(
     dir_paths: list,
     agent_labels: list,
     teacher: bool = False,
     show: bool = False,
-    title: str="",
-    teacher_path: str="",
-    teacher_label: str="",
-    heterogeneous: bool=False,
-    metric: str="f_cur",
+    title: str = "",
+    teacher_path: str = "",
+    teacher_label: str = "",
+    heterogeneous: bool = False,
+    metric: str = "f_cur",
 ) -> None:
-    for dir_path, agent_label in zip(dir_paths, agent_labels):
-        dir_path = Path(dir_path)
+    for path, agent_label in zip(dir_paths, agent_labels):
+        dir_path = Path(path)
         run_info_path = Path(dir_path, "run_info.json")
         with Path.open(run_info_path) as file:
             run_info = json.load(file)
 
         teacher_name = dir_path.parents[1].name
-        if teacher_name not in teacher_name_mapping: # heterogeneous case
+        if teacher_name not in teacher_name_mapping:  # heterogeneous case
             teacher_name = dir_path.parents[0].name
         func_name = dir_path.name
         teacher_data = None
@@ -461,6 +482,7 @@ def plot_comparison(
         agent_data = load_data(result_paths, run_info["num_runs"])
 
         if metric == "f_cur":
+
             def fill_missing_values(group, metric):
                 last_value = group[metric].iloc[-1]
 
@@ -468,7 +490,11 @@ def plot_comparison(
                 all_steps = pd.DataFrame({"batch": range(101)})
 
                 # Merge group with full run
-                filled_group = pd.merge(all_steps, group, on="batch", how="left")
+                filled_group = all_steps.merge(
+                    group,
+                    on="batch",
+                    how="left",
+                )
 
                 filled_group["run"] = group["run"].iloc[0]
                 filled_group[metric] = filled_group[metric].fillna(last_value)
@@ -521,44 +547,55 @@ def plot_comparison(
 
     if show:
         plt.show()
+    elif metric == "f_cur":
+        dir_path = Path(dir_paths[0])
+        save_path = Path(
+            dir_path.parents[2],  # PROJECT/ToySGD/
+            "figures",
+            "comparison",
+            dir_path.name,
+        )
+        if not save_path.exists():
+            save_path.mkdir(parents=True)
+        file_name = (
+            f"comparison_{dir_path.name}_{teacher_name}.pdf"
+            if len(dir_paths) == 1
+            else "trajectory_comparison_agents.pdf"
+        )
+        print(f"Saving figure to {save_path / file_name}")
+        plt.savefig(save_path / file_name, bbox_inches="tight")
     else:
-        if metric == "f_cur":
+        if not heterogeneous:
             dir_path = Path(dir_paths[0])
             save_path = Path(
-                dir_path.parents[2],  # PROJECT/ToySGD/
+                dir_path.parents[1],  # PROJECT/ToySGD/
                 "figures",
                 "comparison",
-                dir_path.name
             )
             if not save_path.exists():
                 save_path.mkdir(parents=True)
-            file_name = f"comparison_{dir_path.name}_{teacher_name}.pdf" if len(dir_paths) == 1 else "trajectory_comparison_agents.pdf"
-            print(f"Saving figure to {save_path / file_name}")
-            plt.savefig(save_path / file_name, bbox_inches="tight")
+            file_name = (
+                f"comparison_{dir_path.parents[0].name}.pdf"
+                if len(dir_paths) == 1
+                else "trajectory_comparison_agents.pdf"
+            )
         else:
-            if not heterogeneous:
-                dir_path = Path(dir_paths[0])
-                save_path = Path(
-                    dir_path.parents[1],  # PROJECT/ToySGD/
-                    "figures",
-                    "comparison",
-                )
-                if not save_path.exists():
-                    save_path.mkdir(parents=True)
-                file_name = f"comparison_{dir_path.parents[0].name}.pdf" if len(dir_paths) == 1 else "trajectory_comparison_agents.pdf"
-            else:
-                dir_path = Path(dir_paths[0])
-                save_path = Path(
-                    dir_path.parents[0],  # PROJECT/ToySGD/
-                    "figures",
-                    "comparison",
-                )
-                if not save_path.exists():
-                    save_path.mkdir(parents=True)
-                file_name = f"comparison_{dir_path.name}.pdf" if len(dir_paths) == 1 else "trajectory_comparison_agents.pdf"
+            dir_path = Path(dir_paths[0])
+            save_path = Path(
+                dir_path.parents[0],  # PROJECT/ToySGD/
+                "figures",
+                "comparison",
+            )
+            if not save_path.exists():
+                save_path.mkdir(parents=True)
+            file_name = (
+                f"comparison_{dir_path.name}.pdf"
+                if len(dir_paths) == 1
+                else "trajectory_comparison_agents.pdf"
+            )
 
-            print(f"Saving figure to {save_path / file_name}")
-            plt.savefig(save_path / file_name, bbox_inches="tight")
+        print(f"Saving figure to {save_path / file_name}")
+        plt.savefig(save_path / file_name, bbox_inches="tight")
 
 
 def plot_actions_sgd(
@@ -589,7 +626,9 @@ def plot_actions_sgd(
         filename = f"action_{agent_type}_{seed}_{fidelity}"
     elif seed is None:
         dir_path = Path(dir_path)
-        teacher_name = dir_path.parents[0].name if not heterogeneous else dir_path.name
+        teacher_name = (
+            dir_path.parents[0].name if not heterogeneous else dir_path.name
+        )
         filename = f"action_{teacher_name}_aggregate_{fidelity}"
         for path in (Path(dir_path) / "results" / agent_type).rglob(
             "*/eval_data.csv",
@@ -612,10 +651,10 @@ def plot_actions_sgd(
                 teacher_drawstyle = "steps-post"
                 # Only use single step_decay teacher for plotting, otherwise it adds weird
                 # Semi transparent line
-                if len(run_data_teacher) <= 200000: # single teacher case
-                    completed_runs_ids = run_data_teacher[run_data_teacher["batch"] == 9000][
-                        "run"
-                    ].unique()
+                if len(run_data_teacher) <= 200000:  # single teacher case
+                    completed_runs_ids = run_data_teacher[
+                        run_data_teacher["batch"] == 9000
+                    ]["run"].unique()
                     completed_runs = run_data_teacher[
                         run_data_teacher["run"].isin(completed_runs_ids)
                     ]
@@ -704,7 +743,7 @@ def plot_actions_sgd(
                 save_path = Path(
                     dir_path.parents[0],  # PROJECT/ToySGD/
                     "figures",
-                    "action"
+                    "action",
                 )
 
             if not save_path.exists():
@@ -712,12 +751,14 @@ def plot_actions_sgd(
             print(f"Saving figure to {save_path / f'{filename}.pdf'}")
             plt.savefig(save_path / f"{filename}.pdf", bbox_inches="tight")
 
+
 def plot_teacher_actions(
-    dir_path: str,
+    dir_path: str | Path,
     show: bool = False,
     reward: bool = False,
     single_plot: bool = False,
     function: str = "Ackley",
+    heterogeneous: bool = False,
 ) -> None:
     plt.clf()
     dfs = []
@@ -736,10 +777,10 @@ def plot_teacher_actions(
 
             if path.parents[0].name == "x_learned":
                 run_data_path = []
-                for path in (path / "results" / "td3_bc").rglob(
+                for eval_data_path in (path / "results" / "td3_bc").rglob(
                     "*/eval_data.csv",
                 ):
-                    run_data_path.append(path)
+                    run_data_path.append(eval_data_path)
                 aggregated_df = pd.DataFrame()
                 for seed_path in run_data_path:
                     # Read run data
@@ -747,7 +788,10 @@ def plot_teacher_actions(
 
                     df["action"] = df["action"].map(lambda x: 10**x)
 
-                    aggregated_df = pd.concat([aggregated_df, df], ignore_index=True)
+                    aggregated_df = pd.concat(
+                        [aggregated_df, df],
+                        ignore_index=True,
+                    )
                 run_info["draw_style"] = "default"
                 dfs.append(aggregated_df)
                 run_infos.append(run_info)
@@ -818,47 +862,30 @@ def plot_teacher_actions(
             )
             if not save_path.exists():
                 save_path.mkdir(parents=True)
-            print(f"Saving figure to {save_path / 'action_teacher_single_plot.pdf'}")
-            plt.savefig(save_path / "action_teacher_single_plot.pdf", bbox_inches="tight")
-        else:
-            save_path = Path(
-                dir_path.parents[2],  # PROJECT/ToySGD/
-                "figures",
-                dir_path.name,  # FUNCTION/
-                dir_path.parents[1].name,  # TEACHER/
+            print(
+                f"Saving figure to {save_path / 'action_teacher_single_plot.pdf'}",
             )
-            teach_id = dir_path.parents[0].name
+            plt.savefig(
+                save_path / "action_teacher_single_plot.pdf",
+                bbox_inches="tight",
+            )
+        else:
+            dir_path = Path(dir_path)
+            if not heterogeneous:
+                save_path = Path(
+                    dir_path.parents[1],  # PROJECT/ToySGD/
+                    "figures",
+                    "action",
+                )
+            else:
+                save_path = Path(
+                    dir_path.parents[0],  # PROJECT/ToySGD/
+                    "figures",
+                    "action",
+                )
+
+            filename = "action_teacher_multi"
             if not save_path.exists():
                 save_path.mkdir(parents=True)
-            print(f"Saving figure to {save_path / f'action_teacher_{teach_id}_aggregate.svg'}")
-            plt.savefig(save_path / f"action_teacher_{teach_id}_aggregate.svg", bbox_inches="tight")
-
-
-##############################
-# PLEASE IGNORE
-##############################
-# I only used this for my thesis - in case I need to recreate the plot again :D
-
-def plot_methodology():
-    rast_path = "data_single_64/ToySGD/exponential_decay/0/Rastrigin/aggregated_run_data.csv"
-    data = load_data([rast_path])
-
-    last_steps = data[data["batch"] == 100]
-    best_run_id = last_steps.loc[last_steps["f_cur"].idxmax()]["run"]
-    worst_run_id = last_steps.loc[last_steps["f_cur"].idxmin()]["run"]
-
-    run_1 = data[data["run"] == best_run_id]
-    run_2 = data[data["run"] == worst_run_id]
-
-    ax = sns.lineplot(run_1,
-                        x="batch",
-                        y="f_cur",
-                        label="Best starting point")
-    ax = sns.lineplot(run_2,
-                              x="batch",
-                              y="f_cur",
-                              label="Worst starting point")
-    plt.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
-    ax.set_xlabel("Step $i$")
-    ax.set_ylabel("$f(\\theta_i)$")
-    plt.savefig(Path("best_vs_worst.pdf"), bbox_inches="tight")
+            print(f"Saving figure to {save_path / f'{filename}.pdf'}")
+            plt.savefig(save_path / f"{filename}.pdf", bbox_inches="tight")

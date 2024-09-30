@@ -9,7 +9,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Run any agent on benchmarks"
     )
-    parser.add_argument("--benchmark", type=str, default="ToySGD")
+    parser.add_argument("--benchmark", type=str, default="SGD")
     parser.add_argument(
         "--env",
         type=str,
@@ -71,6 +71,11 @@ if __name__ == "__main__":
         type=int,
         default=0,
         help="Specify which checkpoint (run number) you want to load. Default 0 means no loading",
+    ),
+    parser.add_argument(
+        "--check_if_exists",
+        action=argparse.BooleanOptionalAction,
+        default=False,
     )
 
     args = parser.parse_args()
@@ -78,7 +83,7 @@ if __name__ == "__main__":
 
     agent_name = "default" if args.id == "0" else str(args.id)
     # Read agent config from file
-    agent_config_path = Path("configs", "agents", args.agent, f"{agent_name}.json")
+    agent_config_path = Path("configs", "agents", args.agent, f"{args.benchmark}", f"{agent_name}.json")
     with agent_config_path.open() as file:
         agent_config = json.load(file)
 
@@ -107,10 +112,13 @@ if __name__ == "__main__":
         seed=args.seed,
         timeout=args.timeout,
         results_dir=args.results_dir,
+        checkpointing_freq=args.checkpointing_freq,
+        checkpoint=args.checkpoint,
         save_run_data=args.save_run_data,
         save_rep_buffer=args.save_rep_buffer,
         checkpointing_freq=args.checkpointing_freq,
         checkpoint=args.checkpoint,
+        check_if_exists=args.check_if_exists,
     )
 
     end = time.time()
