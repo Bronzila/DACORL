@@ -24,25 +24,8 @@ if __name__ == "__main__":
         help="teacher",
     )
     parser.add_argument(
-        "--teacher",
-        help="teacher",
-    )
-    parser.add_argument(
         "--combined_dir",
         default="data_combined/ToySGD/combined",
-    )
-    parser.add_argument(
-        "--combination_strategy",
-        default="concat",
-        choices=["concat", "perf_sampling", "perf_per_run"],
-        help="concat simply concats the buffers, perf_sampling samples runs from \
-         the buffers according to their teachers mean performance, perf_per_run chooses the best teacher for each run.",
-    )
-    parser.add_argument(
-        "--total_size",
-        default=3000,
-        type=int,
-        help="Total number of runs to combine for performance based sampling",
     )
     parser.add_argument(
         "--combination_strategy",
