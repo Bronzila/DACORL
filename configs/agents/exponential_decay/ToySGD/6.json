@@ -1,8 +1,0 @@
-{
-    "params": {
-        "decay_rate": 0.9721947526455044,
-        "decay_steps": 2
-    },
-    "type": "exponential_decay",
-    "id": 6
-}
