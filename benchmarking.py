@@ -1,9 +1,11 @@
 import argparse
 import json
 from pathlib import Path
-import time
+
+import numpy as np
 
 from src.utils.generate_data import generate_dataset
+from src.utils.train_agent import train_agent
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -16,11 +18,12 @@ if __name__ == "__main__":
         help="Config file to define the benchmark env",
         default="default",
     )
-    parser.add_argument("--seeds", type=int, default=[0], nargs="*")
+    parser.add_argument("--n_data_seeds", type=int, default=5)
+    parser.add_argument("--n_train_seeds", type=int, default=5)
     parser.add_argument(
-        "--agent",
+        "--teacher",
         type=str,
-        help="Agent for data generation",
+        help="Teacher for data generation",
         default="step_decay",
     )
     parser.add_argument(
@@ -41,12 +44,33 @@ if __name__ == "__main__":
         default="0",
         help="Agent ID",
     )
+    parser.add_argument(
+        "--agent_type",
+        type=str,
+        default="td3_bc",
+        choices=[
+            "bc",
+            "td3_bc",
+            "cql",
+            "awac",
+            "edac",
+            "sac_n",
+            "lb_sac",
+            "iql",
+            "td3",
+        ],
+    )
+    parser.add_argument(
+        "--tanh_scaling",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+    )
 
     args = parser.parse_args()
 
     agent_name = "default" if args.id == "0" else str(args.id)
     # Read agent config from file
-    agent_config_path = Path("configs", "agents", args.agent, f"{args.benchmark}", f"{agent_name}.json")
+    agent_config_path = Path("configs", "agents", args.teacher, f"{args.benchmark}", f"{agent_name}.json")
     with agent_config_path.open() as file:
         agent_config = json.load(file)
 
@@ -64,22 +88,65 @@ if __name__ == "__main__":
     elif agent_config["type"] == "constant":
         env_config["initial_learning_rate"] = agent_config["params"]["learning_rate"]
 
+    # Experimental details
+    results_dir = Path(args.results_dir)
     num_runs = 100
+    num_train_iter = 30000
+
     if env_config["type"] == "SGD":
         num_runs = 5
         if args.instance_mode:
             env_config["instance_mode"] = args.instance_mode
 
-    for seed in args.seeds:
+    # generate run seeds randomly
+    rng = np.random.default_rng(0)
+
+    data_gen_seeds = rng.integers(0, 2**32 - 1, size=args.n_data_seeds)
+
+    # generate data for different seeds
+    for seed in data_gen_seeds:
         _ = generate_dataset(
             agent_config=agent_config,
             env_config=env_config,
             num_runs=num_runs,
-            seed=seed,
+            seed=int(seed),
             timeout=0,
-            results_dir=args.results_dir,
+            results_dir=results_dir / str(seed),
             save_run_data=True,
             save_rep_buffer=True,
             checkpointing_freq=0,
+            checkpoint=0,
         )
-    
+
+
+    # Train on one seed for multiple training seeds
+
+    rng = np.random.default_rng(0)
+
+    train_seeds = rng.integers(0, 2**32 - 1, size=args.n_train_seeds)
+
+    # train on generated data by first data_gen_seed
+    if env_config["type"] == "SGD":
+        data_dir = results_dir / str(data_gen_seeds[0]) / env_config["type"] / args.teacher / str(args.id)
+    elif env_config["type"] == "ToySGD":
+        data_dir = results_dir / str(data_gen_seeds[0]) / env_config["type"] / args.teacher / str(args.id) / env_config["function"]
+
+    for train_seed in train_seeds:
+        _, mean = train_agent(
+            data_dir=data_dir,
+            agent_type=args.agent_type,
+            agent_config={},
+            num_train_iter=num_train_iter,
+            num_eval_runs=num_runs,
+            batch_size=256,
+            val_freq=num_train_iter,
+            seed=train_seed,
+            wandb_group=None,
+            timeout=0,
+            debug=False,
+            use_wandb=False,
+            hyperparameters={},
+            eval_protocol="train",
+            eval_seed=0,
+            tanh_scaling=args.tanh_scaling,
+        )
