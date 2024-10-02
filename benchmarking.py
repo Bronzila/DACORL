@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     # Experimental details
     results_dir = Path(args.results_dir)
-    num_runs = 100
+    num_runs = 1000
     num_train_iter = 30000
 
     if env_config["type"] == "SGD":
