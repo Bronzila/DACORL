@@ -64,9 +64,11 @@ class Actor(nn.Module):
                 (self._max_action - self._min_action) / 2
             ) + self._max_action
         else:
-            relu_action = torch.nn.functional.relu(action)
-            if not self._pos_act:
-                relu_action.mul_(-1)
+            # Have to do it this way to avoid in-place operation
+            if self._pos_act:
+                relu_action = torch.nn.functional.relu(action)
+            else:
+                relu_action = - torch.nn.functional.relu(action)
             relu_action.clamp_(self._min_action, self._max_action)
             action = relu_action
 
