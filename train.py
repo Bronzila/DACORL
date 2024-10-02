@@ -116,15 +116,13 @@ if __name__ == "__main__":
             tanh_scaling=args.tanh_scaling,
         )
         hyperparameters = get_config_space(
-            args.cs_type
+            args.cs_type,
         ).get_default_configuration()
     hyperparameters["hidden_dim"] = args.hidden_dim
     print(hyperparameters)
 
-    if args.agent_type == "td3":
-        train_agent = train_online
-    else:
-        train_agent = train_offline
+    train_agent = train_online if args.agent_type == "td3" else train_offline
+
     _, mean = train_agent(
         data_dir=args.data_dir,
         agent_type=args.agent_type,
@@ -141,10 +139,7 @@ if __name__ == "__main__":
         hyperparameters=hyperparameters,
         eval_protocol=args.eval_protocol,
         eval_seed=args.eval_seed,
-        tanh_scaling=args.tanh_scaling
-        eval_protocol=args.eval_protocol,
-        eval_seed=args.eval_seed,
-        hyperparameters=hyperparameters,
+        tanh_scaling=args.tanh_scaling,
     )
     print(mean)
     end = time.time()
