@@ -4,8 +4,25 @@ from pathlib import Path
 
 import numpy as np
 
+from src.utils.combinations import combine_runs, get_homogeneous_agent_paths
 from src.utils.generate_data import generate_dataset
 from src.utils.train_agent import train_agent
+
+
+def read_agent(agent_name: str) -> dict:
+    agent_config_path = Path("configs", "agents", args.teacher, f"{args.benchmark}", f"{agent_name}.json")
+    with agent_config_path.open() as file:
+        return json.load(file)
+
+def environment_agent_adjustments(env_config: dict, agent_config: dict) -> None:
+    # Add initial learning rate to agent config for SGDR
+    if agent_config["type"] == "sgdr":
+        agent_config["params"]["initial_learning_rate"] = env_config["initial_learning_rate"]
+
+    if agent_config["type"] == "constant" and agent_config["id"] == 0:
+        agent_config["params"]["learning_rate"] = env_config["initial_learning_rate"]
+    elif agent_config["type"] == "constant":
+        env_config["initial_learning_rate"] = agent_config["params"]["learning_rate"]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -65,28 +82,29 @@ if __name__ == "__main__":
         action=argparse.BooleanOptionalAction,
         default=False,
     )
+    parser.add_argument(
+        "--combination",
+        type=str,
+        default="single",
+        choices=[
+            "homogeneous",
+            "heterogeneous",
+            "single",
+        ],
+    )
 
     args = parser.parse_args()
 
     agent_name = "default" if args.id == "0" else str(args.id)
     # Read agent config from file
-    agent_config_path = Path("configs", "agents", args.teacher, f"{args.benchmark}", f"{agent_name}.json")
-    with agent_config_path.open() as file:
-        agent_config = json.load(file)
+    agent_config = read_agent(agent_name)
 
     # Read environment config from file
     env_config_path = Path("configs", "environment", f"{args.benchmark}", f"{args.env}.json")
     with env_config_path.open() as file:
         env_config = json.load(file)
 
-    # Add initial learning rate to agent config for SGDR
-    if agent_config["type"] == "sgdr":
-        agent_config["params"]["initial_learning_rate"] = env_config["initial_learning_rate"]
-
-    if agent_config["type"] == "constant" and agent_config["id"] == 0:
-        agent_config["params"]["learning_rate"] = env_config["initial_learning_rate"]
-    elif agent_config["type"] == "constant":
-        env_config["initial_learning_rate"] = agent_config["params"]["learning_rate"]
+    environment_agent_adjustments(env_config, agent_config)
 
     # Experimental details
     results_dir = Path(args.results_dir)
@@ -103,20 +121,53 @@ if __name__ == "__main__":
 
     data_gen_seeds = rng.integers(0, 2**32 - 1, size=args.n_data_seeds)
 
-    # generate data for different seeds
-    for seed in data_gen_seeds:
-        _ = generate_dataset(
-            agent_config=agent_config,
-            env_config=env_config,
-            num_runs=num_runs,
-            seed=int(seed),
-            timeout=0,
-            results_dir=results_dir / str(seed),
-            save_run_data=True,
-            save_rep_buffer=True,
-            checkpointing_freq=0,
-            checkpoint=0,
+    if args.combination == "single":
+        # generate data for different seeds
+        for seed in data_gen_seeds:
+            _ = generate_dataset(
+                agent_config=agent_config,
+                env_config=env_config,
+                num_runs=num_runs,
+                seed=int(seed),
+                timeout=0,
+                results_dir=results_dir / str(seed),
+                save_run_data=True,
+                save_rep_buffer=True,
+                checkpointing_freq=0,
+                checkpoint=0,
+            )
+    elif args.combination == "homogeneous":
+        for id in ["default", "1", "2", "3", "4"]:
+            agent_config = read_agent(id)
+            environment_agent_adjustments(env_config, agent_config)
+            _ = generate_dataset(
+                agent_config=agent_config,
+                env_config=env_config,
+                num_runs=num_runs,
+                seed=int(data_gen_seeds[0]),
+                timeout=0,
+                results_dir=results_dir / str(data_gen_seeds[0]),
+                save_run_data=True,
+                save_rep_buffer=True,
+                checkpointing_freq=0,
+                checkpoint=0,
+            )
+
+        data_dir = results_dir / str(data_gen_seeds[0]) / env_config["type"] / args.teacher
+        paths = get_homogeneous_agent_paths(data_dir, env_config.get("function", ""))
+        print(paths)
+        combined_buffer, combined_run_info, combined_run_data = combine_runs(
+            paths, "concat", 3000,
         )
+        combined_dir = data_dir / "combined"
+        combined_dir.mkdir(parents=True, exist_ok=True)
+        buffer_path = combined_dir / "rep_buffer"
+        run_info_path = combined_dir / "run_info.json"
+        run_data_path = combined_dir / "aggregated_run_data.csv"
+        combined_buffer.save(buffer_path)
+        with run_info_path.open(mode="w") as f:
+            json.dump(combined_run_info, f, indent=4)
+        combined_run_data.to_csv(run_data_path, index=False)
 
 
     # Train on one seed for multiple training seeds
@@ -126,27 +177,47 @@ if __name__ == "__main__":
     train_seeds = rng.integers(0, 2**32 - 1, size=args.n_train_seeds)
 
     # train on generated data by first data_gen_seed
-    if env_config["type"] == "SGD":
-        data_dir = results_dir / str(data_gen_seeds[0]) / env_config["type"] / args.teacher / str(args.id)
-    elif env_config["type"] == "ToySGD":
-        data_dir = results_dir / str(data_gen_seeds[0]) / env_config["type"] / args.teacher / str(args.id) / env_config["function"]
 
     for train_seed in train_seeds:
-        _, mean = train_agent(
-            data_dir=data_dir,
-            agent_type=args.agent_type,
-            agent_config={},
-            num_train_iter=num_train_iter,
-            num_eval_runs=num_runs,
-            batch_size=256,
-            val_freq=num_train_iter,
-            seed=train_seed,
-            wandb_group=None,
-            timeout=0,
-            debug=False,
-            use_wandb=False,
-            hyperparameters={},
-            eval_protocol="train",
-            eval_seed=0,
-            tanh_scaling=args.tanh_scaling,
-        )
+        if args.combination == "single":
+            if env_config["type"] == "SGD":
+                data_dir = results_dir / str(data_gen_seeds[0]) / env_config["type"] / args.teacher / str(args.id)
+            elif env_config["type"] == "ToySGD":
+                data_dir = results_dir / str(data_gen_seeds[0]) / env_config["type"] / args.teacher / str(args.id) / env_config["function"]
+            _, mean = train_agent(
+                data_dir=data_dir,
+                agent_type=args.agent_type,
+                agent_config={},
+                num_train_iter=num_train_iter,
+                num_eval_runs=num_runs,
+                batch_size=256,
+                val_freq=num_train_iter,
+                seed=train_seed,
+                wandb_group=None,
+                timeout=0,
+                debug=False,
+                use_wandb=False,
+                hyperparameters={},
+                eval_protocol="train",
+                eval_seed=0,
+                tanh_scaling=args.tanh_scaling,
+            )
+        elif args.combination == "homogeneous":
+            _, mean = train_agent(
+                data_dir=combined_dir,
+                agent_type=args.agent_type,
+                agent_config={},
+                num_train_iter=num_train_iter,
+                num_eval_runs=num_runs,
+                batch_size=256,
+                val_freq=num_train_iter,
+                seed=train_seed,
+                wandb_group=None,
+                timeout=0,
+                debug=False,
+                use_wandb=False,
+                hyperparameters={},
+                eval_protocol="train",
+                eval_seed=0,
+                tanh_scaling=args.tanh_scaling,
+            )
