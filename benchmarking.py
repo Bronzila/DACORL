@@ -9,8 +9,8 @@ from src.utils.generate_data import generate_dataset
 from src.utils.train_agent import train_agent
 
 
-def read_agent(agent_name: str) -> dict:
-    agent_config_path = Path("configs", "agents", args.teacher, f"{args.benchmark}", f"{agent_name}.json")
+def read_teacher(teacher_type: str, benchmark: str, teacher_name: str) -> dict:
+    agent_config_path = Path("configs", "agents", teacher_type, f"{benchmark}", f"{teacher_name}.json")
     with agent_config_path.open() as file:
         return json.load(file)
 
@@ -23,6 +23,20 @@ def environment_agent_adjustments(env_config: dict, agent_config: dict) -> None:
         agent_config["params"]["learning_rate"] = env_config["initial_learning_rate"]
     elif agent_config["type"] == "constant":
         env_config["initial_learning_rate"] = agent_config["params"]["learning_rate"]
+
+def parse_heterogeneous_teacher_name(teacher_name: str) -> list[str]:
+    # Define a dictionary that maps the abbreviations to the actual schedules
+    teacher_map = {
+        "ST": "step_decay",
+        "SG": "sgdr",
+        "C": "constant",
+        "E": "exponential_decay",
+    }
+
+    teacher_codes = teacher_name.split("-")
+
+    return [teacher_map.get(code, "Unknown") for code in teacher_codes]
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -95,16 +109,10 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    agent_name = "default" if args.id == "0" else str(args.id)
-    # Read agent config from file
-    agent_config = read_agent(agent_name)
-
     # Read environment config from file
     env_config_path = Path("configs", "environment", f"{args.benchmark}", f"{args.env}.json")
     with env_config_path.open() as file:
         env_config = json.load(file)
-
-    environment_agent_adjustments(env_config, agent_config)
 
     # Experimental details
     results_dir = Path(args.results_dir)
@@ -122,10 +130,15 @@ if __name__ == "__main__":
     data_gen_seeds = rng.integers(0, 2**32 - 1, size=args.n_data_seeds)
 
     if args.combination == "single":
+        agent_name = "default" if args.id == "0" else str(args.id)
+        # Read agent config from file
+        teacher_config = read_teacher(args.teacher, args.benchmark, agent_name)
+        environment_agent_adjustments(env_config, teacher_config)
+
         # generate data for different seeds
         for seed in data_gen_seeds:
             _ = generate_dataset(
-                agent_config=agent_config,
+                agent_config=teacher_config,
                 env_config=env_config,
                 num_runs=num_runs,
                 seed=int(seed),
@@ -137,11 +150,11 @@ if __name__ == "__main__":
                 checkpoint=0,
             )
     elif args.combination == "homogeneous":
-        for id in ["default", "1", "2", "3", "4"]:
-            agent_config = read_agent(id)
-            environment_agent_adjustments(env_config, agent_config)
+        for teacher_id in ["default", "1", "2", "3", "4"]:
+            teacher_config = read_teacher(args.teacher, args.benchmark, teacher_id)
+            environment_agent_adjustments(env_config, teacher_config)
             _ = generate_dataset(
-                agent_config=agent_config,
+                agent_config=teacher_config,
                 env_config=env_config,
                 num_runs=num_runs,
                 seed=int(data_gen_seeds[0]),
@@ -155,11 +168,45 @@ if __name__ == "__main__":
 
         data_dir = results_dir / str(data_gen_seeds[0]) / env_config["type"] / args.teacher
         paths = get_homogeneous_agent_paths(data_dir, env_config.get("function", ""))
-        print(paths)
         combined_buffer, combined_run_info, combined_run_data = combine_runs(
-            paths, "concat", 3000,
+            paths, "concat", 3000, # buffer size not needed here as we only use concat strategy
         )
         combined_dir = data_dir / "combined"
+        combined_dir.mkdir(parents=True, exist_ok=True)
+        buffer_path = combined_dir / "rep_buffer"
+        run_info_path = combined_dir / "run_info.json"
+        run_data_path = combined_dir / "aggregated_run_data.csv"
+        combined_buffer.save(buffer_path)
+        with run_info_path.open(mode="w") as f:
+            json.dump(combined_run_info, f, indent=4)
+        combined_run_data.to_csv(run_data_path, index=False)
+    elif args.combination == "heterogeneous":
+        agent_name = "default"
+        teachers_to_combine = parse_heterogeneous_teacher_name(args.teacher)
+        data_dirs = []
+        for teacher_type in teachers_to_combine:
+            teacher_config = read_teacher(teacher_type, args.benchmark, agent_name)
+            environment_agent_adjustments(env_config, teacher_config)
+            _ = generate_dataset(
+                agent_config=teacher_config,
+                env_config=env_config,
+                num_runs=num_runs,
+                seed=int(data_gen_seeds[0]),
+                timeout=0,
+                results_dir=results_dir / str(data_gen_seeds[0]),
+                save_run_data=True,
+                save_rep_buffer=True,
+                checkpointing_freq=0,
+                checkpoint=0,
+            )
+
+            data_dirs.append(results_dir / str(data_gen_seeds[0]) / env_config["type"] / teacher_type / "0" / env_config.get("function", ""))
+
+        final_buffer_size = (len(data_dirs) + 1) * 500 # not needed as we only concatenate here
+        combined_buffer, combined_run_info, combined_run_data = combine_runs(
+            data_dirs, "concat", final_buffer_size,
+        )
+        combined_dir = results_dir / str(data_gen_seeds[0]) / env_config["type"] / args.teacher
         combined_dir.mkdir(parents=True, exist_ok=True)
         buffer_path = combined_dir / "rep_buffer"
         run_info_path = combined_dir / "run_info.json"
@@ -202,7 +249,7 @@ if __name__ == "__main__":
                 eval_seed=0,
                 tanh_scaling=args.tanh_scaling,
             )
-        elif args.combination == "homogeneous":
+        else:
             _, mean = train_agent(
                 data_dir=combined_dir,
                 agent_type=args.agent_type,
