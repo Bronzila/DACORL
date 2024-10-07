@@ -122,7 +122,7 @@ def train_agent(
                 logs[k].append(v)
 
         if (not debug) and use_wandb:
-            wandb.log(log_dict, agent.total_it)
+            wandb.log(log_dict, agent.total_it)  # type: ignore
 
         if val_freq != 0 and (t + 1) % val_freq == 0:
             if env_type == "CMAES":
@@ -158,6 +158,12 @@ def train_agent(
                             seed=eval_seed,
                         )
                 elif run_info["environment"]["type"] == "SGD":
+                    # run_info["num_runs"] is not completely right here.
+                    eval_runs = (
+                        num_eval_runs
+                        if num_eval_runs is not None
+                        else run_info["num_runs"]
+                    )
                     env.reset()
                     n_batches_total = run_info["environment"][
                         "num_epochs"
@@ -166,7 +172,7 @@ def train_agent(
                         eval_data = test_agent(
                             actor=agent.actor,
                             env=env,
-                            n_runs=num_eval_runs,
+                            n_runs=eval_runs,
                             n_batches=n_batches_total,
                             seed=run_info["seed"],
                         )
@@ -174,7 +180,7 @@ def train_agent(
                         eval_data = test_agent(
                             actor=agent.actor,
                             env=env,
-                            n_runs=num_eval_runs,
+                            n_runs=eval_runs,
                             n_batches=n_batches_total,
                             seed=eval_seed,
                         )

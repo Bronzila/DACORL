@@ -133,7 +133,7 @@ def test_agent(
                         logs[k] = []
 
                     logs[k].extend(v)
-            except:
+            except Exception:
                 print(f"Failed run {run_id}.")
 
     actor.train()
