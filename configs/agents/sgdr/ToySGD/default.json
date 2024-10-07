@@ -2,8 +2,8 @@
     "type": "sgdr",
     "id": 0,
     "params": {
-        "T_i": 1,
-        "T_mult": 2,
+        "t_i": 1,
+        "t_mult": 2,
         "batches_per_epoch": 10
     }
 }
