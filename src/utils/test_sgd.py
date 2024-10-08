@@ -47,7 +47,6 @@ def run_batches(
     batches.append(0)
     for batch_id in range(1, n_batches + 1):
         action = actor.act(state)
-        print(action.item())
         next_state, reward, done, _, _ = env.step(action.item())
         state = next_state
 

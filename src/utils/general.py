@@ -127,46 +127,56 @@ def get_agent(
     critic_1: CriticType
     critic_2: CriticType
 
+    actor_hidden_dim = hyperparameters.get("actor_hidden_dim", 256)
+    actor_hidden_layers = hyperparameters.get("hidden_layers_actor", 1)
+    critic_hidden_dim = hyperparameters.get("critic_hidden_dim", 256)
+    critic_hidden_layers = hyperparameters.get("hidden_layers_critic", 1)
+    dropout_rate = hyperparameters.get("dropout_rate", 0.2)
+    lr_actor = hyperparameters.get("lr_actor", 3e-4)
+    lr_critic = hyperparameters.get("lr_critic", 3e-4)
+    discount_factor = hyperparameters.get("discount_factor", 0.99)
+    tau = hyperparameters.get("target_update_rate", 5e-3)
+
     if agent_type == "td3_bc":
         td3_bc_config = td3_bc.TrainConfig
 
         actor = td3_bc.Actor(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["actor_hidden_dim"],
-            hidden_layers=hyperparameters["hidden_layers_actor"],
-            dropout_rate=hyperparameters["dropout_rate"],
+            hidden_dim=actor_hidden_dim,
+            hidden_layers=actor_hidden_layers,
+            dropout_rate=dropout_rate,
             max_action=max_action,
             min_action=min_action,
             tanh_scaling=tanh_scaling,
             action_positive=cmaes,
         ).to(device)
-        print(f"hidden_dim: {hyperparameters.get('hidden_dim', 64)}")
+
         actor_optimizer = torch.optim.Adam(
             actor.parameters(),
-            lr=hyperparameters.get("lr_actor", 3e-4),
+            lr=lr_actor,
         )
 
         critic_1 = td3_bc.Critic(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_layers=hyperparameters["hidden_layers_critic"],
-            hidden_dim=hyperparameters["critic_hidden_dim"],
+            hidden_layers=critic_hidden_layers,
+            hidden_dim=critic_hidden_dim,
         ).to(device)
         critic_1_optimizer = torch.optim.Adam(
             critic_1.parameters(),
-            lr=hyperparameters.get("lr_critic", 3e-4),
+            lr=lr_critic,
         )
 
         critic_2 = td3_bc.Critic(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_layers=hyperparameters["hidden_layers_critic"],
-            hidden_dim=hyperparameters["critic_hidden_dim"],
+            hidden_layers=critic_hidden_layers,
+            hidden_dim=critic_hidden_dim,
         ).to(device)
         critic_2_optimizer = torch.optim.Adam(
             critic_2.parameters(),
-            lr=hyperparameters.get("lr_critic", 3e-4),
+            lr=lr_critic,
         )
 
         kwargs = {
@@ -178,8 +188,8 @@ def get_agent(
             "critic_1_optimizer": critic_1_optimizer,
             "critic_2": critic_2,
             "critic_2_optimizer": critic_2_optimizer,
-            "discount": hyperparameters["discount_factor"],
-            "tau": hyperparameters["target_update_rate"],
+            "discount": discount_factor,
+            "tau": tau,
             "device": device,
             # TD3
             "policy_noise": td3_bc_config.policy_noise,
@@ -196,23 +206,23 @@ def get_agent(
         actor = bc.Actor(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["actor_hidden_dim"],
-            hidden_layers=hyperparameters["hidden_layers_actor"],
+            hidden_dim=actor_hidden_dim,
+            hidden_layers=actor_hidden_layers,
             max_action=max_action,
             min_action=min_action,
             tanh_scaling=tanh_scaling,
             action_positive=cmaes,
-            dropout_rate=hyperparameters["dropout_rate"],
+            dropout_rate=dropout_rate,
         ).to(device)
         actor_optimizer = torch.optim.Adam(
             actor.parameters(),
-            lr=hyperparameters["lr_actor"],
+            lr=lr_actor,
         )
 
         kwargs = {
             "actor": actor,
             "actor_optimizer": actor_optimizer,
-            "discount": hyperparameters["discount_factor"],
+            "discount": discount_factor,
             "device": device,
         }
         return bc.BC(**kwargs)
@@ -222,44 +232,44 @@ def get_agent(
         actor = cql.TanhGaussianPolicy(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["actor_hidden_dim"],
-            dropout_rate=hyperparameters["dropout_rate"],
+            hidden_dim=actor_hidden_dim,
+            dropout_rate=dropout_rate,
             max_action=max_action,
             min_action=min_action,
             tanh_scaling=tanh_scaling,
             action_positive=cmaes,
-            n_hidden_layers=hyperparameters["hidden_layers_actor"],
+            n_hidden_layers=actor_hidden_layers,
             log_std_multiplier=cql_config.policy_log_std_multiplier,
             orthogonal_init=cql_config.orthogonal_init,
             no_tanh=True,
         ).to(device)
         actor_optimizer = torch.optim.Adam(
             actor.parameters(),
-            lr=hyperparameters["lr_actor"],
+            lr=lr_actor,
         )
 
         critic_1 = cql.FullyConnectedQFunction(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["critic_hidden_dim"],
+            hidden_dim=critic_hidden_dim,
             orthogonal_init=cql_config.orthogonal_init,
-            n_hidden_layers=hyperparameters["hidden_layers_critic"],
+            n_hidden_layers=critic_hidden_layers,
         ).to(device)
         critic_1_optimizer = torch.optim.Adam(
             critic_1.parameters(),
-            lr=hyperparameters["lr_critic"],
+            lr=lr_critic,
         )
 
         critic_2 = cql.FullyConnectedQFunction(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["critic_hidden_dim"],
+            hidden_dim=critic_hidden_dim,
             orthogonal_init=cql_config.orthogonal_init,
-            n_hidden_layers=hyperparameters["hidden_layers_critic"],
+            n_hidden_layers=critic_hidden_layers,
         ).to(device)
         critic_2_optimizer = torch.optim.Adam(
             critic_2.parameters(),
-            lr=hyperparameters["lr_critic"],
+            lr=lr_critic,
         )
 
         kwargs = {
@@ -269,8 +279,8 @@ def get_agent(
             "critic_2_optimizer": critic_2_optimizer,
             "actor": actor,
             "actor_optimizer": actor_optimizer,
-            "discount": hyperparameters["discount_factor"],
-            "soft_target_update_rate": hyperparameters["target_update_rate"],
+            "discount": discount_factor,
+            "soft_target_update_rate": tau,
             "device": device,
             # CQL
             "target_entropy": -np.prod(action_dim).item(),
@@ -299,9 +309,9 @@ def get_agent(
         actor = awac.Actor(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["actor_hidden_dim"],
-            hidden_layers=hyperparameters["hidden_layers_actor"],
-            dropout_rate=hyperparameters["dropout_rate"],
+            hidden_dim=actor_hidden_dim,
+            hidden_layers=actor_hidden_layers,
+            dropout_rate=dropout_rate,
             max_action=max_action,
             min_action=min_action,
             tanh_scaling=tanh_scaling,
@@ -309,29 +319,29 @@ def get_agent(
         ).to(device)
         actor_optimizer = torch.optim.Adam(
             actor.parameters(),
-            lr=hyperparameters["lr_actor"],
+            lr=lr_actor,
         )
 
         critic_1 = awac.Critic(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["critic_hidden_dim"],
-            hidden_layers=hyperparameters["hidden_layers_critic"],
+            hidden_dim=critic_hidden_dim,
+            hidden_layers=critic_hidden_layers,
         ).to(device)
         critic_1_optimizer = torch.optim.Adam(
             critic_1.parameters(),
-            lr=hyperparameters["lr_critic"],
+            lr=lr_critic,
         )
 
         critic_2 = awac.Critic(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["critic_hidden_dim"],
-            hidden_layers=hyperparameters["hidden_layers_critic"],
+            hidden_dim=critic_hidden_dim,
+            hidden_layers=critic_hidden_layers,
         ).to(device)
         critic_2_optimizer = torch.optim.Adam(
             critic_2.parameters(),
-            lr=hyperparameters["lr_critic"],
+            lr=lr_critic,
         )
 
         kwargs = {
@@ -341,8 +351,8 @@ def get_agent(
             "critic_1_optimizer": critic_1_optimizer,
             "critic_2": critic_2,
             "critic_2_optimizer": critic_2_optimizer,
-            "gamma": hyperparameters["discount_factor"],
-            "tau": hyperparameters["target_update_rate"],
+            "gamma": discount_factor,
+            "tau": tau,
             "awac_lambda": awac_config.awac_lambda,
         }
         return awac.AdvantageWeightedActorCritic(**kwargs)
@@ -352,9 +362,9 @@ def get_agent(
         actor = edac.Actor(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["actor_hidden_dim"],
-            hidden_layers=hyperparameters["hidden_layers_actor"],
-            dropout_rate=hyperparameters["dropout_rate"],
+            hidden_dim=actor_hidden_dim,
+            hidden_layers=actor_hidden_layers,
+            dropout_rate=dropout_rate,
             max_action=max_action,
             min_action=min_action,
         ).to(device)
@@ -366,13 +376,13 @@ def get_agent(
         critic = edac.VectorizedCritic(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["critic_hidden_dim"],
-            hidden_layers=hyperparameters["hidden_layers_critic"],
+            hidden_dim=critic_hidden_dim,
+            hidden_layers=critic_hidden_layers,
             num_critics=edac_config.num_critics,
         ).to(device)
         critic_optimizer = torch.optim.Adam(
             critic.parameters(),
-            lr=hyperparameters["lr_critic"],
+            lr=lr_critic,
         )
 
         kwargs = {
@@ -380,8 +390,8 @@ def get_agent(
             "actor_optimizer": actor_optimizer,
             "critic": critic,
             "critic_optimizer": critic_optimizer,
-            "gamma": hyperparameters["discount_factor"],
-            "tau": hyperparameters["target_update_rate"],
+            "gamma": discount_factor,
+            "tau": tau,
             "eta": edac_config.eta,
             "alpha_learning_rate": edac_config.alpha_learning_rate,
         }
@@ -393,27 +403,27 @@ def get_agent(
         actor = sac_n.Actor(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["actor_hidden_dim"],
-            hidden_layers=hyperparameters["hidden_layers_actor"],
-            dropout_rate=hyperparameters["dropout_rate"],
+            hidden_dim=actor_hidden_dim,
+            hidden_layers=actor_hidden_layers,
+            dropout_rate=dropout_rate,
             max_action=max_action,
             min_action=min_action,
         ).to(device)
         actor_optimizer = torch.optim.Adam(
             actor.parameters(),
-            lr=hyperparameters["lr_actor"],
+            lr=lr_actor,
         )
 
         critic = sac_n.VectorizedCritic(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["critic_hidden_dim"],
-            hidden_layers=hyperparameters["hidden_layers_critic"],
+            hidden_dim=critic_hidden_dim,
+            hidden_layers=critic_hidden_layers,
             num_critics=sac_n_config.num_critics,
         ).to(device)
         critic_optimizer = torch.optim.Adam(
             critic.parameters(),
-            lr=hyperparameters["lr_critic"],
+            lr=lr_critic,
         )
 
         kwargs = {
@@ -421,8 +431,8 @@ def get_agent(
             "actor_optimizer": actor_optimizer,
             "critic": critic,
             "critic_optimizer": critic_optimizer,
-            "gamma": hyperparameters["discount_factor"],
-            "tau": hyperparameters["target_update_rate"],
+            "gamma": discount_factor,
+            "tau": tau,
             "alpha_learning_rate": sac_n_config.alpha_learning_rate,
             "device": device,
         }
@@ -434,9 +444,9 @@ def get_agent(
         actor = lb_sac.Actor(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["actor_hidden_dim"],
-            hidden_layers=hyperparameters["hidden_layers_actor"],
-            dropout_rate=hyperparameters["dropout_rate"],
+            hidden_dim=actor_hidden_dim,
+            hidden_layers=actor_hidden_layers,
+            dropout_rate=dropout_rate,
             max_action=max_action,
             min_action=min_action,
             edac_init=lb_sac_config.edac_init,
@@ -449,15 +459,15 @@ def get_agent(
         critic = lb_sac.VectorizedCritic(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["critic_hidden_dim"],
-            hidden_layers=hyperparameters["hidden_layers_critic"],
+            hidden_dim=critic_hidden_dim,
+            hidden_layers=critic_hidden_layers,
             num_critics=lb_sac_config.num_critics,
             layernorm=lb_sac_config.critic_layernorm,
             edac_init=lb_sac_config.edac_init,
         ).to(device)
         critic_optimizer = torch.optim.Adam(
             critic.parameters(),
-            lr=hyperparameters["lr_critic"],
+            lr=lr_critic,
         )
 
         kwargs = {
@@ -465,8 +475,8 @@ def get_agent(
             "actor_optimizer": actor_optimizer,
             "critic": critic,
             "critic_optimizer": critic_optimizer,
-            "gamma": hyperparameters["discount_factor"],
-            "tau": hyperparameters["target_update_rate"],
+            "gamma": discount_factor,
+            "tau": tau,
             "alpha_learning_rate": lb_sac_config.alpha_learning_rate,
             "device": device,
         }
@@ -477,14 +487,14 @@ def get_agent(
         iql_config = iql.TrainConfig
         v_network = iql.ValueFunction(
             state_dim=state_dim,
-            hidden_dim=hyperparameters["critic_hidden_dim"],
-            n_hidden=hyperparameters["hidden_layers_critic"],
+            hidden_dim=critic_hidden_dim,
+            n_hidden=critic_hidden_layers,
         )
         q_network = iql.TwinQ(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["critic_hidden_dim"],
-            n_hidden=hyperparameters["hidden_layers_critic"],
+            hidden_dim=critic_hidden_dim,
+            n_hidden=critic_hidden_layers,
         )
         actor = (
             iql.DeterministicPolicy(
@@ -493,9 +503,9 @@ def get_agent(
                 max_action,
                 min_action,
                 tanh_scaling=tanh_scaling,
-                hidden_dim=hyperparameters["actor_hidden_dim"],
-                n_hidden=hyperparameters["hidden_layers_actor"],
-                dropout_rate=hyperparameters["dropout_rate"],
+                hidden_dim=actor_hidden_dim,
+                n_hidden=actor_hidden_layers,
+                dropout_rate=dropout_rate,
             )
             if iql_config.iql_deterministic
             else iql.GaussianPolicy(
@@ -505,22 +515,22 @@ def get_agent(
                 min_action,
                 tanh_scaling=tanh_scaling,
                 action_positive=cmaes,
-                hidden_dim=hyperparameters["actor_hidden_dim"],
-                n_hidden=hyperparameters["hidden_layers_actor"],
-                dropout_rate=hyperparameters["dropout_rate"],
+                hidden_dim=actor_hidden_dim,
+                n_hidden=actor_hidden_layers,
+                dropout_rate=dropout_rate,
             )
         ).to(device)
         v_optimizer = torch.optim.Adam(
             v_network.parameters(),
-            lr=hyperparameters["lr_critic"],
+            lr=lr_critic,
         )
         q_optimizer = torch.optim.Adam(
             q_network.parameters(),
-            lr=hyperparameters["lr_critic"],
+            lr=lr_critic,
         )
         actor_optimizer = torch.optim.Adam(
             actor.parameters(),
-            lr=hyperparameters["lr_actor"],
+            lr=lr_actor,
         )
 
         kwargs = {
@@ -530,8 +540,8 @@ def get_agent(
             "q_optimizer": q_optimizer,
             "v_network": v_network,
             "v_optimizer": v_optimizer,
-            "discount": hyperparameters["discount_factor"],
-            "tau": hyperparameters["target_update_rate"],
+            "discount": discount_factor,
+            "tau": tau,
             "device": device,
             # IQL
             "beta": iql_config.beta,
@@ -549,34 +559,34 @@ def get_agent(
             action_dim=action_dim,
             max_action=max_action,
             min_action=min_action,
-            dropout_rate=hyperparameters["dropout_rate"],
-            hidden_dim=hyperparameters["actor_hidden_dim"],
+            dropout_rate=dropout_rate,
+            hidden_dim=actor_hidden_dim,
             tanh_scaling=tanh_scaling,
             action_positive=cmaes,
         ).to(device)
         actor_optimizer = torch.optim.Adam(
             actor.parameters(),
-            lr=hyperparameters["lr_actor"],
+            lr=lr_actor,
         )
 
         critic_1 = td3.Critic(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["critic_hidden_dim"],
+            hidden_dim=critic_hidden_dim,
         ).to(device)
         critic_1_optimizer = torch.optim.Adam(
             critic_1.parameters(),
-            lr=hyperparameters["lr_critic"],
+            lr=lr_critic,
         )
 
         critic_2 = td3.Critic(
             state_dim=state_dim,
             action_dim=action_dim,
-            hidden_dim=hyperparameters["critic_hidden_dim"],
+            hidden_dim=critic_hidden_dim,
         ).to(device)
         critic_2_optimizer = torch.optim.Adam(
             critic_2.parameters(),
-            lr=hyperparameters["lr_critic"],
+            lr=lr_critic,
         )
 
         kwargs = {
@@ -588,8 +598,8 @@ def get_agent(
             "critic_1_optimizer": critic_1_optimizer,
             "critic_2": critic_2,
             "critic_2_optimizer": critic_2_optimizer,
-            "discount": hyperparameters["discount_factor"],
-            "tau": hyperparameters["target_update_rate"],
+            "discount": discount_factor,
+            "tau": tau,
             # TD3
             "policy_noise": 0.2,
             "noise_clip": 0.5,
