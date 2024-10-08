@@ -1,15 +1,18 @@
 import argparse
 import json
 from pathlib import Path
+from typing import Any
 
 import numpy as np
+import pandas as pd
 
+from src.utils.replay_buffer import ReplayBuffer
 from src.utils.combinations import combine_runs, get_homogeneous_agent_paths
 from src.utils.generate_data import generate_dataset
 from src.utils.train_agent import train_agent
 
 
-def read_teacher(teacher_type: str, benchmark: str, teacher_name: str) -> dict:
+def read_teacher(teacher_type: str, benchmark: str, teacher_name: str) -> Any:
     agent_config_path = Path("configs", "agents", teacher_type, f"{benchmark}", f"{teacher_name}.json")
     with agent_config_path.open() as file:
         return json.load(file)
@@ -37,6 +40,15 @@ def parse_heterogeneous_teacher_name(teacher_name: str) -> list[str]:
 
     return [teacher_map.get(code, "Unknown") for code in teacher_codes]
 
+def save_combined_data(path: Path, buffer: ReplayBuffer, run_info: dict, run_data: pd.DataFrame) -> None:
+    path.mkdir(parents=True, exist_ok=True)
+    buffer_path = path / "rep_buffer"
+    run_info_path = path / "run_info.json"
+    run_data_path = path / "aggregated_run_data.csv"
+    buffer.save(buffer_path)
+    with run_info_path.open(mode="w") as f:
+        json.dump(run_info, f, indent=4)
+    run_data.to_csv(run_data_path, index=False)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -116,8 +128,8 @@ if __name__ == "__main__":
 
     # Experimental details
     results_dir = Path(args.results_dir)
-    num_runs = 1000
-    num_train_iter = 30000
+    num_runs = 100
+    num_train_iter = 300
 
     if env_config["type"] == "SGD":
         num_runs = 5
@@ -137,7 +149,7 @@ if __name__ == "__main__":
 
         # generate data for different seeds
         for seed in data_gen_seeds:
-            _ = generate_dataset(
+            generate_dataset(
                 agent_config=teacher_config,
                 env_config=env_config,
                 num_runs=num_runs,
@@ -153,7 +165,7 @@ if __name__ == "__main__":
         for teacher_id in ["default", "1", "2", "3", "4"]:
             teacher_config = read_teacher(args.teacher, args.benchmark, teacher_id)
             environment_agent_adjustments(env_config, teacher_config)
-            _ = generate_dataset(
+            generate_dataset(
                 agent_config=teacher_config,
                 env_config=env_config,
                 num_runs=num_runs,
@@ -171,15 +183,8 @@ if __name__ == "__main__":
         combined_buffer, combined_run_info, combined_run_data = combine_runs(
             paths, "concat", 3000, # buffer size not needed here as we only use concat strategy
         )
-        combined_dir = data_dir / "combined"
-        combined_dir.mkdir(parents=True, exist_ok=True)
-        buffer_path = combined_dir / "rep_buffer"
-        run_info_path = combined_dir / "run_info.json"
-        run_data_path = combined_dir / "aggregated_run_data.csv"
-        combined_buffer.save(buffer_path)
-        with run_info_path.open(mode="w") as f:
-            json.dump(combined_run_info, f, indent=4)
-        combined_run_data.to_csv(run_data_path, index=False)
+        path = data_dir / "combined"
+        save_combined_data(path, combined_buffer, combined_run_info, combined_run_data)
     elif args.combination == "heterogeneous":
         agent_name = "default"
         teachers_to_combine = parse_heterogeneous_teacher_name(args.teacher)
@@ -187,7 +192,7 @@ if __name__ == "__main__":
         for teacher_type in teachers_to_combine:
             teacher_config = read_teacher(teacher_type, args.benchmark, agent_name)
             environment_agent_adjustments(env_config, teacher_config)
-            _ = generate_dataset(
+            generate_dataset(
                 agent_config=teacher_config,
                 env_config=env_config,
                 num_runs=num_runs,
@@ -206,16 +211,8 @@ if __name__ == "__main__":
         combined_buffer, combined_run_info, combined_run_data = combine_runs(
             data_dirs, "concat", final_buffer_size,
         )
-        combined_dir = results_dir / str(data_gen_seeds[0]) / env_config["type"] / args.teacher
-        combined_dir.mkdir(parents=True, exist_ok=True)
-        buffer_path = combined_dir / "rep_buffer"
-        run_info_path = combined_dir / "run_info.json"
-        run_data_path = combined_dir / "aggregated_run_data.csv"
-        combined_buffer.save(buffer_path)
-        with run_info_path.open(mode="w") as f:
-            json.dump(combined_run_info, f, indent=4)
-        combined_run_data.to_csv(run_data_path, index=False)
-
+        path = results_dir / str(data_gen_seeds[0]) / env_config["type"] / args.teacher
+        save_combined_data(path, combined_buffer, combined_run_info, combined_run_data)
 
     # Train on one seed for multiple training seeds
 
@@ -240,7 +237,7 @@ if __name__ == "__main__":
                 batch_size=256,
                 val_freq=num_train_iter,
                 seed=train_seed,
-                wandb_group=None,
+                wandb_group="",
                 timeout=0,
                 debug=False,
                 use_wandb=False,
@@ -251,7 +248,7 @@ if __name__ == "__main__":
             )
         else:
             _, mean = train_agent(
-                data_dir=combined_dir,
+                data_dir=path,
                 agent_type=args.agent_type,
                 agent_config={},
                 num_train_iter=num_train_iter,
@@ -259,7 +256,7 @@ if __name__ == "__main__":
                 batch_size=256,
                 val_freq=num_train_iter,
                 seed=train_seed,
-                wandb_group=None,
+                wandb_group="",
                 timeout=0,
                 debug=False,
                 use_wandb=False,
