@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 import json
-import math
 import time
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
+from src.experiment_data import (
+    CMAESExperimentData,
+    ExperimentData,
+    SGDExperimentData,
+    ToySGDExperimentData,
+)
 from src.utils.general import (
     OutOfTimeError,
     get_environment,
@@ -78,7 +82,7 @@ def generate_dataset(
     save_rep_buffer: bool,
     check_if_exists: bool = False,
     verbose: bool = False,
-) -> None:
+) -> pd.DataFrame:
     set_timeout(timeout)
     set_seeds(seed)
     env_config["seed"] = seed
@@ -93,7 +97,7 @@ def generate_dataset(
     environment_type = env_config["type"]
     agent_type = agent_config["type"]
 
-    if results_dir == Path(""):
+    if results_dir == Path():
         results_dir = Path(
             "data",
             environment_type,
@@ -115,8 +119,7 @@ def generate_dataset(
         num_batches = env_config["num_batches"]
 
     if check_if_exists and (results_dir.exists() and checkpoint == 0):
-        print(f"Data already exists: {results_dir}")
-        return None
+        raise RuntimeError(f"Data already exists: {results_dir}")
 
     env = get_environment(env_config.copy())
     env.reset()
@@ -154,7 +157,17 @@ def generate_dataset(
 
     agent = get_teacher(agent_type, agent_config)
 
-    aggregated_run_data = []
+    exp_data: ExperimentData
+    if environment_type == "ToySGD":
+        exp_data = ToySGDExperimentData()
+    elif environment_type == "SGD":
+        exp_data = SGDExperimentData()
+    elif environment_type == "CMAES":
+        exp_data = CMAESExperimentData()
+    else:
+        raise NotImplementedError(
+            f"No experiment data class for experiment {environment_type}",
+        )
     run_info = {
         "agent": agent_config,
         "environment": env_config,
@@ -188,63 +201,19 @@ def generate_dataset(
 
         assert run_info == checkpoint_run_info
 
-        aggregated_run_data.append(checkpoint_data)
+        exp_data.aggregated_data.append(checkpoint_data)
     if environment_type == "CMAES":
         # Start with instance 0
         env.instance_index = -1
 
     try:
         for run in range(start_run, num_runs):
-            if save_run_data:
-                actions = []
-                rewards = []
-                states = []
-                batch_indeces = []
-                run_indeces = []
-                if environment_type == "ToySGD":
-                    f_curs = []
-                    x_curs = []
-                elif environment_type == "SGD":
-                    train_loss = []
-                    valid_loss = []
-                    train_acc = []
-                    valid_acc = []
-                    test_loss = []
-                    test_acc = []
-                elif environment_type == "CMAES":
-                    lambdas = []
-                    f_curs = []
-                    population = []
-                    target_value = []
-                    fid = []
             state, meta_info = env.reset()
             if environment_type == ("ToySGD"):
                 starting_points.append(meta_info["start"])
             agent.reset()
             if save_run_data:
-                rewards.append(np.NaN)
-                states.append(state.numpy())
-                batch_indeces.append(0)
-                run_indeces.append(run)
-                if environment_type == "ToySGD":
-                    actions.append(math.log10(env.learning_rate))
-                    x_curs.append(env.x_cur.tolist())
-                    f_curs.append(env.objective_function(env.x_cur).numpy())
-                if environment_type == "SGD":
-                    actions.append(math.log10(env.learning_rate))
-                    train_loss.append(env.train_loss)
-                    valid_loss.append(env.validation_loss)
-                    train_acc.append(env.train_accuracy)
-                    valid_acc.append(env.validation_accuracy)
-                    test_loss.append(env.test_loss)
-                    test_acc.append(env.test_accuracy)
-                if environment_type == "CMAES":
-                    actions.append(env.es.parameters.sigma)
-                    lambdas.append(env.es.parameters.lambda_)
-                    f_curs.append(env.es.parameters.fopt)
-                    population.append(env.es.parameters.population.f)
-                    target_value.append(env.target)
-                    fid.append(env.fid)
+                exp_data.init_data(run, state, env)
 
             start = time.time()
             for batch in range(1, num_batches + 1):
@@ -254,7 +223,7 @@ def generate_dataset(
                         Total {batch + run * num_batches}/{num_runs * num_batches}",
                     )
 
-                if agent_type == "csa" or agent_type == "cmaes_constant":
+                if agent_type in ("csa", "cmaes_constant"):
                     action = agent.act(env)
                 else:
                     action = agent.act(state)
@@ -267,29 +236,16 @@ def generate_dataset(
                     done,
                 )
                 if save_run_data:
-                    actions.append(action)
-                    rewards.append(reward.numpy())
-                    states.append(state.numpy())
-                    batch_indeces.append(batch)
-                    run_indeces.append(run)
-                    if environment_type == "ToySGD":
-                        x_curs.append(env.x_cur.tolist())
-                        f_curs.append(env.objective_function(env.x_cur).numpy())
-                    if environment_type == "SGD":
-                        train_loss.append(env.train_loss)
-                        valid_loss.append(
-                            env.validation_loss,
-                        )
-                        train_acc.append(env.train_accuracy)
-                        valid_acc.append(env.validation_accuracy)
-                        test_loss.append(env.test_loss)
-                        test_acc.append(env.test_accuracy)
-                    if environment_type == "CMAES":
-                        lambdas.append(env.es.parameters.lambda_)
-                        f_curs.append(env.es.parameters.fopt)
-                        population.append(env.es.parameters.population.f)
-                        target_value.append(env.target)
-                        fid.append(env.fid)
+                    exp_data.add(
+                        {
+                            "state": state.numpy(),
+                            "action": action,
+                            "reward": reward.numpy(),
+                            "batch_idx": batch,
+                            "run_idx": run,
+                            "env": env,
+                        },
+                    )
 
                 state = next_state
                 if done:
@@ -299,43 +255,7 @@ def generate_dataset(
             print(f"Run {run} took {end - start} sec.")
 
             if save_run_data:
-                data = {
-                    "action": actions,
-                    "reward": rewards,
-                    "state": states,
-                    "batch": batch_indeces,
-                    "run": run_indeces,
-                }
-                if environment_type == "ToySGD":
-                    data.update(
-                        {
-                            "f_cur": f_curs,
-                            "x_cur": x_curs,
-                        },
-                    )
-                if environment_type == "SGD":
-                    data.update(
-                        {
-                            "train_loss": train_loss,
-                            "valid_loss": valid_loss,
-                            "train_acc": train_acc,
-                            "valid_acc": valid_acc,
-                            "test_loss": test_loss,
-                            "test_acc": test_acc,
-                        },
-                    )
-                if environment_type == "CMAES":
-                    data.update(
-                        {
-                            "lambdas": lambdas,
-                            "f_cur": f_curs,
-                            "population": population,
-                            "target_value": target_value,
-                            "function_id": fid,
-                        },
-                    )
-                run_data = pd.DataFrame(data)
-                aggregated_run_data.append(run_data)
+                exp_data.save()
 
             if checkpointing_freq != 0 and (run + 1) % checkpointing_freq == 0:
                 checkpoint_dir = Path(results_dir, "checkpoints", str(run))
@@ -363,7 +283,7 @@ def generate_dataset(
 
                 save_data(
                     save_run_data,
-                    pd.concat(aggregated_run_data),
+                    exp_data.concatenate_data(),
                     save_rep_buffer,
                     replay_buffer,
                     checkpoint_dir,
@@ -376,7 +296,7 @@ def generate_dataset(
     except OutOfTimeError:
         save_data(
             save_run_data,
-            pd.concat(aggregated_run_data),
+            exp_data.concatenate_data(),
             save_rep_buffer,
             replay_buffer,
             results_dir,
@@ -387,7 +307,7 @@ def generate_dataset(
 
     save_data(
         save_run_data,
-        pd.concat(aggregated_run_data),
+        exp_data.concatenate_data(),
         save_rep_buffer,
         replay_buffer,
         results_dir,
@@ -401,4 +321,4 @@ def generate_dataset(
         msg += "run_data " if save_run_data else ""
         print(f"{msg}to {results_dir}")
 
-    return pd.concat(aggregated_run_data)
+    return exp_data.concatenate_data()
