@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
+import torch
 
 if TYPE_CHECKING:
     from dacbench import AbstractEnv
@@ -14,12 +15,10 @@ if TYPE_CHECKING:
 
 class ExperimentData(metaclass=ABCMeta):
     data: dict[str, Any]
-    aggregated_data: list[pd.DataFrame]
-    df_aggregated_data: pd.DataFrame
 
     @abstractmethod
     def init_data(self, run_idx: int, state: Tensor, env: AbstractEnv) -> None:
-        """Initialize the data per run, dependant of the experiment."""
+        """Initialize the data dictionary, dependent on the experiment."""
 
     @abstractmethod
     def add(self, logs: dict) -> None:
@@ -32,39 +31,32 @@ class ExperimentData(metaclass=ABCMeta):
         self.data["batch_idx"].append(logs["batch_idx"])
         self.data["run_idx"].append(logs["run_idx"])
 
-    def _reset(self) -> None:
-        """Reset the fields for the next run."""
-        self.data.clear()
-
-    def save(self) -> None:
-        """Convert the collected data to a DataFrame and reset."""
-        if not hasattr(self, "aggregated_data"):
-            self.aggregated_data = [pd.DataFrame(self.data)]
-        else:
-            self.aggregated_data.append(pd.DataFrame(self.data))
-        self._reset()
-
     def concatenate_data(self) -> pd.DataFrame:
-        """Concatenate all run DataFrames together."""
-        if not hasattr(self, "df_aggregated_data"):
-            self.df_aggregated_data = pd.concat(
-                self.aggregated_data,
-                ignore_index=True,
-            )
-        return self.df_aggregated_data
+        """Return concatenated run data."""
+        return pd.DataFrame(self.data)
 
 
 class ToySGDExperimentData(ExperimentData):
     def init_data(self, run_idx: int, state: Tensor, env: AbstractEnv) -> None:
-        self.data = {
-            "reward": [np.nan],
-            "action": [math.log10(env.learning_rate)],
-            "state": [state.numpy()],
-            "batch_idx": [0],
-            "run_idx": [run_idx],
-            "f_cur": [env.objective_function(env.x_cur).tolist()],
-            "x_cur": [env.x_cur.tolist()],
+        if not hasattr(self, "data"):
+            self.data = {
+            "reward": [],
+            "action": [],
+            "state": [],
+            "batch_idx": [],
+            "run_idx": [],
+            "f_cur": [],
+            "x_cur": [],
         }
+
+        initial_log = {
+            "reward": torch.tensor(float("nan")),
+            "state": state.numpy(),
+            "batch_idx": 0,
+            "run_idx": run_idx,
+            "env": env,
+        }
+        self.add(initial_log)
 
     def add(self, logs: dict) -> None:
         super()._add(logs)
@@ -75,34 +67,44 @@ class ToySGDExperimentData(ExperimentData):
 
 class SGDExperimentData(ExperimentData):
     def init_data(self, run_idx: int, state: Tensor, env: AbstractEnv) -> None:
-        self.data = {
-            "reward": [np.nan],
-            "action": [math.log10(env.learning_rate)],
-            "state": [state.numpy()],
-            "batch_idx": [0],
-            "run_idx": [run_idx],
-            "train_loss": [env.train_loss],
-            "valid_loss": [env.validation_loss],
-            "train_acc": [env.train_accuracy],
-            "valid_acc": [env.validation_accuracy],
-            "test_loss": [env.test_loss],
-            "test_acc": [env.test_accuracy],
+        if not hasattr(self, "data"):
+            self.data = {
+                "reward": [],
+                "action": [],
+                "state": [],
+                "batch_idx": [],
+                "run_idx": [],
+                "train_loss": [],
+                "validation_loss": [],
+                "train_accuracy": [],
+                "validation_accuracy": [],
+                "test_loss": [],
+                "test_accuracy": [],
+            }
+        
+        initial_log = {
+            "reward": torch.tensor(float("nan")),
+            "state": state.numpy(),
+            "batch_idx": 0,
+            "run_idx": run_idx,
+            "env": env,
         }
+        self.add(initial_log)
 
     def add(self, logs: dict) -> None:
         super()._add(logs)
         self.data["action"].append(math.log10(logs["env"].learning_rate))
         self.data["train_loss"].append(logs["env"].train_loss)
-        self.data["valid_loss"].append(logs["env"].valid_loss)
+        self.data["validation_loss"].append(logs["env"].validation_loss)
         self.data["test_loss"].append(logs["env"].test_loss)
-        self.data["train_acc"].append(logs["env"].train_acc)
-        self.data["valid_acc"].append(logs["env"].valid_acc)
-        self.data["test_acc"].append(logs["env"].test_acc)
+        self.data["train_accuracy"].append(logs["env"].train_accuracy)
+        self.data["validation_accuracy"].append(logs["env"].validation_accuracy)
+        self.data["test_accuracy"].append(logs["env"].test_accuracy)
 
 
 class CMAESExperimentData(ExperimentData):
     def init_data(self, run_idx: int, state: Tensor, env: AbstractEnv) -> None:
-        self.data = {
+        initial_log = {
             "reward": [np.nan],
             "action": [env.es.parameters.sigma],
             "state": [state.numpy()],
@@ -114,6 +116,11 @@ class CMAESExperimentData(ExperimentData):
             "target_value": [env.target],
             "fid": [env.fid],
         }
+
+        if not hasattr(self, "data"):
+            self.data = initial_log
+        else:
+            self.add(initial_log)
 
     def add(self, logs: dict) -> None:
         super()._add(logs)

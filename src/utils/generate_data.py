@@ -53,7 +53,7 @@ def save_data(
 
 def load_checkpoint(
     checkpoint_dir: Path,
-) -> tuple[pd.DataFrame, ReplayBuffer, dict]:
+) -> tuple[dict, ReplayBuffer, dict]:
     if not checkpoint_dir.exists():
         raise RuntimeError(
             f"The specified checkpoint does not exist: {checkpoint_dir}",
@@ -61,7 +61,7 @@ def load_checkpoint(
 
     checkpoint_run_data = pd.read_csv(
         checkpoint_dir / "aggregated_run_data.csv",
-    )
+    ).to_dict()
     rb = ReplayBuffer.load(checkpoint_dir / "rep_buffer")
     with (checkpoint_dir / "run_info.json").open(mode="rb") as f:
         run_info = json.load(f)
@@ -201,7 +201,8 @@ def generate_dataset(
 
         assert run_info == checkpoint_run_info
 
-        exp_data.aggregated_data.append(checkpoint_data)
+        exp_data.data = checkpoint_data
+        
     if environment_type == "CMAES":
         # Start with instance 0
         env.instance_index = -1
@@ -253,9 +254,7 @@ def generate_dataset(
 
             end = time.time()
             print(f"Run {run} took {end - start} sec.")
-
-            if save_run_data:
-                exp_data.save()
+            
 
             if checkpointing_freq != 0 and (run + 1) % checkpointing_freq == 0:
                 checkpoint_dir = Path(results_dir, "checkpoints", str(run))
