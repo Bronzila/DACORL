@@ -254,7 +254,6 @@ def generate_dataset(
 
             end = time.time()
             print(f"Run {run} took {end - start} sec.")
-            
 
             if checkpointing_freq != 0 and (run + 1) % checkpointing_freq == 0:
                 checkpoint_dir = Path(results_dir, "checkpoints", str(run))
