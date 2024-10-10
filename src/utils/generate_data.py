@@ -155,7 +155,7 @@ def generate_dataset(
         seed=seed,
     )
 
-    agent = get_teacher(agent_type, agent_config)
+    agent = get_teacher(agent_config)
 
     exp_data: ExperimentData
     if environment_type == "ToySGD":
@@ -202,7 +202,7 @@ def generate_dataset(
         assert run_info == checkpoint_run_info
 
         exp_data.data = checkpoint_data
-        
+
     if environment_type == "CMAES":
         # Start with instance 0
         env.instance_index = -1

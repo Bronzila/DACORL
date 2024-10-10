@@ -82,24 +82,23 @@ def set_seeds(seed: int) -> None:
 
 
 def get_teacher(
-    teacher_type: str,
     teacher_config: dict[str, Any],
 ) -> Any:
-    if teacher_type == "step_decay":
+    if teacher_config["type"] == "step_decay":
         return StepDecay(**teacher_config["params"])
-    if teacher_type == "exponential_decay":
+    if teacher_config["type"] == "exponential_decay":
         return ExponentialDecay(**teacher_config["params"])
-    if teacher_type == "sgdr":
+    if teacher_config["type"] == "sgdr":
         return SGDR(**teacher_config["params"])
-    if teacher_type == "constant":
+    if teacher_config["type"] == "constant":
         return Constant(**teacher_config["params"])
-    if teacher_type == "csa":
+    if teacher_config["type"] == "csa":
         return CSA(**teacher_config["params"])
-    if teacher_type == "cmaes_constant":
+    if teacher_config["type"] == "cmaes_constant":
         return ConstantCMAES()
 
     raise NotImplementedError(
-        f"No agent with type {teacher_type} implemented.",
+        f"No agent with type {teacher_config['type']} implemented.",
     )
 
 
