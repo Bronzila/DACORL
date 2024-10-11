@@ -6,10 +6,10 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from src.utils.replay_buffer import ReplayBuffer
+from src.trainer import Trainer
 from src.utils.combinations import combine_runs, get_homogeneous_agent_paths
 from src.utils.generate_data import generate_dataset
-from src.utils.train_agent import train_agent
+from src.utils.replay_buffer import ReplayBuffer
 
 
 def read_teacher(teacher_type: str, benchmark: str, teacher_name: str) -> Any:
@@ -221,47 +221,38 @@ if __name__ == "__main__":
     train_seeds = rng.integers(0, 2**32 - 1, size=args.n_train_seeds)
 
     # train on generated data by first data_gen_seed
-
     for train_seed in train_seeds:
         if args.combination == "single":
             if env_config["type"] == "SGD":
                 data_dir = results_dir / str(data_gen_seeds[0]) / env_config["type"] / args.teacher / str(args.id)
             elif env_config["type"] == "ToySGD":
                 data_dir = results_dir / str(data_gen_seeds[0]) / env_config["type"] / args.teacher / str(args.id) / env_config["function"]
-            _, mean = train_agent(
+
+            trainer = Trainer(
                 data_dir=data_dir,
+                agent_config={"tanh_scaling": args.tanh_scaling, "batch_size": 256},
                 agent_type=args.agent_type,
-                agent_config={},
-                num_train_iter=num_train_iter,
-                num_eval_runs=num_runs,
-                batch_size=256,
-                val_freq=num_train_iter,
                 seed=train_seed,
-                wandb_group="",
-                timeout=0,
-                debug=False,
-                use_wandb=False,
-                hyperparameters={},
                 eval_protocol="train",
                 eval_seed=0,
-                tanh_scaling=args.tanh_scaling,
+                num_eval_runs=num_runs,
             )
+            _, inc_value = trainer.train(
+                num_train_iter,
+                num_train_iter,
+            )
+
         else:
-            _, mean = train_agent(
+            trainer = Trainer(
                 data_dir=path,
+                agent_config={"tanh_scaling": args.tanh_scaling, "batch_size": 256},
                 agent_type=args.agent_type,
-                agent_config={},
-                num_train_iter=num_train_iter,
-                num_eval_runs=num_runs,
-                batch_size=256,
-                val_freq=num_train_iter,
                 seed=train_seed,
-                wandb_group="",
-                timeout=0,
-                debug=False,
-                use_wandb=False,
-                hyperparameters={},
                 eval_protocol="train",
                 eval_seed=0,
-                tanh_scaling=args.tanh_scaling,
+                num_eval_runs=num_runs,
+            )
+            _, inc_value = trainer.train(
+                num_train_iter,
+                num_train_iter,
             )
