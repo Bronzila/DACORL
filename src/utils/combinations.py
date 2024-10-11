@@ -55,7 +55,7 @@ def concat_runs(agent_paths):
             combined_buffer.merge(temp_buffer)
 
         df = pd.read_csv(run_data_path)
-        df["run"] += idx * run_info["num_runs"]
+        df["run_idx"] += idx * run_info["num_runs"]
         combined_run_data.append(df)
     return (
         combined_buffer,
@@ -74,7 +74,9 @@ def get_run_ids_by_agent_path(
         paths = []
         n_runs = 0
         for path, data in path_data_mapping.items():
-            final_run_values = data["run_data"].groupby("run").last()["f_cur"]
+            final_run_values = (
+                data["run_data"].groupby("run_idx").last()["f_cur"]
+            )
             mean_final_score = np.mean(final_run_values)
             path_data_mapping[path]["performance"] = mean_final_score
             performances.append(mean_final_score)
@@ -143,7 +145,7 @@ def get_run_ids_by_agent_path(
             # assert that there are no duplicated transitions
             assert len(run_ids) == len(set(run_ids))
         return path_data_mapping
-    elif combination_strategy == "perf_per_run":
+    if combination_strategy == "perf_per_run":
         # Get n_runs and initialize run_ids lists
         for path, data in path_data_mapping.items():
             path_data_mapping[path]["run_ids"] = []
@@ -153,7 +155,7 @@ def get_run_ids_by_agent_path(
             paths = []
             for path, data in path_data_mapping.items():
                 final_run_values = (
-                    data["run_data"].groupby("run").last()["f_cur"]
+                    data["run_data"].groupby("run_idx").last()["f_cur"]
                 )
                 paths.append(path)
                 f_values.append(final_run_values[run_id])
@@ -165,8 +167,8 @@ def get_run_ids_by_agent_path(
         for path, data in path_data_mapping.items():
             print(f"{path}: {len(data['run_ids']) / n_runs}")
         return path_data_mapping
-    else:
-        raise NotImplementedError()
+
+    raise NotImplementedError()
 
 
 def filter_buffer(data):
@@ -258,7 +260,7 @@ def create_buffer_from_ids(path_data_mapping):
 
         # Filter run data
         data["run_data"] = data["run_data"][
-            data["run_data"]["run"].isin(data["run_ids"])
+            data["run_data"]["run_idx"].isin(data["run_ids"])
         ]
 
         if combined_buffer is None:
@@ -279,28 +281,28 @@ def create_buffer_from_ids(path_data_mapping):
 def combine_runs(agent_paths, combination_strategy="concat", total_size=3000):
     if combination_strategy == "concat":
         return concat_runs(agent_paths)
-    else:
-        path_data_mapping = {}
-        for root_path in agent_paths:
-            replay_path = Path(root_path, "rep_buffer")
-            run_info_path = Path(root_path, "run_info.json")
-            run_data_path = Path(root_path, "aggregated_run_data.csv")
 
-            with run_info_path.open(mode="rb") as f:
-                run_info = json.load(f)
+    path_data_mapping = {}
+    for root_path in agent_paths:
+        replay_path = Path(root_path, "rep_buffer")
+        run_info_path = Path(root_path, "run_info.json")
+        run_data_path = Path(root_path, "aggregated_run_data.csv")
 
-            buffer = ReplayBuffer.load(replay_path)
+        with run_info_path.open(mode="rb") as f:
+            run_info = json.load(f)
 
-            df_run_data = pd.read_csv(run_data_path)
-            path_data_mapping[root_path] = {
-                "buffer": buffer,
-                "run_data": df_run_data,
-                "run_info": run_info,
-            }
-        path_data_mapping = get_run_ids_by_agent_path(
-            path_data_mapping,
-            combination_strategy,
-            total_size,
-        )
+        buffer = ReplayBuffer.load(replay_path)
 
-        return create_buffer_from_ids(path_data_mapping)
+        df_run_data = pd.read_csv(run_data_path)
+        path_data_mapping[root_path] = {
+            "buffer": buffer,
+            "run_data": df_run_data,
+            "run_info": run_info,
+        }
+    path_data_mapping = get_run_ids_by_agent_path(
+        path_data_mapping,
+        combination_strategy,
+        total_size,
+    )
+
+    return create_buffer_from_ids(path_data_mapping)
