@@ -5,6 +5,8 @@ from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING
 
+import pandas as pd
+
 from src.experiment_data import (
     CMAESExperimentData,
     ExperimentData,
@@ -17,7 +19,6 @@ from src.utils.general import (
     get_teacher,
     set_seeds,
 )
-from src.utils.generate_data import load_checkpoint
 from src.utils.replay_buffer import ReplayBuffer
 
 if TYPE_CHECKING:
@@ -257,7 +258,7 @@ class Generator:
             checkpoint_data,
             self.replay_buffer,
             checkpoint_run_info,
-        ) = load_checkpoint(
+        ) = self._load_checkpoint(
             checkpoint_dir,
         )
 
@@ -276,3 +277,21 @@ class Generator:
         del checkpoint_run_info["checkpoint_info"]
 
         assert self.run_info == checkpoint_run_info
+
+    def _load_checkpoint(
+        self,
+        checkpoint_dir: Path,
+    ) -> tuple[dict, ReplayBuffer, dict]:
+        if not checkpoint_dir.exists():
+            raise RuntimeError(
+                f"The specified checkpoint does not exist: {checkpoint_dir}",
+            )
+
+        checkpoint_run_data = pd.read_csv(
+            checkpoint_dir / "aggregated_run_data.csv",
+        ).to_dict()
+        rb = ReplayBuffer.load(checkpoint_dir / "rep_buffer")
+        with (checkpoint_dir / "run_info.json").open(mode="rb") as f:
+            run_info = json.load(f)
+
+        return checkpoint_run_data, rb, run_info
