@@ -4,7 +4,6 @@ import warnings
 from pathlib import Path
 
 import numpy as np
-import torch.nn as nn
 from ConfigSpace import (
     Configuration,
     ConfigurationSpace,
@@ -17,7 +16,6 @@ from smac import (
 )
 
 from src.utils.general import set_seeds
-from src.utils.generate_data import generate_dataset
 
 warnings.filterwarnings("ignore")
 

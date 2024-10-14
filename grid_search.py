@@ -1,9 +1,8 @@
 import argparse
 import json
 from pathlib import Path
-import numpy as np
-from src.utils.generate_data import generate_dataset
 
+import numpy as np
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Teacher HPO")
