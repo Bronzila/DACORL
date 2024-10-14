@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     import numpy as np
 
 
-class Generator:
+class DataGenerator:
     def __init__(
         self,
         teacher_config: dict,
