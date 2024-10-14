@@ -85,7 +85,7 @@ if __name__ == "__main__":
         "--id",
         type=str,
         default="0",
-        help="Agent ID",
+        help="Teacher ID",
     )
     parser.add_argument(
         "--agent_type",
@@ -128,8 +128,8 @@ if __name__ == "__main__":
 
     # Experimental details
     results_dir = Path(args.results_dir)
-    num_runs = 100
-    num_train_iter = 300
+    num_runs = 1000
+    num_train_iter = 30000
 
     if env_config["type"] == "SGD":
         num_runs = 5
