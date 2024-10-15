@@ -197,7 +197,7 @@ def train_agent(
 
                 # Calculate mean performance for this checkpoint
                 if run_info["environment"]["type"] == "ToySGD":
-                    fbest_mean, _ = calc_mean_and_std_dev(eval_data)
+                    fbest_mean, _ = calc_mean_and_std_dev(eval_data, "f_cur")
                     print(f"Mean at iteration {t+1}: {fbest_mean}")
                     inc_value = (
                         fbest_mean

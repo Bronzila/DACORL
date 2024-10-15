@@ -1,7 +1,7 @@
 {
     "params": {
-        "T_i": 3,
-        "T_mult": 7,
+        "t_i": 3,
+        "t_mult": 7,
         "batches_per_epoch": 3
     },
     "type": "sgdr",
