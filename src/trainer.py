@@ -87,6 +87,11 @@ class Trainer:
             )
 
     def _setup_agent(self, state_dim: int) -> None:
+        """Sets up agent according to given agent config and state dim.
+
+        Args:
+            state_dim (int): State dimensionality
+        """
         self.agent_config.update(
             {
                 "state_dim": state_dim,
@@ -104,6 +109,11 @@ class Trainer:
         )
 
     def _eval_agent(self) -> pd.DataFrame:
+        """Evaluates the trained agent.
+
+        Returns:
+            pd.DataFrame: Aggregated evaluation data
+        """
         if self.env_type == "CMAES":
             test_agent = test_cma
         elif self.env_type == "SGD":
@@ -164,6 +174,12 @@ class Trainer:
         eval_data: pd.DataFrame,
         t: int,
     ) -> None:
+        """Helper function for incumbent and performance logging.
+
+        Args:
+            eval_data (pd.DataFrame): Evaluation data at t
+            t (int): Current time step
+        """
         if self.run_info["environment"]["type"] == "ToySGD":
             fbest_mean, _ = calc_mean_and_std_dev(eval_data, "f_cur")
             print(f"Mean at iteration {t+1}: {fbest_mean}")
@@ -239,6 +255,11 @@ class Trainer:
             fbest_mean = final_evaluations["f_cur"].mean()
 
     def _setup_environment(self) -> tuple[Any, np.ndarray]:
+        """Sets up environment according to environment config.
+
+        Returns:
+            tuple[Any, np.ndarray]: Environment and initial state
+        """
         env = get_environment(self.run_info["environment"].copy())
         initial_state = env.reset()[0]
 
@@ -258,6 +279,15 @@ class Trainer:
         num_train_iter: int,
         val_freq: int,
     ) -> tuple[dict, float]:
+        """Trains agent using offline RL.
+
+        Args:
+            num_train_iter (int): Number of training iterations
+            val_freq (int): Validation frequency
+
+        Returns:
+            tuple[dict, float]: Logs and incumbent performance
+        """
         logs: dict = {}
 
         print("Starting training with the following configuration...")
@@ -306,6 +336,16 @@ class Trainer:
         val_freq: int,
         start_timesteps: int = 2560,
     ) -> tuple[dict, float]:
+        """Trains agent using online RL.
+
+        Args:
+            num_train_iter (int): Number of training iterations
+            val_freq (int): Validation frequency
+            start_timesteps (int, optional): Defines how many random actions to use in order to fill ReplayBuffer. Defaults to 2560.
+
+        Returns:
+            tuple[dict, float]: Logs and incumbent value
+        """
         env, state = self._setup_environment()
         # This is currently a quite ugly work-around for online-training
         state_dim = state.shape[0]
@@ -410,6 +450,16 @@ class Trainer:
         val_freq: int,
         start_timesteps: int = 2560,
     ) -> tuple[dict, float]:
+        """Train agent online/offline depending on trainer configuration.
+
+        Args:
+            num_train_iter (int): Nummber of training iterations
+            val_freq (int): Validation frequency
+            start_timesteps (int, optional): Only used for online training: Defines how many random actions to use in order to fill ReplayBuffer. Defaults to 2560.
+
+        Returns:
+            tuple[dict, float]: Logs and incumbent value
+        """
         if self.agent_type == "td3":
             return self._train_online(
                 num_train_iter=num_train_iter,
