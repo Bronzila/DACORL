@@ -36,10 +36,9 @@ def train_agent(
     hyperparameters: dict,
     eval_protocol: str,
     eval_seed: int,
+    num_eval_runs: int,
     start_timesteps: int = 2560,  # 25e3  <-- Find good default value
-    tanh_scaling: bool = False,
     use_wandb: bool = False,
-    num_eval_runs: int | None = None,
 ) -> tuple[dict, float]:
     if debug:
         num_train_iter = 5
@@ -135,7 +134,7 @@ def train_agent(
             print("First Time")
             action = (
                 agent.select_action(state.type(torch.float32))
-                + np.random.normal(
+                + np.random.normal(  # noqa: NPY002
                     0,
                     max_action * 0.1,
                     size=action_dim,
@@ -169,7 +168,7 @@ def train_agent(
             log_dict.update({"episode_reward": episode_reward})
 
             if (not debug) and use_wandb:
-                wandb.log(log_dict, agent.total_it)
+                wandb.log(log_dict, agent.total_it)  # type: ignore
 
         # if we run out of bounds or reached max optimization iters
         if done or episode_timesteps == num_batches:
@@ -177,7 +176,7 @@ def train_agent(
                 f"Total T: {t+1}/{int(num_train_iter)} Episode Num: {episode_num+1} Episode T: {episode_timesteps} Reward: {episode_reward:.3f}",
             )
             # Reset environment
-            (state, meta_info), done = env.reset(), False
+            (state, _), done = env.reset(), False
             episode_reward = 0
             episode_timesteps = 0
             episode_num += 1

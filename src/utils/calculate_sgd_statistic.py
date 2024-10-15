@@ -7,7 +7,10 @@ import numpy as np
 import pandas as pd
 
 
-def combine_run_data(data_paths, num_runs=100):
+def combine_run_data(
+    data_paths: list[Path],
+    num_runs: int = 100,
+) -> pd.DataFrame:
     combined_run_data = []
     for idx, root_path in enumerate(data_paths):
         run_data_path = Path(root_path)
@@ -17,7 +20,11 @@ def combine_run_data(data_paths, num_runs=100):
     return pd.concat(combined_run_data, ignore_index=True)
 
 
-def find_highest_values(df, column_name, n=10):
+def find_highest_values(
+    df: pd.DataFrame,
+    column_name: str,
+    n: int = 10,
+) -> pd.DataFrame:
     final_evaluations = df.groupby("run").last()
 
     # Sort the DataFrame by the specified column in ascending order
@@ -27,7 +34,10 @@ def find_highest_values(df, column_name, n=10):
     return sorted_df.head(n)
 
 
-def calc_mean_and_std_dev(df, metric="test_acc"):
+def calc_mean_and_std_dev(
+    df: pd.DataFrame,
+    metric: str = "test_acc",
+) -> tuple[float, float]:
     final_evaluations = (
         df.sort_values(by=["run", "batch"]).groupby("run").last()
     )

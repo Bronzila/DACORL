@@ -74,14 +74,14 @@ class Actor(nn.Module):
 
         return action
 
-    @torch.no_grad()
+    @torch.no_grad()  # type: ignore
     def act(self, state: np.ndarray, device: str = "cpu") -> np.ndarray:
         state = torch.tensor(
             state.reshape(1, -1),
             device=device,
             dtype=torch.float32,
         )
-        return self(state).cpu().data.numpy().flatten()
+        return self(state).cpu().data.numpy().flatten()  # type: ignore
 
 
 class Critic(nn.Module):
