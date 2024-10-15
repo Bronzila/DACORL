@@ -341,7 +341,8 @@ class Trainer:
         Args:
             num_train_iter (int): Number of training iterations
             val_freq (int): Validation frequency
-            start_timesteps (int, optional): Defines how many random actions to use in order to fill ReplayBuffer. Defaults to 2560.
+            start_timesteps (int, optional): Defines how many random actions to use in
+                order to fill ReplayBuffer. Defaults to 2560.
 
         Returns:
             tuple[dict, float]: Logs and incumbent value
@@ -455,7 +456,8 @@ class Trainer:
         Args:
             num_train_iter (int): Nummber of training iterations
             val_freq (int): Validation frequency
-            start_timesteps (int, optional): Only used for online training: Defines how many random actions to use in order to fill ReplayBuffer. Defaults to 2560.
+            start_timesteps (int, optional): Only used for online training:
+                Defines how many random actions to use in order to fill ReplayBuffer. Defaults to 2560.
 
         Returns:
             tuple[dict, float]: Logs and incumbent value
