@@ -63,6 +63,8 @@ if __name__ == "__main__":
     )
     parser.add_argument("--n_data_seeds", type=int, default=5)
     parser.add_argument("--n_train_seeds", type=int, default=5)
+    parser.add_argument("--n_train_iter", type=int, default=30000)
+    parser.add_argument("--n_runs", type=int, default=1000)
     parser.add_argument(
         "--teacher",
         type=str,
@@ -128,13 +130,11 @@ if __name__ == "__main__":
 
     # Experimental details
     results_dir = Path(args.results_dir)
-    num_runs = 1000
-    num_train_iter = 30000
+    n_runs = args.n_runs
+    n_train_iter = args.n_train_iter
 
-    if env_config["type"] == "SGD":
-        num_runs = 5
-        if args.instance_mode:
-            env_config["instance_mode"] = args.instance_mode
+    if env_config["type"] == "SGD" and args.instance_mode:
+        env_config["instance_mode"] = args.instance_mode
 
     # generate run seeds randomly
     rng = np.random.default_rng(0)
@@ -152,7 +152,7 @@ if __name__ == "__main__":
             generate_dataset(
                 agent_config=teacher_config,
                 env_config=env_config,
-                num_runs=num_runs,
+                num_runs=n_runs,
                 seed=int(seed),
                 timeout=0,
                 results_dir=results_dir / str(seed),
@@ -168,7 +168,7 @@ if __name__ == "__main__":
             generate_dataset(
                 agent_config=teacher_config,
                 env_config=env_config,
-                num_runs=num_runs,
+                num_runs=n_runs,
                 seed=int(data_gen_seeds[0]),
                 timeout=0,
                 results_dir=results_dir / str(data_gen_seeds[0]),
@@ -195,7 +195,7 @@ if __name__ == "__main__":
             generate_dataset(
                 agent_config=teacher_config,
                 env_config=env_config,
-                num_runs=num_runs,
+                num_runs=n_runs,
                 seed=int(data_gen_seeds[0]),
                 timeout=0,
                 results_dir=results_dir / str(data_gen_seeds[0]),
@@ -235,11 +235,11 @@ if __name__ == "__main__":
                 seed=train_seed,
                 eval_protocol="train",
                 eval_seed=0,
-                num_eval_runs=num_runs,
+                num_eval_runs=n_runs,
             )
             _, inc_value = trainer.train(
-                num_train_iter,
-                num_train_iter,
+                n_train_iter,
+                n_train_iter,
             )
 
         else:
@@ -250,9 +250,9 @@ if __name__ == "__main__":
                 seed=train_seed,
                 eval_protocol="train",
                 eval_seed=0,
-                num_eval_runs=num_runs,
+                num_eval_runs=n_runs,
             )
             _, inc_value = trainer.train(
-                num_train_iter,
-                num_train_iter,
+                n_train_iter,
+                n_train_iter,
             )
