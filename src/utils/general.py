@@ -105,17 +105,15 @@ def get_teacher(
 def get_agent(
     agent_type: str,
     agent_config: dict[str, Any],
-    tanh_scaling: bool,
-    hyperparameters: dict[str, Any] = {},
     device: str = "cpu",
     cmaes: bool = False,
 ) -> Any:
-    if hyperparameters.get("hidden_dim") is not None:
+    if agent_config.get("hidden_dim") is not None:
         print(
             "Warning! You are using the non reduced config space. Actor_hidden_dim and critic_hidden_dim will be equal.",
         )
-        hyperparameters["actor_hidden_dim"] = hyperparameters["hidden_dim"]
-        hyperparameters["critic_hidden_dim"] = hyperparameters["hidden_dim"]
+        agent_config["actor_hidden_dim"] = agent_config["hidden_dim"]
+        agent_config["critic_hidden_dim"] = agent_config["hidden_dim"]
     state_dim = agent_config["state_dim"]
     action_dim = agent_config["action_dim"]
     max_action = agent_config["max_action"]
@@ -126,15 +124,16 @@ def get_agent(
     critic_1: CriticType
     critic_2: CriticType
 
-    actor_hidden_dim = hyperparameters.get("actor_hidden_dim", 256)
-    actor_hidden_layers = hyperparameters.get("hidden_layers_actor", 1)
-    critic_hidden_dim = hyperparameters.get("critic_hidden_dim", 256)
-    critic_hidden_layers = hyperparameters.get("hidden_layers_critic", 1)
-    dropout_rate = hyperparameters.get("dropout_rate", 0.2)
-    lr_actor = hyperparameters.get("lr_actor", 3e-4)
-    lr_critic = hyperparameters.get("lr_critic", 3e-4)
-    discount_factor = hyperparameters.get("discount_factor", 0.99)
-    tau = hyperparameters.get("target_update_rate", 5e-3)
+    actor_hidden_dim = agent_config.get("actor_hidden_dim", 256)
+    actor_hidden_layers = agent_config.get("hidden_layers_actor", 1)
+    critic_hidden_dim = agent_config.get("critic_hidden_dim", 256)
+    critic_hidden_layers = agent_config.get("hidden_layers_critic", 1)
+    dropout_rate = agent_config.get("dropout_rate", 0.2)
+    lr_actor = agent_config.get("lr_actor", 3e-4)
+    lr_critic = agent_config.get("lr_critic", 3e-4)
+    discount_factor = agent_config.get("discount_factor", 0.99)
+    tau = agent_config.get("target_update_rate", 5e-3)
+    tanh_scaling = agent_config.get("tanh_scaling", False)
 
     if agent_type == "td3_bc":
         td3_bc_config = td3_bc.TrainConfig
@@ -651,9 +650,8 @@ def save_agent(
     state_dicts: dict,
     results_dir: Path,
     iteration: int,
-    seed: int = 0,
 ) -> None:
-    filename = results_dir / str(seed) / f"{iteration + 1}"
+    filename = results_dir / f"{iteration + 1}"
     if not filename.exists():
         filename.mkdir(parents=True)
 
@@ -663,18 +661,16 @@ def save_agent(
 
 def load_agent(
     agent_type: str,
-    agent_config: dict,
     agent_path: Path,
-    tanh_scaling: bool = False,
 ) -> Any:
     hp_conf_path = agent_path / "config.json"
     with hp_conf_path.open("r") as f:
-        hyperparameters = json.load(f)
+        agent_config = json.load(f)
 
     print("Loaded agent with following hyperparameters:")
-    print(hyperparameters)
+    print(agent_config)
 
-    agent = get_agent(agent_type, agent_config, tanh_scaling, hyperparameters)
+    agent = get_agent(agent_type, agent_config)
     state_dict = agent.state_dict()
     new_state_dict = {}
     for key, _ in state_dict.items():
