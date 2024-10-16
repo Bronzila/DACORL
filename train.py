@@ -1,12 +1,12 @@
 import argparse
-import time
 import json
+import time
 from pathlib import Path
 
-from src.utils.general import get_config_space
-from src.utils.train_agent import train_agent as train_offline
-from src.utils.train_agent_online import train_agent as train_online
 from train_hpo import Optimizee
+
+from src.trainer import Trainer
+from src.utils.general import get_config_space
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train any offline agent ")
@@ -103,8 +103,8 @@ if __name__ == "__main__":
     batch_size = args.batch_size
     if args.hp_path:
         with Path(args.hp_path).open("r") as f:
-            hyperparameters = json.load(f)
-        batch_size = hyperparameters["batch_size"]
+            agent_config = json.load(f)
+        batch_size = agent_config["batch_size"]
     else:
         cs = Optimizee(
             args.data_dir,
@@ -115,32 +115,30 @@ if __name__ == "__main__":
             eval_seed=args.eval_seed,
             tanh_scaling=args.tanh_scaling,
         )
-        hyperparameters = get_config_space(
+        agent_config = get_config_space(
             args.cs_type,
         ).get_default_configuration()
-    hyperparameters["hidden_dim"] = args.hidden_dim
-    print(hyperparameters)
+    agent_config["hidden_dim"] = args.hidden_dim
+    agent_config["tanh_scaling"] = args.tanh_scaling
+    print(agent_config)
 
-    train_agent = train_online if args.agent_type == "td3" else train_offline
-
-    _, mean = train_agent(
-        data_dir=args.data_dir,
+    trainer = Trainer(
+        data_dir=Path(args.data_dir),
+        agent_config=agent_config,
         agent_type=args.agent_type,
-        agent_config=args.agent_config,
-        num_train_iter=args.num_train_iter,
-        num_eval_runs=args.num_eval_runs,
-        batch_size=batch_size,
-        val_freq=args.val_freq,
         seed=args.seed,
-        wandb_group=args.wandb_group,
-        timeout=args.timeout,
-        debug=args.debug,
-        use_wandb=args.wandb,
-        hyperparameters=hyperparameters,
         eval_protocol=args.eval_protocol,
         eval_seed=args.eval_seed,
-        tanh_scaling=args.tanh_scaling,
+        device="cpu",
+        num_eval_runs=args.num_eval_runs,
+        wandb_group=args.wandb_group
     )
-    print(mean)
+
+    _, inc_value = trainer.train(
+        args.num_train_iter,
+        args.val_freq,
+    )
+
+    print(inc_value)
     end = time.time()
     print(f"Took: {end-start}s to generate")
