@@ -157,7 +157,6 @@ if __name__ == "__main__":
                 num_runs=num_runs,
                 checkpoint=0,
                 seed=seed.item(),
-                timeout=0,
                 verbose=False,
             )
             gen.generate_data()
@@ -175,7 +174,6 @@ if __name__ == "__main__":
                 num_runs=num_runs,
                 checkpoint=0,
                 seed=int(data_gen_seeds[0]),
-                timeout=0,
                 verbose=False,
             )
             gen.generate_data()
@@ -203,23 +201,10 @@ if __name__ == "__main__":
                 num_runs=num_runs,
                 checkpoint=0,
                 seed=int(data_gen_seeds[0]),
-                timeout=0,
                 verbose=False,
             )
             gen.generate_data()
             gen.save_data()
-            generate_dataset(
-                agent_config=teacher_config,
-                env_config=env_config,
-                num_runs=num_runs,
-                seed=int(data_gen_seeds[0]),
-                timeout=0,
-                results_dir=results_dir / str(data_gen_seeds[0]),
-                save_run_data=True,
-                save_rep_buffer=True,
-                checkpointing_freq=0,
-                checkpoint=0,
-            )
 
             data_dirs.append(results_dir / str(data_gen_seeds[0]) / env_config["type"] / teacher_type / "0" / env_config.get("function", ""))
 

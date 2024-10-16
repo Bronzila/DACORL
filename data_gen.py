@@ -19,7 +19,6 @@ if __name__ == "__main__":
         result_dir: Path  # path to the directory where replay_buffer and info about the replay_buffer are stored
         instance_mode: str | None = None  # Select the instance mode for SGD Benchmark
         id: str = "0"
-        timeout: int = 0  # Timeout in sec. 0 -> no timeout
         checkpointing_freq: int = 0  # How frequent we want to checkpoint. Default 0 means no checkpoints
         checkpoint: int = 0  # Specify which checkpoint you want to load. Default 0 means no loading
         check_if_exists: bool = False
@@ -75,7 +74,6 @@ if __name__ == "__main__":
         args.num_runs,
         args.checkpoint,
         args.seed,
-        args.timeout,
         args.verbose,
     )
 

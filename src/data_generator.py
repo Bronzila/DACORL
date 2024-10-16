@@ -35,7 +35,6 @@ class DataGenerator:
         num_runs: int,
         checkpoint: int,
         seed: int,
-        timeout: int,
         verbose: bool,
     ) -> None:
         if check_if_exists and (result_dir.exists() and checkpoint == 0):
@@ -48,7 +47,6 @@ class DataGenerator:
         self.agent_type = teacher_config["type"]
 
         self.seed = seed
-        self.timeout = timeout
         self.verbose = verbose
 
         self._init_seeds()
