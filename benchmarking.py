@@ -7,8 +7,8 @@ import numpy as np
 import pandas as pd
 
 from src.trainer import Trainer
+from src.data_generator import DataGenerator
 from src.utils.combinations import combine_runs, get_homogeneous_agent_paths
-from src.utils.generate_data import generate_dataset
 from src.utils.replay_buffer import ReplayBuffer
 
 
@@ -52,7 +52,7 @@ def save_combined_data(path: Path, buffer: ReplayBuffer, run_info: dict, run_dat
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Run any agent on benchmarks"
+        description="Run any agent on benchmarks",
     )
     parser.add_argument("--benchmark", type=str, default="SGD")
     parser.add_argument(
@@ -149,34 +149,35 @@ if __name__ == "__main__":
 
         # generate data for different seeds
         for seed in data_gen_seeds:
-            generate_dataset(
-                agent_config=teacher_config,
+            gen = DataGenerator(
+                teacher_config=teacher_config,
                 env_config=env_config,
+                result_dir=results_dir / str(seed),
+                check_if_exists=False,
                 num_runs=n_runs,
-                seed=int(seed),
-                timeout=0,
-                results_dir=results_dir / str(seed),
-                save_run_data=True,
-                save_rep_buffer=True,
-                checkpointing_freq=0,
                 checkpoint=0,
+                seed=seed.item(),
+                verbose=False,
             )
+            gen.generate_data()
+            gen.save_data()
+
     elif args.combination == "homogeneous":
         for teacher_id in ["default", "1", "2", "3", "4"]:
             teacher_config = read_teacher(args.teacher, args.benchmark, teacher_id)
             environment_agent_adjustments(env_config, teacher_config)
-            generate_dataset(
-                agent_config=teacher_config,
+            gen = DataGenerator(
+                teacher_config=teacher_config,
                 env_config=env_config,
+                result_dir=results_dir / str(data_gen_seeds[0]),
+                check_if_exists=False,
                 num_runs=n_runs,
-                seed=int(data_gen_seeds[0]),
-                timeout=0,
-                results_dir=results_dir / str(data_gen_seeds[0]),
-                save_run_data=True,
-                save_rep_buffer=True,
-                checkpointing_freq=0,
                 checkpoint=0,
+                seed=int(data_gen_seeds[0]),
+                verbose=False,
             )
+            gen.generate_data()
+            gen.save_data()
 
         data_dir = results_dir / str(data_gen_seeds[0]) / env_config["type"] / args.teacher
         paths = get_homogeneous_agent_paths(data_dir, env_config.get("function", ""))
@@ -192,18 +193,18 @@ if __name__ == "__main__":
         for teacher_type in teachers_to_combine:
             teacher_config = read_teacher(teacher_type, args.benchmark, agent_name)
             environment_agent_adjustments(env_config, teacher_config)
-            generate_dataset(
-                agent_config=teacher_config,
+            gen = DataGenerator(
+                teacher_config=teacher_config,
                 env_config=env_config,
+                result_dir=results_dir / str(data_gen_seeds[0]),
+                check_if_exists=False,
                 num_runs=n_runs,
-                seed=int(data_gen_seeds[0]),
-                timeout=0,
-                results_dir=results_dir / str(data_gen_seeds[0]),
-                save_run_data=True,
-                save_rep_buffer=True,
-                checkpointing_freq=0,
                 checkpoint=0,
+                seed=int(data_gen_seeds[0]),
+                verbose=False,
             )
+            gen.generate_data()
+            gen.save_data()
 
             data_dirs.append(results_dir / str(data_gen_seeds[0]) / env_config["type"] / teacher_type / "0" / env_config.get("function", ""))
 

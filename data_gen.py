@@ -1,123 +1,84 @@
-import argparse
-import json
-from pathlib import Path
-import time
+from __future__ import annotations
 
-from src.utils.generate_data import generate_dataset
+import json
+import time
+from pathlib import Path
+
+from tap import Tap
+
+from src.data_generator import DataGenerator
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Run any agent on benchmarks"
-    )
-    parser.add_argument("--benchmark", type=str, default="SGD")
-    parser.add_argument(
-        "--env",
-        type=str,
-        help="Config file to define the benchmark env",
-        default="default",
-    )
-    parser.add_argument("--num_runs", type=int, default=1000)
-    parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument(
-        "--agent",
-        type=str,
-        help="Agent for data generation",
-        default="step_decay",
-    )
-    parser.add_argument(
-        "--results_dir",
-        type=str,
-        default="",
-        help="path to the directory where replay_buffer and info about the replay_buffer are stored",
-    )
-    parser.add_argument(
-        "--instance_mode",
-        type=str,
-        default=None,
-        help="Select the instance mode for SGD Benchmark.",
-    )
-    parser.add_argument(
-        "--save_run_data",
-        action=argparse.BooleanOptionalAction,
-        default=False,
-        help="Save all the run data in a csv",
-    )
-    parser.add_argument(
-        "--save_rep_buffer",
-        action=argparse.BooleanOptionalAction,
-        default=False,
-        help="Save the rep buffer",
-    )
-    parser.add_argument(
-        "--id",
-        type=str,
-        default="0",
-        help="Agent ID",
-    )
-    parser.add_argument(
-        "--timeout",
-        type=int,
-        default=0,
-        help="Timeout in sec. 0 -> no timeout",
-    )
-    parser.add_argument(
-        "--checkpointing_freq",
-        type=int,
-        default=0,
-        help="How frequent we want to checkpoint. Default 0 means no checkpoints",
-    )
-    parser.add_argument(
-        "--checkpoint",
-        type=int,
-        default=0,
-        help="Specify which checkpoint (run number) you want to load. Default 0 means no loading",
-    ),
-    parser.add_argument(
-        "--check_if_exists",
-        action=argparse.BooleanOptionalAction,
-        default=False,
-    )
 
-    args = parser.parse_args()
+    class DataGeneratorParser(Tap):
+        benchmark: str = "SGD"
+        env: str = "default"  # Config file to define the benchmark env
+        num_runs: int = 1000
+        seed: int = 0
+        teacher: str = "step_decay"
+        result_dir: Path  # path to the directory where replay_buffer and info about the replay_buffer are stored
+        instance_mode: str | None = None  # Select the instance mode for SGD Benchmark
+        id: str = "0"
+        checkpointing_freq: int = 0  # How frequent we want to checkpoint. Default 0 means no checkpoints
+        checkpoint: int = 0  # Specify which checkpoint you want to load. Default 0 means no loading
+        check_if_exists: bool = False
+        verbose: bool = False
+        """Generate Data using a teacher in a specified environment."""
+
+    args = DataGeneratorParser().parse_args()
+
     start = time.time()
 
     agent_name = "default" if args.id == "0" else str(args.id)
     # Read agent config from file
-    agent_config_path = Path("configs", "agents", args.agent, f"{args.benchmark}", f"{agent_name}.json")
-    with agent_config_path.open() as file:
-        agent_config = json.load(file)
+    teacher_config_path = Path(
+        "configs",
+        "agents",
+        args.teacher,
+        f"{args.benchmark}",
+        f"{agent_name}.json",
+    )
+    with teacher_config_path.open() as file:
+        teacher_config = json.load(file)
 
     # Read environment config from file
-    env_config_path = Path("configs", "environment", f"{args.benchmark}", f"{args.env}.json")
+    env_config_path = Path(
+        "configs", "environment", f"{args.benchmark}", f"{args.env}.json",
+    )
     with env_config_path.open() as file:
         env_config = json.load(file)
 
     # Add initial learning rate to agent config for SGDR
-    if agent_config["type"] == "sgdr":
-        agent_config["params"]["initial_learning_rate"] = env_config["initial_learning_rate"]
+    if teacher_config["type"] == "sgdr":
+        teacher_config["params"]["initial_learning_rate"] = env_config[
+            "initial_learning_rate"
+        ]
 
-    if agent_config["type"] == "constant" and agent_config["id"] == 0:
-        agent_config["params"]["learning_rate"] = env_config["initial_learning_rate"]
-    elif agent_config["type"] == "constant":
-        env_config["initial_learning_rate"] = agent_config["params"]["learning_rate"]
+    if teacher_config["type"] == "constant" and teacher_config["id"] == 0:
+        teacher_config["params"]["learning_rate"] = env_config[
+            "initial_learning_rate"
+        ]
+    elif teacher_config["type"] == "constant":
+        env_config["initial_learning_rate"] = teacher_config["params"][
+            "learning_rate"
+        ]
 
-    if env_config["type"] == "SGD":
-        if args.instance_mode:
-            env_config["instance_mode"] = args.instance_mode
+    if env_config["type"] == "SGD" and args.instance_mode:
+        env_config["instance_mode"] = args.instance_mode
 
-    agg_run_data = generate_dataset(
-        agent_config=agent_config,
-        env_config=env_config,
-        num_runs=args.num_runs,
-        seed=args.seed,
-        timeout=args.timeout,
-        results_dir=args.results_dir,        
-        save_run_data=args.save_run_data,
-        save_rep_buffer=args.save_rep_buffer,
-        checkpointing_freq=args.checkpointing_freq,
-        checkpoint=args.checkpoint,
-        check_if_exists=args.check_if_exists,
+    generator = DataGenerator(
+        teacher_config,
+        env_config,
+        args.result_dir,
+        args.check_if_exists,
+        args.num_runs,
+        args.checkpoint,
+        args.seed,
+        args.verbose,
     )
+
+    generator.generate_data(args.checkpointing_freq)
+    generator.save_data()
 
     end = time.time()
     print(f"Took: {end-start}s to generate")

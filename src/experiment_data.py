@@ -40,14 +40,14 @@ class ToySGDExperimentData(ExperimentData):
     def init_data(self, run_idx: int, state: Tensor, env: AbstractEnv) -> None:
         if not hasattr(self, "data"):
             self.data = {
-            "reward": [],
-            "action": [],
-            "state": [],
-            "batch_idx": [],
-            "run_idx": [],
-            "f_cur": [],
-            "x_cur": [],
-        }
+                "reward": [],
+                "action": [],
+                "state": [],
+                "batch_idx": [],
+                "run_idx": [],
+                "f_cur": [],
+                "x_cur": [],
+            }
 
         initial_log = {
             "reward": torch.tensor(float("nan")),
@@ -81,7 +81,7 @@ class SGDExperimentData(ExperimentData):
                 "test_loss": [],
                 "test_accuracy": [],
             }
-        
+
         initial_log = {
             "reward": torch.tensor(float("nan")),
             "state": state.numpy(),

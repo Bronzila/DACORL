@@ -82,24 +82,23 @@ def set_seeds(seed: int) -> None:
 
 
 def get_teacher(
-    teacher_type: str,
     teacher_config: dict[str, Any],
 ) -> Any:
-    if teacher_type == "step_decay":
+    if teacher_config["type"] == "step_decay":
         return StepDecay(**teacher_config["params"])
-    if teacher_type == "exponential_decay":
+    if teacher_config["type"] == "exponential_decay":
         return ExponentialDecay(**teacher_config["params"])
-    if teacher_type == "sgdr":
+    if teacher_config["type"] == "sgdr":
         return SGDR(**teacher_config["params"])
-    if teacher_type == "constant":
+    if teacher_config["type"] == "constant":
         return Constant(**teacher_config["params"])
-    if teacher_type == "csa":
+    if teacher_config["type"] == "csa":
         return CSA(**teacher_config["params"])
-    if teacher_type == "cmaes_constant":
+    if teacher_config["type"] == "cmaes_constant":
         return ConstantCMAES()
 
     raise NotImplementedError(
-        f"No agent with type {teacher_type} implemented.",
+        f"No agent with type {teacher_config['type']} implemented.",
     )
 
 
@@ -109,7 +108,7 @@ def get_agent(
     device: str = "cpu",
     cmaes: bool = False,
 ) -> Any:
-    if agent_config.get("hidden_dim", None) is not None:
+    if agent_config.get("hidden_dim") is not None:
         print(
             "Warning! You are using the non reduced config space. Actor_hidden_dim and critic_hidden_dim will be equal.",
         )
@@ -613,7 +612,7 @@ def get_agent(
 
 
 def get_environment(env_config: dict) -> Any:
-    from dacbench.benchmarks import (
+    from DACBench.dacbench.benchmarks import (
         CMAESBenchmark,
         FastDownwardBenchmark,
         SGDBenchmark,

@@ -1,8 +1,8 @@
 import argparse
 import json
-from typing import Optional
 import warnings
 from pathlib import Path
+from typing import Optional
 
 from ConfigSpace import (
     Categorical,
@@ -11,7 +11,6 @@ from ConfigSpace import (
     Constant,
     Float,
     Integer,
-    Constant,
 )
 from matplotlib import pyplot as plt
 from smac import (
@@ -20,7 +19,7 @@ from smac import (
     Scenario,
 )
 
-from src.utils.general import set_seeds, get_config_space
+from src.utils.general import get_config_space, set_seeds
 from src.utils.train_agent import train_agent as train_offline
 from src.utils.train_agent_online import train_agent as train_online
 
