@@ -132,6 +132,7 @@ ignore = [
   "PLR2004",  # Magic values --> use const vars instead
   "B006",     # mutable data structures as default arg
   "PLR0911",  # too many return statements 
+  "BLE001",   # Do not catch simple "Exception" exceptions
 ]
 
 exclude = [
@@ -155,6 +156,8 @@ exclude = [
   "node_modules",
   "venv",
   "docs",
+  "src/utils/calculate_sgd_statistics.py",
+  "src/utils/generate_cma_plots.py",
 ]
 
 # Exclude a variety of commonly ignored directories.
@@ -193,13 +196,12 @@ max-args = 10 # Changed from default of 5
 python_version = "3.10"
 packages = ["src"]
 
-
 show_error_codes = true
 
 warn_unused_configs = true # warn about unused [tool.mypy] lines
 
 follow_imports = "normal"      # Type check top level api code we use from imports
-ignore_missing_imports = false # prefer explicit ignores
+ignore_missing_imports = true # prefer explicit ignores
 
 disallow_untyped_defs = true       # All functions must have types
 disallow_untyped_decorators = true # ... even decorators

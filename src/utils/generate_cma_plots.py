@@ -290,9 +290,7 @@ def plot_actions(
     dir_path: str,
     agent_type: str,
     fidelity: int,
-    seed: int | None,
     show: bool = False,
-    num_runs: int = 1,
     aggregate: bool = True,
     teacher: bool = True,
     reward: bool = False,
@@ -478,7 +476,7 @@ def plot_comparison(
             all_steps = pd.DataFrame({"batch": range(101)})
 
             # Merge group with full run
-            filled_group = pd.merge(all_steps, group, on="batch", how="left")
+            filled_group = all_steps.merge(group, on="batch", how="left")
 
             filled_group["run"] = group["run"].iloc[0]
             filled_group[metric] = filled_group[metric].fillna(last_value)
@@ -586,10 +584,10 @@ def plot_teacher_actions(
 
             if path.parents[0].name == "x_learned":
                 run_data_path = []
-                for path in (path / "results" / "td3_bc").rglob(
+                for p in (path / "results" / "td3_bc").rglob(
                     "*/eval_data.csv",
                 ):
-                    run_data_path.append(path)
+                    run_data_path.append(p)
                 aggregated_df = pd.DataFrame()
                 for seed_path in run_data_path:
                     # Read run data
