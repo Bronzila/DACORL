@@ -1,15 +1,20 @@
+from __future__ import annotations
+
 import argparse
 import json
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
-import pandas as pd
 
-from src.trainer import Trainer
 from src.data_generator import DataGenerator
+from src.trainer import Trainer
 from src.utils.combinations import combine_runs, get_homogeneous_agent_paths
-from src.utils.replay_buffer import ReplayBuffer
+
+if TYPE_CHECKING:
+    import pandas as pd
+
+    from src.utils.replay_buffer import ReplayBuffer
 
 
 def read_teacher(teacher_type: str, benchmark: str, teacher_name: str) -> Any:
