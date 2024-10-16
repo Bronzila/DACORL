@@ -38,6 +38,10 @@ class DataGenerator:
         timeout: int,
         verbose: bool,
     ) -> None:
+        if check_if_exists and (result_dir.exists() and checkpoint == 0):
+            print(f"Data already exists: {result_dir}")
+            return
+
         self.env_config = env_config
 
         self.environment_type = env_config["type"]
@@ -56,10 +60,6 @@ class DataGenerator:
             self.seed,
         )  # Reseed environment here to allow for proper starting point generation
         state_dim = state.shape[0]
-
-        if check_if_exists and (result_dir.exists() and checkpoint == 0):
-            print(f"Data already exists: {result_dir}")
-            return
 
         self.exp_data: ExperimentData
         if self.environment_type == "ToySGD":
