@@ -3,8 +3,6 @@ import json
 import time
 from pathlib import Path
 
-from train_hpo import Optimizee
-
 from src.trainer import Trainer
 from src.utils.general import get_config_space
 
@@ -50,7 +48,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--wandb_group",
         type=str,
-        default=None,
+        default="",
         help="Use to group certain runs in wandb.",
     )
     parser.add_argument(
@@ -74,27 +72,15 @@ if __name__ == "__main__":
     parser.add_argument("--hidden_dim", type=int, default=256)
     parser.add_argument("--hp_path", type=str)
     parser.add_argument(
-        "--wandb",
-        action=argparse.BooleanOptionalAction,
-        default=True,
-    )
-    parser.add_argument(
-        "--eval_protocol",
-        type=str,
-        default="train",
-        choices=["train", "interpolation"],
-    )
-    parser.add_argument(
         "--tanh_scaling",
         action=argparse.BooleanOptionalAction,
         default=False,
     )
-    parser.add_argument("--eval_seed", type=int, default=123)
     parser.add_argument(
         "--cs_type",
         type=str,
         help="Which config space to use",
-        default="reduced_no_arch_dropout",
+        default="reduced_no_arch_dropout_256",
     )
 
     args = parser.parse_args()
@@ -106,18 +92,9 @@ if __name__ == "__main__":
             agent_config = json.load(f)
         batch_size = agent_config["batch_size"]
     else:
-        cs = Optimizee(
-            args.data_dir,
-            agent_type=args.agent_type,
-            debug=args.debug,
-            budget=None,
-            eval_protocol=args.eval_protocol,
-            eval_seed=args.eval_seed,
-            tanh_scaling=args.tanh_scaling,
-        )
-        agent_config = get_config_space(
+        agent_config = dict(get_config_space(
             args.cs_type,
-        ).get_default_configuration()
+        ).get_default_configuration())
     agent_config["hidden_dim"] = args.hidden_dim
     agent_config["tanh_scaling"] = args.tanh_scaling
     print(agent_config)
