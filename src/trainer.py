@@ -183,7 +183,7 @@ class Trainer:
         if self.run_info["environment"]["type"] == "ToySGD":
             fbest_mean, _ = calc_mean_and_std_dev(eval_data, "f_cur")
             print(f"Mean at iteration {t+1}: {fbest_mean}")
-            inc_value = (
+            self.inc_value = (
                 fbest_mean
                 if self.inc_value is None
                 else np.min([self.inc_value, fbest_mean])
@@ -237,10 +237,10 @@ class Trainer:
                 f"Mean test acc at iteration {t+1}: {test_acc_mean} +- {test_acc_std}",
             )
 
-            inc_value = (
+            self.inc_value = (
                 test_acc_mean
-                if inc_value is None
-                else np.max([inc_value, test_acc_mean])
+                if self.inc_value is None
+                else np.max([self.inc_value, test_acc_mean])
             )
         elif self.env_type == "CMAES":
             final_evaluations = eval_data.groupby("run").last()
