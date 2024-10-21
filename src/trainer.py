@@ -142,7 +142,7 @@ class Trainer:
             )
             train_acc_mean, train_acc_std = calc_mean_and_std_dev(
                 eval_data,
-                "train_acc",
+                "train_accuracy",
             )
             print(
                 f"Mean train acc at iteration {t+1}: {train_acc_mean} +- {train_acc_std}",
@@ -151,14 +151,14 @@ class Trainer:
             # Statistics for validation set
             valid_loss_mean, valid_loss_std = calc_mean_and_std_dev(
                 eval_data,
-                "valid_loss",
+                "validation_loss",
             )
             print(
                 f"Mean valid loss at iteration {t+1}: {valid_loss_mean} +- {valid_loss_std}",
             )
             valid_acc_mean, valid_acc_std = calc_mean_and_std_dev(
                 eval_data,
-                "valid_acc",
+                "validation_accuracy",
             )
             print(
                 f"Mean valid acc at iteration {t+1}: {valid_acc_mean} +- {valid_acc_std}",
@@ -174,7 +174,7 @@ class Trainer:
             )
             test_acc_mean, test_acc_std = calc_mean_and_std_dev(
                 eval_data,
-                "test_acc",
+                "test_accuracy",
             )
             print(
                 f"Mean test acc at iteration {t+1}: {test_acc_mean} +- {test_acc_std}",

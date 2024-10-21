@@ -37,7 +37,7 @@ def find_highest_values(
 
 def calc_mean_and_std_dev(
     df: pd.DataFrame,
-    metric: str = "test_acc",
+    metric: str = "test_accuracy",
 ) -> tuple[float, float]:
     final_evaluations = (
         df.sort_values(by=["run_idx", "batch_idx"]).groupby("run_idx").last()
@@ -55,7 +55,7 @@ def calculate_single_seed_statistics(
     n_lowest: int = 1,
     results: bool = True,
     interpolation: bool = False,
-    metric: str = "test_acc",
+    metric: str = "test_accuracy",
     verbose: bool = False,
 ) -> tuple[float, float, list[float], float, float, Path, float, float]:
     paths: list[Path] = []
@@ -132,7 +132,7 @@ def calculate_multi_seed_statistics(
     results: bool = True,
     num_runs: int = 100,
     interpolation: bool = False,
-    metric: str = "test_acc",
+    metric: str = "test_accuracy",
     verbose: bool = False,
 ) -> tuple[float, float, pd.Series, float, float, Path, float, float]:
     seed_dirs = set()
@@ -214,7 +214,7 @@ def calculate_statistics(
     multi_seed: bool = False,
     num_runs: int = 100,
     interpolation: bool = False,
-    metric: str = "test_acc",
+    metric: str = "test_accuracy",
     verbose: bool = False,
 ) -> tuple:
     if multi_seed:
@@ -245,7 +245,7 @@ def calculate_statistics(
 
 def compute_iqm(
     df: pd.DataFrame,
-    metric: str = "test_acc",
+    metric: str = "test_accuracy",
 ) -> tuple[float, float]:
     final_evaluations = df.groupby("run_idx").last()
     df_sorted = final_evaluations.sort_values(by=metric)
@@ -276,7 +276,7 @@ def compute_auc(df: pd.DataFrame, metric: str) -> tuple[float, float]:
         return filled_group
 
     # Metric has to be validation accuracy as test accuracy is only computed at end of epoch
-    metric = "valid_acc"
+    metric = "valid_accuracy"
     required_fields_df = df[[metric, "run_idx", "batch_idx"]]
 
     # No need to fill values for SGD since we do not terminate early
