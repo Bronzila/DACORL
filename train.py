@@ -3,14 +3,15 @@ import json
 import time
 from pathlib import Path
 
+from src.evaluator import Evaluator
 from src.trainer import Trainer
-from src.utils.general import get_config_space
+from src.utils.general import get_config_space, get_environment
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train any offline agent ")
     parser.add_argument(
         "--data_dir",
-        type=str,
+        type=Path,
         default="data",
         help="path to the directory where replay_buffer and info about the replay_buffer are stored",
     )
@@ -99,16 +100,21 @@ if __name__ == "__main__":
     agent_config["tanh_scaling"] = args.tanh_scaling
     print(agent_config)
 
+    evaluator = Evaluator(
+        data_dir=args.data_dir,
+        eval_protocol=args.eval_protocol,
+        n_runs=args.num_eval_runs,
+        seed=args.eval_seed,
+    )
+
     trainer = Trainer(
-        data_dir=Path(args.data_dir),
+        data_dir=args.data_dir,
         agent_config=agent_config,
         agent_type=args.agent_type,
+        evaluator=evaluator,
         seed=args.seed,
-        eval_protocol=args.eval_protocol,
-        eval_seed=args.eval_seed,
         device="cpu",
-        num_eval_runs=args.num_eval_runs,
-        wandb_group=args.wandb_group
+        wandb_group=args.wandb_group,
     )
 
     _, inc_value = trainer.train(

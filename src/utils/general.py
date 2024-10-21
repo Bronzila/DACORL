@@ -26,6 +26,7 @@ from CORL.algorithms.offline import (
     sac_n,
     td3_bc,
 )
+from DACBench.dacbench.envs import CMAESEnv, SGDEnv, ToySGD2DEnv
 
 from src.agents import (
     CSA,
@@ -36,6 +37,12 @@ from src.agents import (
     StepDecay,
     td3,
 )
+
+EnvType = Union[
+    CMAESEnv,
+    SGDEnv,
+    ToySGD2DEnv,
+]
 
 ActorType = Union[
     bc.Actor,

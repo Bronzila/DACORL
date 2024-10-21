@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -15,7 +16,7 @@ def combine_run_data(
     for idx, root_path in enumerate(data_paths):
         run_data_path = Path(root_path)
         df = pd.read_csv(run_data_path)
-        df["run"] += idx * num_runs
+        df["run_idx"] += idx * num_runs
         combined_run_data.append(df)
     return pd.concat(combined_run_data, ignore_index=True)
 
@@ -25,7 +26,7 @@ def find_highest_values(
     column_name: str,
     n: int = 10,
 ) -> pd.DataFrame:
-    final_evaluations = df.groupby("run").last()
+    final_evaluations = df.groupby("run_idx").last()
 
     # Sort the DataFrame by the specified column in ascending order
     sorted_df = final_evaluations.sort_values(by=column_name, ascending=False)
@@ -36,10 +37,10 @@ def find_highest_values(
 
 def calc_mean_and_std_dev(
     df: pd.DataFrame,
-    metric: str = "test_acc",
+    metric: str = "test_accuracy",
 ) -> tuple[float, float]:
     final_evaluations = (
-        df.sort_values(by=["run", "batch"]).groupby("run").last()
+        df.sort_values(by=["run_idx", "batch_idx"]).groupby("run_idx").last()
     )
 
     fbests = final_evaluations[metric]
@@ -47,17 +48,17 @@ def calc_mean_and_std_dev(
 
 
 def calculate_single_seed_statistics(
-    calc_mean=True,
-    calc_lowest=True,
-    n_lowest=1,
-    path=None,
-    results=True,
-    verbose=False,
-    interpolation=False,
-    calc_auc=True,
-    metric="test_acc",
-):
-    paths = []
+    path: Path,
+    calc_mean: bool = True,
+    calc_lowest: bool = True,
+    calc_auc: bool = True,
+    n_lowest: int = 1,
+    results: bool = True,
+    interpolation: bool = False,
+    metric: str = "test_accuracy",
+    verbose: bool = False,
+) -> tuple[float, float, list[float], float, float, Path, float, float]:
+    paths: list[Path] = []
     filename = (
         "eval_data_interpolation.csv" if interpolation else "eval_data.csv"
     )
@@ -67,14 +68,14 @@ def calculate_single_seed_statistics(
     else:
         paths.append(path)
     # Load data
-    max_mean = -1
-    max_std = -1
-    max_iqm = -1
-    max_iqm_std = -1
-    max_auc = -1
-    max_auc_std = -1
-    max_path = ""
-    lowest_vals_of_max_mean = []
+    max_mean = -1.0
+    max_std = -1.0
+    max_iqm = -1.0
+    max_iqm_std = -1.0
+    max_auc = -1.0
+    max_auc_std = -1.0
+    max_path = Path()
+    lowest_vals_of_max_mean: list[float] = []
     assert (
         len(paths) == 1
     ), "There are more than 1 paths given. Are you sure, you want to only use the lowest checkpoint?"
@@ -106,7 +107,7 @@ def calculate_single_seed_statistics(
         if calc_lowest:
             lowest_vals = find_highest_values(df, metric, n_lowest)
             if incumbent_changed:
-                lowest_vals_of_max_mean = lowest_vals[metric]
+                lowest_vals_of_max_mean = list(lowest_vals[metric])
             if verbose:
                 print("Lowest values:")
                 print(lowest_vals[metric])
@@ -123,17 +124,17 @@ def calculate_single_seed_statistics(
 
 
 def calculate_multi_seed_statistics(
-    calc_mean=True,
-    calc_lowest=True,
-    n_lowest=1,
-    path=None,
-    results=True,
-    verbose=False,
-    num_runs=100,
-    interpolation=False,
-    calc_auc=True,
-    metric="test_acc",
-):
+    path: Path,
+    calc_mean: bool = True,
+    calc_lowest: bool = True,
+    calc_auc: bool = True,
+    n_lowest: int = 1,
+    results: bool = True,
+    num_runs: int = 100,
+    interpolation: bool = False,
+    metric: str = "test_accuracy",
+    verbose: bool = False,
+) -> tuple[float, float, pd.Series, float, float, Path, float, float]:
     seed_dirs = set()
     filename = (
         "eval_data_interpolation.csv" if interpolation else "eval_data.csv"
@@ -160,15 +161,15 @@ def calculate_multi_seed_statistics(
             _,
             _,
         ) = calculate_single_seed_statistics(
+            seed_dir,
             calc_mean,
             calc_lowest,
-            n_lowest,
-            seed_dir,
-            results,
-            verbose,
-            interpolation,
             calc_auc,
+            n_lowest,
+            results,
+            interpolation,
             metric,
+            verbose,
         )
         if verbose:
             print(f"Minimum mean {max_mean} +- {max_std} for path {max_path}")
@@ -197,53 +198,56 @@ def calculate_multi_seed_statistics(
         lowest_vals,
         iqm,
         iqm_std,
-        0,
+        Path(),
         auc,
         auc_std,
     )  # path doesnt really matter here
 
 
 def calculate_statistics(
-    calc_mean=True,
-    calc_lowest=True,
-    n_lowest=1,
-    path=None,
-    results=True,
-    verbose=False,
-    multi_seed=False,
-    num_runs=100,
-    interpolation=False,
-    calc_auc=True,
-    metric="test_acc",
-):
+    path: Path,
+    calc_mean: bool = True,
+    calc_lowest: bool = True,
+    calc_auc: bool = True,
+    n_lowest: int = 1,
+    results: bool = True,
+    multi_seed: bool = False,
+    num_runs: int = 100,
+    interpolation: bool = False,
+    metric: str = "test_accuracy",
+    verbose: bool = False,
+) -> tuple:
     if multi_seed:
         return calculate_multi_seed_statistics(
+            path,
             calc_mean,
             calc_lowest,
+            calc_auc,
             n_lowest,
-            path,
             results,
-            verbose,
             num_runs,
             interpolation,
-            calc_auc,
             metric,
+            verbose,
         )
     return calculate_single_seed_statistics(
+        path,
         calc_mean,
         calc_lowest,
-        n_lowest,
-        path,
-        results,
-        verbose,
-        interpolation,
         calc_auc,
+        n_lowest,
+        results,
+        interpolation,
         metric,
+        verbose,
     )
 
 
-def compute_iqm(df, metric="test_acc"):
-    final_evaluations = df.groupby("run").last()
+def compute_iqm(
+    df: pd.DataFrame,
+    metric: str = "test_accuracy",
+) -> tuple[float, float]:
+    final_evaluations = df.groupby("run_idx").last()
     df_sorted = final_evaluations.sort_values(by=metric)
 
     # Calculate the number of rows representing 25% of the DataFrame
@@ -256,39 +260,39 @@ def compute_iqm(df, metric="test_acc"):
     return fbests.mean(), fbests.std()
 
 
-def compute_auc(df, metric):
-    def fill_missing_values(group):
+def compute_auc(df: pd.DataFrame, metric: str) -> tuple[float, float]:
+    def fill_missing_values(group: pd.DataFrame) -> pd.DataFrame:
         last_value = group[metric].iloc[-1]
 
         # Create full run
-        all_steps = pd.DataFrame({"batch": range(101)})
+        all_steps = pd.DataFrame({"batch_idx": range(101)})
 
         # Merge group with full run
-        filled_group = all_steps.merge(group, on="batch", how="left")
+        filled_group = all_steps.merge(group, on="batch_idx", how="left")
 
-        filled_group["run"] = group["run"].iloc[0]
+        filled_group["run_idx"] = group["run_idx"].iloc[0]
         filled_group[metric] = filled_group[metric].fillna(last_value)
 
         return filled_group
 
     # Metric has to be validation accuracy as test accuracy is only computed at end of epoch
-    metric = "valid_acc"
-    required_fields_df = df[[metric, "run", "batch"]]
+    metric = "valid_accuracy"
+    required_fields_df = df[[metric, "run_idx", "batch_idx"]]
 
     # No need to fill values for SGD since we do not terminate early
     df_filled = required_fields_df
 
     # Sort by run and batch to ensure order
-    df_filled = df_filled.sort_values(by=["run", "batch"]).reset_index(
+    df_filled = df_filled.sort_values(by=["run_idx", "batch_idx"]).reset_index(
         drop=True,
     )
 
-    def calculate_auc(run):
-        auc = np.trapz(run[metric], run["batch"])
-        return pd.Series({"run": run["run"].iloc[0], "auc": auc})
+    def calculate_auc(run: pd.DataFrame) -> Any:
+        auc = np.trapz(run[metric], run["batch_idx"])
+        return pd.Series({"run_idx": run["run_idx"].iloc[0], "auc": auc})
 
     auc_per_run = (
-        df_filled.groupby("run").apply(calculate_auc).reset_index(drop=True)
+        df_filled.groupby("run_idx").apply(calculate_auc).reset_index(drop=True)
     )
 
     mean_auc = auc_per_run["auc"].mean()
@@ -297,9 +301,12 @@ def compute_auc(df, metric):
     return mean_auc, std_auc
 
 
-def compute_prob_outperformance(df_teacher, df_agent):
-    final_evaluations_teacher = df_teacher.groupby("run").last()["f_cur"]
-    final_evaluations_agent = df_agent.groupby("run").last()["f_cur"]
+def compute_prob_outperformance(
+    df_teacher: pd.DataFrame,
+    df_agent: pd.DataFrame,
+) -> float:
+    final_evaluations_teacher = df_teacher.groupby("run_idx").last()["f_cur"]
+    final_evaluations_agent = df_agent.groupby("run_idx").last()["f_cur"]
 
     assert len(final_evaluations_agent) == len(final_evaluations_teacher)
 

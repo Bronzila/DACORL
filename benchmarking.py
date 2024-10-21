@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 from src.data_generator import DataGenerator
+from src.evaluator import Evaluator
 from src.trainer import Trainer
 from src.utils.combinations import combine_runs, get_homogeneous_agent_paths
 
@@ -70,6 +71,8 @@ if __name__ == "__main__":
     parser.add_argument("--n_train_seeds", type=int, default=5)
     parser.add_argument("--n_train_iter", type=int, default=30000)
     parser.add_argument("--n_runs", type=int, default=1000)
+    parser.add_argument("--eval_seed", type=int, default=0)
+    parser.add_argument("--eval_protocol", type=str, default="train")
     parser.add_argument(
         "--teacher",
         type=str,
@@ -135,7 +138,7 @@ if __name__ == "__main__":
 
     # Experimental details
     results_dir = Path(args.results_dir)
-    n_runs = args.n_runs
+    n_runs: int = args.n_runs
     n_train_iter = args.n_train_iter
 
     if env_config["type"] == "SGD" and args.instance_mode:
@@ -226,6 +229,7 @@ if __name__ == "__main__":
 
     train_seeds = rng.integers(0, 2**32 - 1, size=args.n_train_seeds)
 
+
     # train on generated data by first data_gen_seed
     for train_seed in train_seeds:
         if args.combination == "single":
@@ -233,32 +237,19 @@ if __name__ == "__main__":
                 data_dir = results_dir / str(data_gen_seeds[0]) / env_config["type"] / args.teacher / str(args.id)
             elif env_config["type"] == "ToySGD":
                 data_dir = results_dir / str(data_gen_seeds[0]) / env_config["type"] / args.teacher / str(args.id) / env_config["function"]
-
-            trainer = Trainer(
-                data_dir=data_dir,
-                agent_config={"tanh_scaling": args.tanh_scaling, "batch_size": 256},
-                agent_type=args.agent_type,
-                seed=train_seed,
-                eval_protocol="train",
-                eval_seed=0,
-                num_eval_runs=n_runs,
-            )
-            _, inc_value = trainer.train(
-                n_train_iter,
-                n_train_iter,
-            )
-
         else:
-            trainer = Trainer(
-                data_dir=path,
-                agent_config={"tanh_scaling": args.tanh_scaling, "batch_size": 256},
-                agent_type=args.agent_type,
-                seed=train_seed,
-                eval_protocol="train",
-                eval_seed=0,
-                num_eval_runs=n_runs,
-            )
-            _, inc_value = trainer.train(
-                n_train_iter,
-                n_train_iter,
-            )
+            data_dir = path
+
+        evaluator = Evaluator(data_dir, args.eval_protocol, n_runs, args.eval_seed)
+
+        trainer = Trainer(
+            data_dir=data_dir,
+            agent_config={"tanh_scaling": args.tanh_scaling, "batch_size": 256},
+            agent_type=args.agent_type,
+            evaluator=evaluator,
+            seed=train_seed,
+        )
+        _, inc_value = trainer.train(
+            n_train_iter,
+            n_train_iter,
+        )
