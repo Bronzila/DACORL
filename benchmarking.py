@@ -11,7 +11,6 @@ from src.data_generator import DataGenerator
 from src.evaluator import Evaluator
 from src.trainer import Trainer
 from src.utils.combinations import combine_runs, get_homogeneous_agent_paths
-from src.utils.general import get_environment
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -241,39 +240,7 @@ if __name__ == "__main__":
         else:
             data_dir = path
 
-
-        env = get_environment(env_config)
-
-        with (data_dir / "run_info.json").open(mode="rb") as f:
-            run_info = json.load(f)
-
-        env_type = run_info["environment"]["type"]
-        if env_type == "ToySGD":
-            eval_runs = (
-                n_runs
-                if n_runs is not None
-                else len(run_info["starting_points"])
-            )
-            n_batches = run_info["environment"]["num_batches"]
-        elif env_type == "SGD":
-            env.reset()
-            eval_runs = n_runs
-            n_batches = run_info["environment"]["num_epochs"] * len(
-                env.train_loader,
-            )
-        else:
-            raise RuntimeError(
-                f"Evaluation unsupported for environment: {env_type}.",
-            )
-
-        if args.eval_protocol == "train":
-            starting_points = run_info["starting_points"]
-            eval_seed = run_info["seed"]
-        elif args.eval_protocol == "interpolation":
-            starting_points = None
-            eval_seed = args.eval_seed
-
-        evaluator = Evaluator(env, n_runs, n_batches, eval_seed, starting_points)
+        evaluator = Evaluator(data_dir, args.eval_protocol, n_runs, args.eval_seed)
 
         trainer = Trainer(
             data_dir=data_dir,
