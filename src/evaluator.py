@@ -72,7 +72,7 @@ class Evaluator:
             run_idx (int): Instance to be evaluated
         """
         print(f"Evaluating run {run_idx}")
-        state, _ = self._env.reset()
+        state = self._env.get_state()
 
         self._exp_data.init_data(run_idx, state, self._env)
 
@@ -102,7 +102,7 @@ class Evaluator:
         """Evaluates n starting points."""
         actor.eval()
 
-        if self._starting_points is not None:
+        if self._starting_points is not None and len(self._starting_points) > 0:
             for run_id, starting_point in enumerate(
                 self._starting_points[: self._n_runs],
             ):
