@@ -8,8 +8,10 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 from src.data_generator import DataGenerator
+from src.evaluator import Evaluator
 from src.trainer import Trainer
 from src.utils.combinations import combine_runs, get_homogeneous_agent_paths
+from src.utils.general import get_environment
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -70,6 +72,8 @@ if __name__ == "__main__":
     parser.add_argument("--n_train_seeds", type=int, default=5)
     parser.add_argument("--n_train_iter", type=int, default=30000)
     parser.add_argument("--n_runs", type=int, default=1000)
+    parser.add_argument("--eval_seed", type=int, default=0)
+    parser.add_argument("--eval_protocol", type=str, default="train")
     parser.add_argument(
         "--teacher",
         type=str,
@@ -135,7 +139,7 @@ if __name__ == "__main__":
 
     # Experimental details
     results_dir = Path(args.results_dir)
-    n_runs = args.n_runs
+    n_runs: int = args.n_runs
     n_train_iter = args.n_train_iter
 
     if env_config["type"] == "SGD" and args.instance_mode:
@@ -226,6 +230,7 @@ if __name__ == "__main__":
 
     train_seeds = rng.integers(0, 2**32 - 1, size=args.n_train_seeds)
 
+
     # train on generated data by first data_gen_seed
     for train_seed in train_seeds:
         if args.combination == "single":
@@ -233,32 +238,51 @@ if __name__ == "__main__":
                 data_dir = results_dir / str(data_gen_seeds[0]) / env_config["type"] / args.teacher / str(args.id)
             elif env_config["type"] == "ToySGD":
                 data_dir = results_dir / str(data_gen_seeds[0]) / env_config["type"] / args.teacher / str(args.id) / env_config["function"]
-
-            trainer = Trainer(
-                data_dir=data_dir,
-                agent_config={"tanh_scaling": args.tanh_scaling, "batch_size": 256},
-                agent_type=args.agent_type,
-                seed=train_seed,
-                eval_protocol="train",
-                eval_seed=0,
-                num_eval_runs=n_runs,
-            )
-            _, inc_value = trainer.train(
-                n_train_iter,
-                n_train_iter,
-            )
-
         else:
-            trainer = Trainer(
-                data_dir=path,
-                agent_config={"tanh_scaling": args.tanh_scaling, "batch_size": 256},
-                agent_type=args.agent_type,
-                seed=train_seed,
-                eval_protocol="train",
-                eval_seed=0,
-                num_eval_runs=n_runs,
+            data_dir = path
+
+
+        env = get_environment(env_config)
+
+        with (data_dir / "run_info.json").open(mode="rb") as f:
+            run_info = json.load(f)
+
+        env_type = run_info["environment"]["type"]
+        if env_type == "ToySGD":
+            eval_runs = (
+                n_runs
+                if n_runs is not None
+                else len(run_info["starting_points"])
             )
-            _, inc_value = trainer.train(
-                n_train_iter,
-                n_train_iter,
+            n_batches = run_info["environment"]["num_batches"]
+        elif env_type == "SGD":
+            env.reset()
+            eval_runs = n_runs
+            n_batches = run_info["environment"]["num_epochs"] * len(
+                env.train_loader,
             )
+        else:
+            raise RuntimeError(
+                f"Evaluation unsupported for environment: {env_type}.",
+            )
+
+        if args.eval_protocol == "train":
+            starting_points = run_info["starting_points"]
+            eval_seed = run_info["seed"]
+        elif args.eval_protocol == "interpolation":
+            starting_points = None
+            eval_seed = args.eval_seed
+
+        evaluator = Evaluator(env, n_runs, n_batches, eval_seed, starting_points)
+
+        trainer = Trainer(
+            data_dir=data_dir,
+            agent_config={"tanh_scaling": args.tanh_scaling, "batch_size": 256},
+            agent_type=args.agent_type,
+            evaluator=evaluator,
+            seed=train_seed,
+        )
+        _, inc_value = trainer.train(
+            n_train_iter,
+            n_train_iter,
+        )
