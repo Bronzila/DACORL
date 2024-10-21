@@ -11,12 +11,11 @@ import wandb
 from src.utils.calculate_sgd_statistic import calc_mean_and_std_dev
 from src.utils.general import get_agent, get_environment, save_agent, set_seeds
 from src.utils.replay_buffer import ReplayBuffer
-from src.utils.test_agent import test_agent as test_toy
-from src.utils.test_cma import test_agent as test_cma
-from src.utils.test_sgd import test_agent as test_sgd
 
 if TYPE_CHECKING:
     import pandas as pd
+
+    from src.evaluator import Evaluator
 
 cma_es_function = {
     12: "BentCigar",
@@ -38,10 +37,8 @@ class Trainer:
         data_dir: Path,
         agent_config: dict,
         agent_type: str,
+        evaluator: Evaluator,
         seed: int,
-        eval_protocol: str,
-        eval_seed: int,
-        num_eval_runs: int,
         device: str = "cpu",
         wandb_group: str = "",
     ) -> None:
@@ -49,11 +46,9 @@ class Trainer:
         self.agent_config = agent_config
         self.batch_size = self.agent_config.get("batch_size", 256)
         self.agent_type = agent_type
+        self.evaluator = evaluator
         self.seed = seed
-        self.eval_protocol = eval_protocol
-        self.eval_seed = eval_seed
         self.device = device
-        self.num_eval_runs = num_eval_runs
         self.wandb_group = wandb_group
         self.use_wandb = wandb_group != ""
         self.inc_value = np.inf
@@ -114,60 +109,8 @@ class Trainer:
         Returns:
             pd.DataFrame: Aggregated evaluation data
         """
-        if self.env_type == "CMAES":
-            test_agent = test_cma
-        elif self.env_type == "SGD":
-            test_agent = test_sgd
-        else:
-            test_agent = test_toy
-
         with torch.random.fork_rng():
-            env = get_environment(self.run_info["environment"])
-            if self.run_info["environment"]["type"] == "ToySGD":
-                eval_runs = (
-                    self.num_eval_runs
-                    if self.num_eval_runs is not None
-                    else len(self.run_info["starting_points"])
-                )
-                if self.eval_protocol == "train":
-                    eval_data = test_agent(
-                        actor=self.agent.actor,
-                        env=env,
-                        n_runs=eval_runs,
-                        starting_points=self.run_info["starting_points"],
-                        n_batches=self.run_info["environment"]["num_batches"],
-                        seed=self.run_info["seed"],
-                    )
-                elif self.eval_protocol == "interpolation":
-                    eval_data = test_agent(
-                        actor=self.agent.actor,
-                        env=env,
-                        n_runs=eval_runs,
-                        n_batches=self.run_info["environment"]["num_batches"],
-                        seed=self.eval_seed,
-                    )
-            elif self.run_info["environment"]["type"] == "SGD":
-                env.reset()
-                n_batches_total = self.run_info["environment"][
-                    "num_epochs"
-                ] * len(env.train_loader)
-                if self.eval_protocol == "train":
-                    eval_data = test_agent(
-                        actor=self.agent.actor,
-                        env=env,
-                        n_runs=self.num_eval_runs,
-                        n_batches=n_batches_total,
-                        seed=self.run_info["seed"],
-                    )
-                elif self.eval_protocol == "interpolation":
-                    eval_data = test_agent(
-                        actor=self.agent.actor,
-                        env=env,
-                        n_runs=self.num_eval_runs,
-                        n_batches=n_batches_total,
-                        seed=self.eval_seed,
-                    )
-        return eval_data
+            return self.evaluator.evaluate(self.agent.actor)
 
     def _update_inc_and_log_performance(
         self,
@@ -302,7 +245,7 @@ class Trainer:
                     logs[k].append(v)
 
             if self.use_wandb:
-                wandb.log(log_dict, self.agent.total_it)
+                wandb.log(log_dict, self.agent.total_it)  # type: ignore
 
             if val_freq != 0 and (t + 1) % val_freq == 0:
                 eval_data = self._eval_agent()
@@ -415,7 +358,7 @@ class Trainer:
                         logs[k].append(v)
 
                 if self.use_wandb:
-                    wandb.log(log_dict, self.agent.total_it)
+                    wandb.log(log_dict, self.agent.total_it)  # type: ignore
 
             # if we run out of bounds or reached max optimization iters
             if done:
