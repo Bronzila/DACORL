@@ -1,17 +1,18 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import torch
-from dacbench.envs import CMAESEnv, SGDEnv, ToySGD2DEnv
+from dacbench.envs import SGDEnv, ToySGD2DEnv
 
 from src.experiment_data import (
-    CMAESExperimentData,
     ExperimentData,
     SGDExperimentData,
     ToySGDExperimentData,
 )
-from src.utils.general import ActorType, EnvType, set_seeds
+from src.utils.general import ActorType, get_environment, set_seeds
 
 if TYPE_CHECKING:
     import numpy as np
@@ -21,29 +22,47 @@ if TYPE_CHECKING:
 class Evaluator:
     def __init__(
         self,
-        env: EnvType,
+        data_dir: Path,
+        eval_protocol: str,
         n_runs: int,
-        n_batches: int,
         seed: int,
-        starting_points: np.ndarray | None = None,
     ) -> None:
-        self._env = env
-        self._n_runs = n_runs
-        self._n_batches = n_batches
-        self._starting_points = starting_points
+        self._starting_points: np.ndarray | None
 
-        self._env.seed(seed)
-        set_seeds(seed)
+        with (data_dir / "run_info.json").open(mode="rb") as f:
+            run_info = json.load(f)
+        self._env = get_environment(run_info["environment"])
+
+        if eval_protocol == "train":
+            self._starting_points = run_info["starting_points"]
+            eval_seed = run_info["seed"]
+        elif eval_protocol == "interpolation":
+            self._starting_points = None
+            eval_seed = seed
 
         self._exp_data: ExperimentData
-        if isinstance(env, ToySGD2DEnv):
+        if isinstance(self._env, ToySGD2DEnv):
             self._exp_data = ToySGDExperimentData()
-        elif isinstance(env, SGDEnv):
+            self._n_runs = (
+                n_runs
+                if n_runs is not None
+                else len(run_info["starting_points"])
+            )
+            self._n_batches = run_info["environment"]["num_batches"]
+        elif isinstance(self._env, SGDEnv):
             self._exp_data = SGDExperimentData()
-        elif isinstance(env, CMAESEnv):
-            self._exp_data = CMAESExperimentData()
+            self._env.reset()
+            self._n_runs = n_runs
+            self._n_batches = run_info["environment"]["num_epochs"] * len(
+                self._env.train_loader,
+            )
         else:
-            raise RuntimeError(f"Unknown enviroment instance {type(env)}")
+            raise RuntimeError(
+                f"Evaluation unsupported for environment: {type(self._env)}",
+            )
+
+        self._env.seed(eval_seed)
+        set_seeds(eval_seed)
 
     def _run_batches(self, actor: ActorType, run_idx: int) -> None:
         """Evaluate specific run for a given number of batches.
