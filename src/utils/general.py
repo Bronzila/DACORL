@@ -27,6 +27,8 @@ from CORL.algorithms.offline import (
     td3_bc,
 )
 from DACBench.dacbench.envs import CMAESEnv, SGDEnv, ToySGD2DEnv
+from hydra.core.hydra_config import HydraConfig
+from hydra.utils import get_original_cwd
 
 from src.agents import (
     CSA,
@@ -108,6 +110,14 @@ def set_seeds(seed: int) -> None:
     torch.manual_seed(seed)
     np.random.seed(seed)  # noqa: NPY002
     random.seed(seed)
+
+
+def get_safe_original_cwd() -> Path:
+    if HydraConfig.initialized():
+        # Safe to use Hydra's original working directory
+        return Path(get_original_cwd())
+    # Fallback to the current working directory
+    return Path.cwd()
 
 
 def get_teacher(

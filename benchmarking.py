@@ -11,6 +11,7 @@ from src.data_generator import DataGenerator
 from src.evaluator import Evaluator
 from src.trainer import Trainer
 from src.utils.combinations import combine_runs, get_homogeneous_agent_paths
+from src.utils.general import get_safe_original_cwd
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -19,7 +20,7 @@ if TYPE_CHECKING:
 
 
 def read_teacher(teacher_type: str, benchmark: str, teacher_name: str) -> Any:
-    agent_config_path = Path("configs", "agents", teacher_type, f"{benchmark}", f"{teacher_name}.json")
+    agent_config_path = Path(get_safe_original_cwd(), "configs", "agents", teacher_type, f"{benchmark}", f"{teacher_name}.json")
     with agent_config_path.open() as file:
         return json.load(file)
 
