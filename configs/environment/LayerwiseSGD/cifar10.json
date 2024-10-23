@@ -1,0 +1,23 @@
+{
+    "type": "LayerwiseSGD",
+    "initial_learning_rate": 0.002,
+    "state_version": "basic",
+    "num_epochs": 20,
+    "dataset_name": "CIFAR10",
+    "layer_specification": [
+        ["CONV2D", {"in_channels": 3, "out_channels": 32, "kernel_size": 3}],
+        ["RELU", {}],
+        ["CONV2D", {"in_channels": 32, "out_channels": 64, "kernel_size": 3}],
+        ["RELU", {}],
+        ["MAXPOOL2D", {"kernel_size": 2}],
+        ["DROPOUT", {"p": 0.25}],
+        ["FLATTEN", {"start_dim": 1}],
+        ["LINEAR", {"in_features": 12544, "out_features": 128}],
+        ["RELU", {}],
+        ["DROPOUT", {"p": 0.25}],
+        ["LINEAR", {"in_features": 128, "out_features": 10}],
+        ["LOGSOFTMAX", {"dim": 1}]
+    ],
+    "epoch_mode": false,
+    "instance_mode": "random_seed"
+}

@@ -5,10 +5,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import torch
-from dacbench.envs import SGDEnv, ToySGD2DEnv
+from DACBench.dacbench.envs import LayerwiseSGDEnv, SGDEnv, ToySGD2DEnv
 
 from src.experiment_data import (
     ExperimentData,
+    LayerwiseSGDExperimentData,
     SGDExperimentData,
     ToySGDExperimentData,
 )
@@ -56,6 +57,13 @@ class Evaluator:
             self._n_batches = run_info["environment"]["num_epochs"] * len(
                 self._env.train_loader,
             )
+        elif isinstance(self._env, LayerwiseSGDEnv):
+            self._exp_data = LayerwiseSGDExperimentData()
+            self._env.reset()
+            self._n_runs = n_runs
+            self._n_batches = run_info["environment"]["num_epochs"] * len(
+                self._env.train_loader,
+            )
         else:
             raise RuntimeError(
                 f"Evaluation unsupported for environment: {type(self._env)}",
@@ -74,7 +82,8 @@ class Evaluator:
         print(f"Evaluating run {run_idx}")
         state = self._env.get_state()
 
-        self._exp_data.init_data(run_idx, state, self._env)
+        # [state] workaround due to layerwise/Liskov principle
+        self._exp_data.init_data(run_idx, [state], self._env)
 
         for batch_idx in range(1, self._n_batches + 1):
             action = actor.act(state)
@@ -83,7 +92,7 @@ class Evaluator:
 
             self._exp_data.add(
                 {
-                    "state": state.numpy(),
+                    "state": [state.numpy()],
                     "action": action,
                     "reward": reward.numpy(),
                     "batch_idx": batch_idx,
@@ -120,3 +129,42 @@ class Evaluator:
 
         actor.train()
         return self._exp_data.concatenate_data()
+
+
+class LayerwiseEvaluator(Evaluator):
+    def _run_batches(self, actor: ActorType, run_idx: int) -> None:
+        """Evaluate specific run for a given number of batches.
+
+        Args:
+            actor (ActorType): Actor to be evaluated
+            run_idx (int): Instance to be evaluated
+        """
+        print(f"Evaluating run {run_idx}")
+        states = self._env.get_states()
+
+        self._exp_data.init_data(run_idx, states, self._env)
+
+        for batch_idx in range(1, self._n_batches + 1):
+            actions = []
+            for state in states:
+                action = actor.act(state)
+                actions.append(action.item())
+            next_states, reward, done, _, _ = self._env.step(actions)
+
+            for layer_idx, state in enumerate(states):
+                self._exp_data.add(
+                    {
+                        "state": state.numpy(),
+                        "action": action,
+                        "reward": reward.numpy(),
+                        "layer_idx": layer_idx,
+                        "batch_idx": batch_idx,
+                        "run_idx": run_idx,
+                        "env": self._env,
+                    },
+                )
+
+            states = next_states
+
+            if done:
+                break

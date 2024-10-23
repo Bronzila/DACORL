@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from src.data_generator import DataGenerator
-from src.evaluator import Evaluator
+from src.data_generator import DataGenerator, LayerwiseDataGenerator
+from src.evaluator import Evaluator, LayerwiseEvaluator
 from src.trainer import Trainer
 from src.utils.combinations import combine_runs, get_homogeneous_agent_paths
 
@@ -141,87 +141,94 @@ if __name__ == "__main__":
     n_runs: int = args.n_runs
     n_train_iter = args.n_train_iter
 
-    if env_config["type"] == "SGD" and args.instance_mode:
+    if (env_config["type"] == "SGD" or env_config["type"] == "LayerwiseSGD") and args.instance_mode:
         env_config["instance_mode"] = args.instance_mode
+
+    if env_config["type"] == "LayerwiseSGD":
+        generator_class = LayerwiseDataGenerator
+        evaluator_class = LayerwiseEvaluator
+    else:
+        generator_class = DataGenerator
+        evaluator_class = Evaluator
 
     # generate run seeds randomly
     rng = np.random.default_rng(0)
 
     data_gen_seeds = rng.integers(0, 2**32 - 1, size=args.n_data_seeds)
 
-    if args.combination == "single":
-        agent_name = "default" if args.id == "0" else str(args.id)
-        # Read agent config from file
-        teacher_config = read_teacher(args.teacher, args.benchmark, agent_name)
-        environment_agent_adjustments(env_config, teacher_config)
+    # if args.combination == "single":
+    #     agent_name = "default" if args.id == "0" else str(args.id)
+    #     # Read agent config from file
+    #     teacher_config = read_teacher(args.teacher, args.benchmark, agent_name)
+    #     environment_agent_adjustments(env_config, teacher_config)
 
-        # generate data for different seeds
-        for seed in data_gen_seeds:
-            gen = DataGenerator(
-                teacher_config=teacher_config,
-                env_config=env_config,
-                result_dir=results_dir / str(seed),
-                check_if_exists=False,
-                num_runs=n_runs,
-                checkpoint=0,
-                seed=seed.item(),
-                verbose=False,
-            )
-            gen.generate_data()
-            gen.save_data()
+    #     # generate data for different seeds
+    #     for seed in data_gen_seeds:
+    #         gen = generator_class(
+    #             teacher_config=teacher_config,
+    #             env_config=env_config,
+    #             result_dir=results_dir / str(seed),
+    #             check_if_exists=False,
+    #             num_runs=n_runs,
+    #             checkpoint=0,
+    #             seed=seed.item(),
+    #             verbose=False,
+    #         )
+    #         gen.generate_data()
+    #         gen.save_data()
 
-    elif args.combination == "homogeneous":
-        for teacher_id in ["default", "1", "2", "3", "4"]:
-            teacher_config = read_teacher(args.teacher, args.benchmark, teacher_id)
-            environment_agent_adjustments(env_config, teacher_config)
-            gen = DataGenerator(
-                teacher_config=teacher_config,
-                env_config=env_config,
-                result_dir=results_dir / str(data_gen_seeds[0]),
-                check_if_exists=False,
-                num_runs=n_runs,
-                checkpoint=0,
-                seed=int(data_gen_seeds[0]),
-                verbose=False,
-            )
-            gen.generate_data()
-            gen.save_data()
+    # elif args.combination == "homogeneous":
+    #     for teacher_id in ["default", "1", "2", "3", "4"]:
+    #         teacher_config = read_teacher(args.teacher, args.benchmark, teacher_id)
+    #         environment_agent_adjustments(env_config, teacher_config)
+    #         gen = generator_class(
+    #             teacher_config=teacher_config,
+    #             env_config=env_config,
+    #             result_dir=results_dir / str(data_gen_seeds[0]),
+    #             check_if_exists=False,
+    #             num_runs=n_runs,
+    #             checkpoint=0,
+    #             seed=int(data_gen_seeds[0]),
+    #             verbose=False,
+    #         )
+    #         gen.generate_data()
+    #         gen.save_data()
 
-        data_dir = results_dir / str(data_gen_seeds[0]) / env_config["type"] / args.teacher
-        paths = get_homogeneous_agent_paths(data_dir, env_config.get("function", ""))
-        combined_buffer, combined_run_info, combined_run_data = combine_runs(
-            paths, "concat", 3000, # buffer size not needed here as we only use concat strategy
-        )
-        path = data_dir / "combined"
-        save_combined_data(path, combined_buffer, combined_run_info, combined_run_data)
-    elif args.combination == "heterogeneous":
-        agent_name = "default"
-        teachers_to_combine = parse_heterogeneous_teacher_name(args.teacher)
-        data_dirs = []
-        for teacher_type in teachers_to_combine:
-            teacher_config = read_teacher(teacher_type, args.benchmark, agent_name)
-            environment_agent_adjustments(env_config, teacher_config)
-            gen = DataGenerator(
-                teacher_config=teacher_config,
-                env_config=env_config,
-                result_dir=results_dir / str(data_gen_seeds[0]),
-                check_if_exists=False,
-                num_runs=n_runs,
-                checkpoint=0,
-                seed=int(data_gen_seeds[0]),
-                verbose=False,
-            )
-            gen.generate_data()
-            gen.save_data()
+    #     data_dir = results_dir / str(data_gen_seeds[0]) / env_config["type"] / args.teacher
+    #     paths = get_homogeneous_agent_paths(data_dir, env_config.get("function", ""))
+    #     combined_buffer, combined_run_info, combined_run_data = combine_runs(
+    #         paths, "concat", 3000, # buffer size not needed here as we only use concat strategy
+    #     )
+    #     path = data_dir / "combined"
+    #     save_combined_data(path, combined_buffer, combined_run_info, combined_run_data)
+    # elif args.combination == "heterogeneous":
+    #     agent_name = "default"
+    #     teachers_to_combine = parse_heterogeneous_teacher_name(args.teacher)
+    #     data_dirs = []
+    #     for teacher_type in teachers_to_combine:
+    #         teacher_config = read_teacher(teacher_type, args.benchmark, agent_name)
+    #         environment_agent_adjustments(env_config, teacher_config)
+    #         gen = generator_class(
+    #             teacher_config=teacher_config,
+    #             env_config=env_config,
+    #             result_dir=results_dir / str(data_gen_seeds[0]),
+    #             check_if_exists=False,
+    #             num_runs=n_runs,
+    #             checkpoint=0,
+    #             seed=int(data_gen_seeds[0]),
+    #             verbose=False,
+    #         )
+    #         gen.generate_data()
+    #         gen.save_data()
 
-            data_dirs.append(results_dir / str(data_gen_seeds[0]) / env_config["type"] / teacher_type / "0" / env_config.get("function", ""))
+    #         data_dirs.append(results_dir / str(data_gen_seeds[0]) / env_config["type"] / teacher_type / "0" / env_config.get("function", ""))
 
-        final_buffer_size = (len(data_dirs) + 1) * 500 # not needed as we only concatenate here
-        combined_buffer, combined_run_info, combined_run_data = combine_runs(
-            data_dirs, "concat", final_buffer_size,
-        )
-        path = results_dir / str(data_gen_seeds[0]) / env_config["type"] / args.teacher
-        save_combined_data(path, combined_buffer, combined_run_info, combined_run_data)
+    #     final_buffer_size = (len(data_dirs) + 1) * 500 # not needed as we only concatenate here
+    #     combined_buffer, combined_run_info, combined_run_data = combine_runs(
+    #         data_dirs, "concat", final_buffer_size,
+    #     )
+    #     path = results_dir / str(data_gen_seeds[0]) / env_config["type"] / args.teacher
+    #     save_combined_data(path, combined_buffer, combined_run_info, combined_run_data)
 
     # Train on one seed for multiple training seeds
 
@@ -233,14 +240,14 @@ if __name__ == "__main__":
     # train on generated data by first data_gen_seed
     for train_seed in train_seeds:
         if args.combination == "single":
-            if env_config["type"] == "SGD":
+            if env_config["type"] == "SGD" or env_config["type"] == "LayerwiseSGD":
                 data_dir = results_dir / str(data_gen_seeds[0]) / env_config["type"] / args.teacher / str(args.id)
             elif env_config["type"] == "ToySGD":
                 data_dir = results_dir / str(data_gen_seeds[0]) / env_config["type"] / args.teacher / str(args.id) / env_config["function"]
         else:
             data_dir = path
 
-        evaluator = Evaluator(data_dir, args.eval_protocol, n_runs, args.eval_seed)
+        evaluator = evaluator_class(data_dir, args.eval_protocol, n_runs, args.eval_seed)
 
         trainer = Trainer(
             data_dir=data_dir,

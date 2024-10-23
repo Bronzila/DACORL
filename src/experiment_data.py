@@ -17,7 +17,12 @@ class ExperimentData(metaclass=ABCMeta):
     data: dict[str, Any]
 
     @abstractmethod
-    def init_data(self, run_idx: int, state: Tensor, env: AbstractEnv) -> None:
+    def init_data(
+        self,
+        run_idx: int,
+        state: list[Tensor],
+        env: AbstractEnv,
+    ) -> None:
         """Initialize the data dictionary, dependent on the experiment."""
 
     @abstractmethod
@@ -37,7 +42,12 @@ class ExperimentData(metaclass=ABCMeta):
 
 
 class ToySGDExperimentData(ExperimentData):
-    def init_data(self, run_idx: int, state: Tensor, env: AbstractEnv) -> None:
+    def init_data(
+        self,
+        run_idx: int,
+        state: list[Tensor],
+        env: AbstractEnv,
+    ) -> None:
         if not hasattr(self, "data"):
             self.data = {
                 "reward": [],
@@ -51,7 +61,7 @@ class ToySGDExperimentData(ExperimentData):
 
         initial_log = {
             "reward": torch.tensor(float("nan")),
-            "state": state.numpy(),
+            "state": state[0].numpy(),
             "batch_idx": 0,
             "run_idx": run_idx,
             "env": env,
@@ -66,7 +76,12 @@ class ToySGDExperimentData(ExperimentData):
 
 
 class SGDExperimentData(ExperimentData):
-    def init_data(self, run_idx: int, state: Tensor, env: AbstractEnv) -> None:
+    def init_data(
+        self,
+        run_idx: int,
+        state: list[Tensor],
+        env: AbstractEnv,
+    ) -> None:
         if not hasattr(self, "data"):
             self.data = {
                 "reward": [],
@@ -84,7 +99,7 @@ class SGDExperimentData(ExperimentData):
 
         initial_log = {
             "reward": torch.tensor(float("nan")),
-            "state": state.numpy(),
+            "state": state[0].numpy(),
             "batch_idx": 0,
             "run_idx": run_idx,
             "env": env,
@@ -102,12 +117,66 @@ class SGDExperimentData(ExperimentData):
         self.data["test_accuracy"].append(logs["env"].test_accuracy)
 
 
+class LayerwiseSGDExperimentData(ExperimentData):
+    def init_data(
+        self,
+        run_idx: int,
+        states: list[Tensor],
+        env: AbstractEnv,
+    ) -> None:
+        if not hasattr(self, "data"):
+            self.data = {
+                "reward": [],
+                "action": [],
+                "state": [],
+                "batch_idx": [],
+                "run_idx": [],
+                "layer_idx": [],
+                "train_loss": [],
+                "validation_loss": [],
+                "train_accuracy": [],
+                "validation_accuracy": [],
+                "test_loss": [],
+                "test_accuracy": [],
+            }
+
+        for i, state in enumerate(states):
+            initial_log = {
+                "reward": torch.tensor(float("nan")),
+                "state": state.numpy(),
+                "batch_idx": 0,
+                "run_idx": run_idx,
+                "layer_idx": i,
+                "env": env,
+            }
+            self.add(initial_log)
+
+    def add(self, logs: dict) -> None:
+        super()._add(logs)
+        layer_idx = logs["layer_idx"]
+        self.data["layer_idx"] = layer_idx
+        self.data["action"].append(
+            math.log10(logs["env"].learning_rates[layer_idx]),
+        )
+        self.data["train_loss"].append(logs["env"].train_loss)
+        self.data["validation_loss"].append(logs["env"].validation_loss)
+        self.data["test_loss"].append(logs["env"].test_loss)
+        self.data["train_accuracy"].append(logs["env"].train_accuracy)
+        self.data["validation_accuracy"].append(logs["env"].validation_accuracy)
+        self.data["test_accuracy"].append(logs["env"].test_accuracy)
+
+
 class CMAESExperimentData(ExperimentData):
-    def init_data(self, run_idx: int, state: Tensor, env: AbstractEnv) -> None:
+    def init_data(
+        self,
+        run_idx: int,
+        state: list[Tensor],
+        env: AbstractEnv,
+    ) -> None:
         initial_log = {
             "reward": [np.nan],
             "action": [env.es.parameters.sigma],
-            "state": [state.numpy()],
+            "state": [state[0].numpy()],
             "batch_idx": [0],
             "run_idx": [run_idx],
             "lambda": [env.es.parameters.lambda_],

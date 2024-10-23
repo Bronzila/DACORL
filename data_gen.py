@@ -6,7 +6,7 @@ from pathlib import Path
 
 from tap import Tap
 
-from src.data_generator import DataGenerator
+from src.data_generator import DataGenerator, LayerwiseDataGenerator
 
 if __name__ == "__main__":
 
@@ -63,10 +63,15 @@ if __name__ == "__main__":
             "learning_rate"
         ]
 
-    if env_config["type"] == "SGD" and args.instance_mode:
+    if (env_config["type"] == "SGD" or env_config["type"] == "LayerwiseSGD") and args.instance_mode:
         env_config["instance_mode"] = args.instance_mode
 
-    generator = DataGenerator(
+    if env_config["type"] == "LayerwiseSGD":
+        generator_class = LayerwiseDataGenerator
+    else:
+        generator_class = DataGenerator
+
+    generator = generator_class(
         teacher_config,
         env_config,
         args.result_dir,

@@ -622,6 +622,7 @@ def get_environment(env_config: dict) -> Any:
     from DACBench.dacbench.benchmarks import (
         CMAESBenchmark,
         FastDownwardBenchmark,
+        LayerwiseSGDBenchmark,
         SGDBenchmark,
         ToySGD2DBenchmark,
     )
@@ -641,6 +642,9 @@ def get_environment(env_config: dict) -> Any:
         return bench.get_environment()
     if env_config["type"] == "SGD":
         bench = SGDBenchmark(config=env_config)
+        return bench.get_environment()
+    if env_config["type"] == "LayerwiseSGD":
+        bench = LayerwiseSGDBenchmark(config=env_config)
         return bench.get_environment()
     if env_config["type"] == "CMAES":
         bench = CMAESBenchmark(config=env_config)
