@@ -12,7 +12,7 @@ from src.experiment_data import (
     SGDExperimentData,
     ToySGDExperimentData,
 )
-from src.utils.general import ActorType, get_environment, set_seeds
+from src.utils import ActorType, get_environment, set_seeds
 
 if TYPE_CHECKING:
     import numpy as np

@@ -10,8 +10,7 @@ import numpy as np
 from src.data_generator import DataGenerator
 from src.evaluator import Evaluator
 from src.trainer import Trainer
-from src.utils.combinations import combine_runs, get_homogeneous_agent_paths
-from src.utils.general import get_safe_original_cwd
+from src.utils import combine_runs, get_homogeneous_agent_paths, get_safe_original_cwd
 
 if TYPE_CHECKING:
     import pandas as pd

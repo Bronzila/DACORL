@@ -13,7 +13,7 @@ from src.experiment_data import (
     SGDExperimentData,
     ToySGDExperimentData,
 )
-from src.utils.general import (
+from src.utils import (
     OutOfTimeError,
     get_environment,
     get_teacher,
