@@ -8,6 +8,7 @@ import numpy as np
 import torch
 import wandb
 
+from src.agents.td3 import TD3
 from src.utils.calculate_sgd_statistic import calc_mean_and_std_dev
 from src.utils.general import get_agent, get_environment, save_agent, set_seeds
 from src.utils.replay_buffer import ReplayBuffer
@@ -197,7 +198,7 @@ class Trainer:
                 )
             fbest_mean = final_evaluations["f_cur"].mean()
 
-    def _setup_environment(self) -> tuple[Any, np.ndarray]:
+    def _setup_environment(self) -> tuple[Any, torch.Tensor]:
         """Sets up environment according to environment config.
 
         Returns:
@@ -290,6 +291,8 @@ class Trainer:
         Returns:
             tuple[dict, float]: Logs and incumbent value
         """
+        assert isinstance(self.agent, TD3)
+
         env, state = self._setup_environment()
         # This is currently a quite ugly work-around for online-training
         state_dim = state.shape[0]
@@ -329,14 +332,14 @@ class Trainer:
             if self.env_type == "CMAES":
                 action += 1e-10
             else:
-                action = torch.from_numpy(action)
+                action = torch.from_numpy(action)  # type: ignore
 
             # Perform action
             next_state, reward, done, _, _ = env.step(action.item())
 
             # Store data in replay buffer
             self.replay_buffer.add_transition(
-                state,
+                state.numpy(),
                 action,
                 next_state,
                 reward,
