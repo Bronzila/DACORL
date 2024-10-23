@@ -44,7 +44,29 @@ EnvType = Union[
     ToySGD2DEnv,
 ]
 
+TeacherType = Union[
+    StepDecay,
+    ExponentialDecay,
+    SGDR,
+    Constant,
+    ConstantCMAES,
+    CSA,
+]
+
+AgentType = Union[
+    bc.BC,
+    td3_bc.TD3_BC,
+    awac.AdvantageWeightedActorCritic,
+    cql.ContinuousCQL,
+    iql.ImplicitQLearning,
+    edac.EDAC,
+    sac_n.SACN,
+    lb_sac.LBSAC,
+    td3.TD3,
+]
+
 ActorType = Union[
+    torch.nn.Module,
     bc.Actor,
     td3_bc.Actor,
     td3.Actor,
@@ -90,7 +112,7 @@ def set_seeds(seed: int) -> None:
 
 def get_teacher(
     teacher_config: dict[str, Any],
-) -> Any:
+) -> TeacherType:
     if teacher_config["type"] == "step_decay":
         return StepDecay(**teacher_config["params"])
     if teacher_config["type"] == "exponential_decay":
@@ -114,7 +136,7 @@ def get_agent(
     agent_config: dict[str, Any],
     device: str = "cpu",
     cmaes: bool = False,
-) -> Any:
+) -> AgentType:
     if agent_config.get("hidden_dim") is not None:
         print(
             "Warning! You are using the non reduced config space. Actor_hidden_dim and critic_hidden_dim will be equal.",
@@ -618,7 +640,7 @@ def get_agent(
     )
 
 
-def get_environment(env_config: dict) -> Any:
+def get_environment(env_config: dict) -> EnvType:
     from DACBench.dacbench.benchmarks import (
         CMAESBenchmark,
         FastDownwardBenchmark,
