@@ -1,0 +1,16 @@
+results_dir: ???  # Mandatory, no default value
+benchmark: "ToySGD"
+env: "Ackley_default"  # Config file to define the benchmark env
+n_data_seeds: 5
+n_train_seeds: 5
+n_train_iter: 30000
+n_runs: 1000
+eval_seed: 0
+eval_protocol: "train"
+teacher: "step_decay"
+instance_mode: null
+id: 0
+agent_type: "td3_bc"
+tanh_scaling: false
+combination: "single"
+mode: "both"  # Options: "data_generation", "training", "both"
