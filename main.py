@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -28,7 +27,7 @@ def generate_data(cfg: HydraConfig, env_config: dict, data_gen_seeds: list[int])
 
     if cfg.combination == "single":
         agent_name = "default" if cfg.id == 0 else str(cfg.id)
-        teacher_config = read_teacher(cfg.teacher, cfg.benchmark, agent_name)
+        teacher_config = read_teacher(cfg.teacher, cfg.env.type, agent_name)
         environment_agent_adjustments(env_config, teacher_config)
 
         # Generate data for different seeds
@@ -48,7 +47,7 @@ def generate_data(cfg: HydraConfig, env_config: dict, data_gen_seeds: list[int])
 
     elif cfg.combination == "homogeneous":
         for teacher_id in ["default", "1", "2", "3", "4"]:
-            teacher_config = read_teacher(cfg.teacher, cfg.benchmark, teacher_id)
+            teacher_config = read_teacher(cfg.teacher, cfg.env.type, teacher_id)
             environment_agent_adjustments(env_config, teacher_config)
             gen = DataGenerator(
                 teacher_config=teacher_config,
@@ -76,7 +75,7 @@ def generate_data(cfg: HydraConfig, env_config: dict, data_gen_seeds: list[int])
         teachers_to_combine = parse_heterogeneous_teacher_name(cfg.teacher)
         data_dirs = []
         for teacher_type in teachers_to_combine:
-            teacher_config = read_teacher(teacher_type, cfg.benchmark, agent_name)
+            teacher_config = read_teacher(teacher_type, cfg.env.type, agent_name)
             environment_agent_adjustments(env_config, teacher_config)
             gen = DataGenerator(
                 teacher_config=teacher_config,
@@ -143,7 +142,7 @@ def eval_agent(cfg: HydraConfig, env_config: dict, data_gen_seeds: list[int]) ->
 
     eval_data.to_csv(agent_path / f"eval_data_{cfg.eval_protocol}.csv")
 
-@hydra.main(config_path="hydra_conf", config_name="config")
+@hydra.main(config_path="hydra_conf", config_name="config", version_base="1.1")
 def main(cfg: HydraConfig):
     """One script to rule them all,
         one script to find them,
@@ -158,10 +157,8 @@ def main(cfg: HydraConfig):
 
     start = time.time()
 
-    # Read environment config from file
-    env_config_path = Path(get_safe_original_cwd(), "configs", "environment", f"{cfg.benchmark}", f"{cfg.env}.json")
-    with env_config_path.open() as file:
-        env_config = json.load(file)
+    # Get environment config
+    env_config = cfg._to_content(cfg, resolve=True, throw_on_missing=False)["env"]
 
     if env_config["type"] == "SGD" and cfg.instance_mode:
         env_config["instance_mode"] = cfg.instance_mode
