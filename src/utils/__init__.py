@@ -6,7 +6,6 @@ from .combinations import (
 from .general import (
     ActorType,
     EnvType,
-    OutOfTimeError,
     get_agent,
     get_environment,
     get_safe_original_cwd,
@@ -21,7 +20,6 @@ __all__ = [
     "ActorType",
     "EnvType",
     "HydraConfig",
-    "OutOfTimeError",
     "combine_runs",
     "get_agent",
     "get_environment",

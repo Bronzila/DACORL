@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import json
 import random
-import signal
 from pathlib import Path
-from types import FrameType
 from typing import Any, Union
 
 import ConfigSpace
@@ -87,23 +85,6 @@ CriticType = Union[
     lb_sac.VectorizedCritic,
     iql.TwinQ,
 ]
-
-
-# Time out related class and function
-class OutOfTimeError(Exception):
-    pass
-
-
-def timeouthandler(_signum: int, _frame: FrameType | None) -> Any:
-    raise OutOfTimeError
-
-
-def set_timeout(timeout: int) -> None:
-    if timeout > 0:
-        # conversion from hours to seconds
-        timeout = timeout * 60 * 60
-        signal.signal(signal.SIGALRM, timeouthandler)
-        signal.alarm(timeout)
 
 
 def set_seeds(seed: int) -> None:

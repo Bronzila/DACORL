@@ -1,5 +1,5 @@
 # Common settings for all ToySGD benchmarks
 type: ToySGD
 num_batches: 100
-state_version: basic
+state_version: extended_velocity
 boundary_termination: true
