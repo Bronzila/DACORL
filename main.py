@@ -168,7 +168,7 @@ def main(cfg: HydraConfig):
     data_gen_seeds = rng.integers(0, 2**32 - 1, size=cfg.n_data_seeds)
 
     # Execute according to the specified mode
-    if cfg.mode in ["data_gen", "both"]:
+    if cfg.mode in ["data_generation", "both"]:
         generate_data(cfg, env_config, data_gen_seeds)
 
     if cfg.mode in ["train", "both"]:
