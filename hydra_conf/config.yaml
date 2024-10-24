@@ -1,6 +1,7 @@
+defaults:
+  - env: SGD/MNIST
+
 results_dir: ???  # Mandatory, no default value
-benchmark: "ToySGD"
-env: "Ackley_default"  # Config file to define the benchmark env
 n_data_seeds: 5
 n_train_seeds: 5
 n_train_iter: 30000

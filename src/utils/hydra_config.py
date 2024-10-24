@@ -4,17 +4,16 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-from omegaconf import MISSING
+from omegaconf import MISSING, DictConfig
 
 
 @dataclass
-class Config:
+class Config(DictConfig):
     # Required fields
     results_dir: Path = MISSING  # Mandatory, no default value
 
     # Optional fields with default values
-    benchmark: str = "SGD"
-    env: str = "default"
+    env: dict = MISSING
     n_data_seeds: int = 5
     n_train_seeds: int = 5
     n_train_iter: int = 30000
