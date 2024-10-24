@@ -3,7 +3,7 @@ import json
 import time
 from pathlib import Path
 
-from src.evaluator import Evaluator
+from src.evaluator import Evaluator, LayerwiseEvaluator
 from src.trainer import Trainer
 from src.utils.general import get_config_space, get_environment
 
@@ -100,7 +100,15 @@ if __name__ == "__main__":
     agent_config["tanh_scaling"] = args.tanh_scaling
     print(agent_config)
 
-    evaluator = Evaluator(
+    with Path(args.data_dir, "run_info.json").open(mode="rb") as f:
+        run_info = json.load(f)
+
+    if run_info["environment"]["type"] == "LayerwiseSGD":
+        evaluator_class = LayerwiseEvaluator
+    else:
+        evaluator_class = Evaluator
+
+    evaluator = evaluator_class(
         data_dir=args.data_dir,
         eval_protocol=args.eval_protocol,
         n_runs=args.num_eval_runs,
