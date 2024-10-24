@@ -667,7 +667,6 @@ def get_environment(env_config: dict) -> EnvType:
         bench.config.function = env_config["function"]
         bench.config.initial_learning_rate = env_config["initial_learning_rate"]
         bench.config.state_version = env_config["state_version"]
-        bench.config.reward_version = env_config["reward_version"]
         bench.config.boundary_termination = env_config["boundary_termination"]
         bench.config.seed = env_config["seed"]
         return bench.get_environment()
