@@ -151,7 +151,7 @@ class LayerwiseEvaluator(Evaluator):
                 actions.append(action.item())
             next_states, reward, done, _, _ = self._env.step(actions)
 
-            for layer_idx, state in enumerate(states):
+            for layer_idx, (state, action) in enumerate(zip(states, actions)):
                 self._exp_data.add(
                     {
                         "state": state.numpy(),
