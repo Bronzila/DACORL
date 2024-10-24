@@ -77,7 +77,7 @@ class DataGenerator:
                 f"No experiment data class for experiment {self.environment_type}",
             )
 
-        state_dim = state.shape[0]
+        self._state_dim = state.shape[0]
 
         self.result_dir: Path = (
             result_dir
@@ -94,16 +94,16 @@ class DataGenerator:
 
         buffer_size = num_runs * self._num_batches
         self.replay_buffer = ReplayBuffer(
-            state_dim=state_dim,
+            state_dim=self._state_dim,
             action_dim=1,
             buffer_size=buffer_size,
-            seed=seed,
+            seed=self.seed,
         )
 
         self.run_info = {
             "agent": teacher_config,
             "environment": env_config,
-            "seed": seed,
+            "seed": self.seed,
             "num_runs": num_runs,
             "num_batches": self._num_batches,
         }
@@ -332,6 +332,38 @@ class DataGenerator:
 
 
 class LayerwiseDataGenerator(DataGenerator):
+    def __init__(
+        self,
+        teacher_config: dict,
+        env_config: dict,
+        result_dir: Path,
+        check_if_exists: bool,
+        num_runs: int,
+        checkpoint: int,
+        seed: int,
+        verbose: bool,
+    ) -> None:
+        super().__init__(
+            teacher_config,
+            env_config,
+            result_dir,
+            check_if_exists,
+            num_runs,
+            checkpoint,
+            seed,
+            verbose,
+        )
+
+        self._n_layers = len(self.env.layer_types)
+        # Reinitialize ReplayBuffer with proper size
+        buffer_size = num_runs * self._num_batches * self._n_layers
+        self.replay_buffer = ReplayBuffer(
+            state_dim=self._state_dim,
+            action_dim=1,
+            buffer_size=buffer_size,
+            seed=self.seed,
+        )
+
     def _interact_with_environment(
         self,
         run_idx: int,
@@ -340,7 +372,7 @@ class LayerwiseDataGenerator(DataGenerator):
     ) -> tuple[torch.Tensor, bool]:
         # Teachers use same learning rate for all layers, so simply use first state
         action = self.teacher.act(states[0])
-        actions = [action] * len(self.env.layer_types)
+        actions = [action] * self._n_layers
         next_states, reward, done, _, _ = self.env.step(actions)
 
         for layer_idx, (state, next_state) in enumerate(
