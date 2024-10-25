@@ -99,16 +99,12 @@ def generate_data(cfg: HydraConfig, env_config: dict, data_gen_seeds: list[int])
         path = cfg.results_dir / str(data_gen_seeds[0]) / env_config["type"] / cfg.teacher
         save_combined_data(path, combined_buffer, combined_run_info, combined_run_data)
 
-def train_model(cfg: HydraConfig, env_config: dict, data_gen_seeds: list[int]):
-
-    rng = np.random.default_rng(0)
-    train_seeds = rng.integers(0, 2**32 - 1, size=cfg.n_train_seeds)
-
+def train_model(cfg: HydraConfig, env_config: dict, train_seeds: list[int]):
     for train_seed in train_seeds:
         if cfg.combination == "single":
-            data_dir = cfg.results_dir / str(data_gen_seeds[0]) / env_config["type"] / cfg.teacher / str(cfg.id)
+            data_dir = cfg.results_dir / str(train_seeds[0]) / env_config["type"] / cfg.teacher / str(cfg.id)
         else:
-            data_dir = cfg.results_dir / str(data_gen_seeds[0]) / env_config["type"] / cfg.teacher
+            data_dir = cfg.results_dir / str(train_seeds[0]) / env_config["type"] / cfg.teacher
 
         if env_config["type"] == "ToySGD":
             data_dir = data_dir / env_config["function"]
@@ -164,19 +160,19 @@ def main(cfg: HydraConfig):
         env_config["instance_mode"] = cfg.instance_mode
 
     # Generate run seeds
-    rng = np.random.default_rng(0)
-    data_gen_seeds = rng.integers(0, 2**32 - 1, size=cfg.n_data_seeds)
+    rng = np.random.default_rng(cfg.seed)
+    random_seeds = rng.integers(0, 2**32 - 1, size=cfg.n_seeds)
 
     # Execute according to the specified mode
     if cfg.mode in ["data_generation", "both"]:
-        generate_data(cfg, env_config, data_gen_seeds)
+        generate_data(cfg, env_config, random_seeds)
 
     if cfg.mode in ["train", "both"]:
-        train_model(cfg, env_config, data_gen_seeds)
+        train_model(cfg, env_config, random_seeds)
 
     # Perform evaluation only separately
     if cfg.mode in ["eval"]:
-        eval_agent(cfg, env_config, data_gen_seeds)
+        eval_agent(cfg, env_config, random_seeds)
 
     end = time.time()
     print(f"Took: {end-start}s to generate")

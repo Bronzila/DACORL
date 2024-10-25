@@ -14,10 +14,10 @@ class Config(DictConfig):
 
     # Optional fields with default values
     env: dict = MISSING
-    n_data_seeds: int = 5
-    n_train_seeds: int = 5
+    n_seeds: int = 1
     n_train_iter: int = 30000
     n_runs: int = 1000
+    seed: int = 0
     eval_seed: int = 0
     eval_protocol: str = "train"
     teacher: str = "step_decay"

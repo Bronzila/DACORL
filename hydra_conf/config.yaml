@@ -2,10 +2,10 @@ defaults:
   - env: SGD/MNIST
 
 results_dir: ???  # Mandatory, no default value
-n_data_seeds: 5
-n_train_seeds: 5
+n_seeds: 1
 n_train_iter: 30000
 n_runs: 1000
+seed: 0
 eval_seed: 0
 eval_protocol: "train"
 teacher: "step_decay"
