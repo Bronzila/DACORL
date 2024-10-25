@@ -148,6 +148,8 @@ def main(cfg: HydraConfig):
     # Ensure results_dir is specified
     if not cfg.results_dir:
         raise ValueError("The 'results_dir' must be specified as a command-line argument or in the config file.")
+    if cfg.mode not in ["data_gen", "train", "eval", "all"]:
+        raise ValueError(f"Unknown run mode: {cfg.mode}. Please use 'data_gen', 'train', 'eval' or the default 'all'.")
 
     cfg.results_dir = Path(get_safe_original_cwd(), cfg.results_dir)
 
@@ -164,10 +166,10 @@ def main(cfg: HydraConfig):
     random_seeds = rng.integers(0, 2**32 - 1, size=cfg.n_seeds)
 
     # Execute according to the specified mode
-    if cfg.mode in ["data_generation", "both"]:
+    if cfg.mode in ["data_gen", "all"]:
         generate_data(cfg, env_config, random_seeds)
 
-    if cfg.mode in ["train", "both"]:
+    if cfg.mode in ["train", "all"]:
         train_model(cfg, env_config, random_seeds)
 
     # Perform evaluation only separately
