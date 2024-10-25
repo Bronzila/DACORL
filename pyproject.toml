@@ -25,6 +25,7 @@ classifiers = [
 readme = "README.md"
 authors = [
   { name = "Janis Fix", email = "fixj@cs.uni-freiburg.de" },
+  { name = "Leon Gieringer", email = "gieringl@cs.uni-freiburg.de" },
 ]
 requires-python = ">=3.8"
 [project.optional-dependencies]
