@@ -107,7 +107,7 @@ def train_model(cfg: HydraConfig, env_config: dict, seed: int):
     if env_config["type"] == "ToySGD":
         data_dir = data_dir / env_config["function"]
 
-        evaluator = Evaluator(data_dir, cfg.eval_protocol, env_config["n_runs"], cfg.eval_seed)
+    evaluator = Evaluator(data_dir, cfg.eval_protocol, env_config["n_runs"], cfg.eval_seed)
 
     trainer = Trainer(
         data_dir=data_dir,
