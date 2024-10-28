@@ -2,7 +2,6 @@ defaults:
   - env: SGD/MNIST
 
 results_dir: ???  # Mandatory, no default value
-n_seeds: 1
 n_train_iter: 30000
 n_runs: 1000
 seed: 0
@@ -14,4 +13,4 @@ id: 0
 agent_type: "td3_bc"
 tanh_scaling: false
 combination: "single"
-mode: "all"  # Options: "data_gen", "training", "eval", "all"
+mode: "all"  # Options: "data_gen", "train", "eval", "all"
