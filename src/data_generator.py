@@ -14,8 +14,7 @@ from src.experiment_data import (
     SGDExperimentData,
     ToySGDExperimentData,
 )
-from src.utils.general import (
-    OutOfTimeError,
+from src.utils import (
     get_environment,
     get_teacher,
     set_seeds,
@@ -153,68 +152,65 @@ class DataGenerator:
 
         save_checkpoints = checkpointing_freq != 0
 
-        try:
-            for run in range(self.start_run, num_runs):
-                state, meta_info = self.env.reset()
-                if self.environment_type == ("ToySGD"):
-                    self.starting_points.append(meta_info["start"])
-                self.teacher.reset()
+        for run in range(self.start_run, num_runs):
+            state, meta_info = self.env.reset()
+            if self.environment_type == ("ToySGD"):
+                self.starting_points.append(meta_info["start"])
+            self.teacher.reset()
+
+            if self.environment_type == "LayerwiseSGD":
+                self.exp_data.init_data(run, state, self.env)
+            else:
+                self.exp_data.init_data(run, [state], self.env)
+
+        start = time()
+        for batch in range(1, num_batches + 1):
+            if self.verbose:
+                print(
+                    f"Starting {self._phase} {batch}/{num_batches} of run {run}. \
+                    Total {batch + run * num_batches}/{num_runs * num_batches}",
+                )
 
                 if self.environment_type == "LayerwiseSGD":
-                    self.exp_data.init_data(run, state, self.env)
+                    state, done = self._interact_with_environment(
+                        run,
+                        batch,
+                        state,
+                    )
                 else:
-                    self.exp_data.init_data(run, [state], self.env)
+                    # Ugly workaround due to Layerwise Env/Liskov principle
+                    state, done = self._interact_with_environment(
+                        run,
+                        batch,
+                        [state],
+                    )
 
-                start = time()
-                for batch in range(1, num_batches + 1):
-                    if self.verbose:
-                        print(
-                            f"Starting {self._phase} {batch}/{num_batches} of run {run}. \
-                            Total {batch + run * num_batches}/{num_runs * num_batches}",
-                        )
+                if done:
+                    break
 
-                    if self.environment_type == "LayerwiseSGD":
-                        state, done = self._interact_with_environment(
-                            run,
-                            batch,
-                            state,
-                        )
-                    else:
-                        # Ugly workaround due to Layerwise Env/Liskov principle
-                        state, done = self._interact_with_environment(
-                            run,
-                            batch,
-                            [state],
-                        )
+        end = time()
+        print(f"Run {run} took {end - start} sec.")
 
-                    if done:
-                        break
+        if save_checkpoints and (run + 1) % checkpointing_freq == 0:
+            checkpoint_dir = self.result_dir / "checkpoints" / str(run)
+            if not checkpoint_dir.exists():
+                checkpoint_dir.mkdir(parents=True)
 
-                end = time()
-                print(f"Run {run} took {end - start} sec.")
-
-                if save_checkpoints and (run + 1) % checkpointing_freq == 0:
-                    checkpoint_dir = self.result_dir / "checkpoints" / str(run)
-                    if not checkpoint_dir.exists():
-                        checkpoint_dir.mkdir(parents=True)
-
-                    if self.environment_type in ["ToySGD", "CMAES"]:
-                        raise UserWarning(
-                            f"Are you sure you want to checkpoint {self.environment_type}?",
-                        )
-                    if self.environment_type == "SGD":
-                        self.run_info.update(
-                            {
-                                "checkpoint_info": {
-                                    "run": run,
-                                    "rng": self.env.rng.bit_generator.state,
-                                    "instance_index": self.env.instance_index,
-                                },
-                            },
-                        )
-                    self.save_data(save_checkpoints)
-        except OutOfTimeError:
-            print("Run was about to end. Let's quickly save the progress.")
+            if self.environment_type in ["ToySGD", "CMAES"]:
+                raise UserWarning(
+                    f"Are you sure you want to checkpoint {self.environment_type}?",
+                )
+            if self.environment_type == "SGD":
+                self.run_info.update(
+                    {
+                        "checkpoint_info": {
+                            "run": run,
+                            "rng": self.env.rng.bit_generator.state,
+                            "instance_index": self.env.instance_index,
+                        },
+                    },
+                )
+            self.save_data(save_checkpoints)
 
         print(f"Saved data and ReplayBuf to {self.result_dir}")
 

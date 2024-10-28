@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import json
 import random
-import signal
 from pathlib import Path
-from types import FrameType
 from typing import Any, Union
 
 import ConfigSpace
@@ -27,6 +25,8 @@ from CORL.algorithms.offline import (
     td3_bc,
 )
 from DACBench.dacbench.envs import CMAESEnv, SGDEnv, ToySGD2DEnv
+from hydra.core.hydra_config import HydraConfig
+from hydra.utils import get_original_cwd
 
 from src.agents import (
     CSA,
@@ -44,7 +44,29 @@ EnvType = Union[
     ToySGD2DEnv,
 ]
 
+TeacherType = Union[
+    StepDecay,
+    ExponentialDecay,
+    SGDR,
+    Constant,
+    ConstantCMAES,
+    CSA,
+]
+
+AgentType = Union[
+    bc.BC,
+    td3_bc.TD3_BC,
+    awac.AdvantageWeightedActorCritic,
+    cql.ContinuousCQL,
+    iql.ImplicitQLearning,
+    edac.EDAC,
+    sac_n.SACN,
+    lb_sac.LBSAC,
+    td3.TD3,
+]
+
 ActorType = Union[
+    torch.nn.Module,
     bc.Actor,
     td3_bc.Actor,
     td3.Actor,
@@ -65,32 +87,23 @@ CriticType = Union[
 ]
 
 
-# Time out related class and function
-class OutOfTimeError(Exception):
-    pass
-
-
-def timeouthandler(_signum: int, _frame: FrameType | None) -> Any:
-    raise OutOfTimeError
-
-
-def set_timeout(timeout: int) -> None:
-    if timeout > 0:
-        # conversion from hours to seconds
-        timeout = timeout * 60 * 60
-        signal.signal(signal.SIGALRM, timeouthandler)
-        signal.alarm(timeout)
-
-
 def set_seeds(seed: int) -> None:
     torch.manual_seed(seed)
     np.random.seed(seed)  # noqa: NPY002
     random.seed(seed)
 
 
+def get_safe_original_cwd() -> Path:
+    if HydraConfig.initialized():
+        # Safe to use Hydra's original working directory
+        return Path(get_original_cwd())
+    # Fallback to the current working directory
+    return Path.cwd()
+
+
 def get_teacher(
     teacher_config: dict[str, Any],
-) -> Any:
+) -> TeacherType:
     if teacher_config["type"] == "step_decay":
         return StepDecay(**teacher_config["params"])
     if teacher_config["type"] == "exponential_decay":
@@ -114,7 +127,7 @@ def get_agent(
     agent_config: dict[str, Any],
     device: str = "cpu",
     cmaes: bool = False,
-) -> Any:
+) -> AgentType:
     if agent_config.get("hidden_dim") is not None:
         print(
             "Warning! You are using the non reduced config space. Actor_hidden_dim and critic_hidden_dim will be equal.",
@@ -618,7 +631,7 @@ def get_agent(
     )
 
 
-def get_environment(env_config: dict) -> Any:
+def get_environment(env_config: dict) -> EnvType:
     from DACBench.dacbench.benchmarks import (
         CMAESBenchmark,
         FastDownwardBenchmark,
@@ -636,7 +649,6 @@ def get_environment(env_config: dict) -> Any:
         bench.config.function = env_config["function"]
         bench.config.initial_learning_rate = env_config["initial_learning_rate"]
         bench.config.state_version = env_config["state_version"]
-        bench.config.reward_version = env_config["reward_version"]
         bench.config.boundary_termination = env_config["boundary_termination"]
         bench.config.seed = env_config["seed"]
         return bench.get_environment()

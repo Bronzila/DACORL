@@ -1,0 +1,15 @@
+defaults:
+  - env: SGD/MNIST
+
+results_dir: ???  # Mandatory, no default value
+n_train_iter: 30000
+seed: 0
+eval_seed: 0
+eval_protocol: "train"
+teacher: "step_decay"
+instance_mode: null
+id: 0
+agent_type: "td3_bc"
+tanh_scaling: false
+combination: "single"
+mode: "all"  # Options: "data_gen", "train", "eval", "all"
