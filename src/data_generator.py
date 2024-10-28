@@ -126,7 +126,7 @@ class DataGenerator:
         next_state, reward, done, _, _ = self.env.step(action)
 
         self.replay_buffer.add_transition(
-            state[0].numpy(),
+            state[0].cpu().numpy(),
             action,
             next_state,
             reward,
@@ -134,9 +134,9 @@ class DataGenerator:
         )
         self.exp_data.add(
             {
-                "state": state[0].numpy(),
+                "state": state[0].cpu().numpy(),
                 "action": action,
-                "reward": reward.numpy(),
+                "reward": reward.cpu().numpy(),
                 "batch_idx": batch_idx,
                 "run_idx": run_idx,
                 "env": self.env,
@@ -258,8 +258,7 @@ class DataGenerator:
         self._phase = "batch"
         batches_per_epoch = 1
         if (
-            self.environment_type == "SGD"
-            or self.environment_type == "LayerwiseSGD"
+            self.environment_type in ("SGD", "LayerwiseSGD")
         ):
             print(f"Generating data for {self.env_config['dataset_name']}")
             if env.epoch_mode is False:
@@ -375,7 +374,7 @@ class LayerwiseDataGenerator(DataGenerator):
             zip(states, next_states, strict=True),
         ):
             self.replay_buffer.add_transition(
-                state.numpy(),
+                state.cpu().numpy(),
                 action,
                 next_state,
                 reward,
@@ -383,9 +382,9 @@ class LayerwiseDataGenerator(DataGenerator):
             )
             self.exp_data.add(
                 {
-                    "state": state.numpy(),
+                    "state": state.cpu().numpy(),
                     "action": action,
-                    "reward": reward.numpy(),
+                    "reward": reward.cpu().numpy(),
                     "layer_idx": layer_idx,
                     "batch_idx": batch_idx,
                     "run_idx": run_idx,

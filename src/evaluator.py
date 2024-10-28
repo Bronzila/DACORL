@@ -92,9 +92,9 @@ class Evaluator:
 
             self._exp_data.add(
                 {
-                    "state": [state.numpy()],
+                    "state": [state.cpu().numpy()],
                     "action": action,
-                    "reward": reward.numpy(),
+                    "reward": reward.cpu().numpy(),
                     "batch_idx": batch_idx,
                     "run_idx": run_idx,
                     "env": self._env,
@@ -154,9 +154,9 @@ class LayerwiseEvaluator(Evaluator):
             for layer_idx, (state, action) in enumerate(zip(states, actions)):
                 self._exp_data.add(
                     {
-                        "state": state.numpy(),
+                        "state": state.cpu().numpy(),
                         "action": action,
-                        "reward": reward.numpy(),
+                        "reward": reward.cpu().numpy(),
                         "layer_idx": layer_idx,
                         "batch_idx": batch_idx,
                         "run_idx": run_idx,

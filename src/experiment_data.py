@@ -61,7 +61,7 @@ class ToySGDExperimentData(ExperimentData):
 
         initial_log = {
             "reward": torch.tensor(float("nan")),
-            "state": state[0].numpy(),
+            "state": state[0].cpu().numpy(),
             "batch_idx": 0,
             "run_idx": run_idx,
             "env": env,
@@ -99,7 +99,7 @@ class SGDExperimentData(ExperimentData):
 
         initial_log = {
             "reward": torch.tensor(float("nan")),
-            "state": state[0].numpy(),
+            "state": state[0].cpu().numpy(),
             "batch_idx": 0,
             "run_idx": run_idx,
             "env": env,
@@ -143,7 +143,7 @@ class LayerwiseSGDExperimentData(ExperimentData):
         for i, state in enumerate(states):
             initial_log = {
                 "reward": torch.tensor(float("nan")),
-                "state": state.numpy(),
+                "state": state.cpu().numpy(),
                 "batch_idx": 0,
                 "run_idx": run_idx,
                 "layer_idx": i,
@@ -154,7 +154,7 @@ class LayerwiseSGDExperimentData(ExperimentData):
     def add(self, logs: dict) -> None:
         super()._add(logs)
         layer_idx = logs["layer_idx"]
-        self.data["layer_idx"] = layer_idx
+        self.data["layer_idx"].append(layer_idx)
         self.data["action"].append(
             math.log10(logs["env"].learning_rates[layer_idx]),
         )
@@ -176,7 +176,7 @@ class CMAESExperimentData(ExperimentData):
         initial_log = {
             "reward": [np.nan],
             "action": [env.es.parameters.sigma],
-            "state": [state[0].numpy()],
+            "state": [state[0].cpu().numpy()],
             "batch_idx": [0],
             "run_idx": [run_idx],
             "lambda": [env.es.parameters.lambda_],
