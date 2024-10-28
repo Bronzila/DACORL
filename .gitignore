@@ -21,6 +21,7 @@ agent_critic_1_optimizer
 agent_critic_2
 agent_critic_2_optimizer
 agent_total_it
+agent_*
 smac*
 logs*
 SGD_data/*
