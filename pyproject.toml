@@ -11,6 +11,7 @@ dependencies = [
   "pandas>=1.5.3",
 #  "dacbench@git+https://github.com/Bronzila/DACBench.git@ToySGD_MTDAC",
   "gym",
+  "hydra-core==1.3.2",
 ]
 classifiers = [
   "Programming Language :: Python :: 3.10",
@@ -24,6 +25,7 @@ classifiers = [
 readme = "README.md"
 authors = [
   { name = "Janis Fix", email = "fixj@cs.uni-freiburg.de" },
+  { name = "Leon Gieringer", email = "gieringl@cs.uni-freiburg.de" },
 ]
 requires-python = ">=3.8"
 [project.optional-dependencies]
@@ -158,6 +160,7 @@ exclude = [
   "docs",
   "src/utils/calculate_sgd_statistics.py",
   "src/utils/generate_cma_plots.py",
+  "legacy_scripts",
 ]
 
 # Exclude a variety of commonly ignored directories.

@@ -68,7 +68,7 @@ class Actor(nn.Module):
             if self._pos_act:
                 relu_action = torch.nn.functional.relu(action)
             else:
-                relu_action = - torch.nn.functional.relu(action)
+                relu_action = -torch.nn.functional.relu(action)
             relu_action.clamp_(self._min_action, self._max_action)
             action = relu_action
 
@@ -149,7 +149,7 @@ class TD3:
         self.total_it = 0
         self.device = device
 
-    def select_action(self, state: torch.Tensor) -> np.ndarray:
+    def select_action(self, state: torch.Tensor) -> torch.Tensor:
         state = state.reshape(1, -1)
         out: torch.Tensor = self.actor(state)
         return out.cpu().data.numpy().flatten()

@@ -27,7 +27,7 @@ def get_homogeneous_agent_paths(root_dir: str, function: str) -> list[Path]:
     return paths
 
 
-def concat_runs(agent_paths):
+def concat_runs(agent_paths: list[str]) -> tuple:
     combined_buffer = None
     combined_run_info = None
     combined_run_data = []
@@ -65,12 +65,12 @@ def concat_runs(agent_paths):
 
 
 def get_run_ids_by_agent_path(
-    path_data_mapping,
-    combination_strategy,
-    total_size,
-):
+    path_data_mapping: dict,
+    combination_strategy: str,
+    total_size: int,
+) -> dict:
     if combination_strategy == "perf_sampling":
-        performances = []
+        _performances = []
         paths = []
         n_runs = 0
         for path, data in path_data_mapping.items():
@@ -79,11 +79,11 @@ def get_run_ids_by_agent_path(
             )
             mean_final_score = np.mean(final_run_values)
             path_data_mapping[path]["performance"] = mean_final_score
-            performances.append(mean_final_score)
+            _performances.append(mean_final_score)
             paths.append(path)
             n_runs = data["run_info"]["num_runs"]
         # Get max score, invert scores and normalize them
-        performances = np.array(performances)
+        performances = np.array(_performances)
         max_score = max(performances)
         inverted_scores = max_score - performances
         normalized_scores = inverted_scores / np.sum(inverted_scores)
@@ -171,7 +171,7 @@ def get_run_ids_by_agent_path(
     raise NotImplementedError()
 
 
-def filter_buffer(data):
+def filter_buffer(data: dict) -> None:
     device = torch.device("cpu")
     # Turn states etc. into pandas dataframe fo easier access
     states_np = data["buffer"]._states.cpu().numpy()
@@ -192,7 +192,7 @@ def filter_buffer(data):
 
     # Filter out rows where states are all zeros --> empty rows in replay_buffer
     transitions_df = transitions_df[
-        ~(transitions_df["state"].apply(lambda x: np.all(np.array(x) == 0)))
+        ~(transitions_df["state"].apply(lambda x: np.all(np.array(x) == 0)))  # type: ignore
     ]
 
     # Assign run IDs based on the first state value being 1
@@ -245,7 +245,7 @@ def filter_buffer(data):
     )
 
 
-def create_buffer_from_ids(path_data_mapping):
+def create_buffer_from_ids(path_data_mapping: dict) -> tuple:
     # For each buffer
     # Group states etc. by run (use first state, optim budget as criterion when new run begins)
     # Remove all runs that are not in run_ids
@@ -278,7 +278,11 @@ def create_buffer_from_ids(path_data_mapping):
     return combined_buffer, run_info, combined_run_data
 
 
-def combine_runs(agent_paths, combination_strategy="concat", total_size=3000):
+def combine_runs(
+    agent_paths: list[str],
+    combination_strategy: str = "concat",
+    total_size: int = 3000,
+) -> tuple:
     if combination_strategy == "concat":
         return concat_runs(agent_paths)
 

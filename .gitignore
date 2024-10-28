@@ -21,10 +21,12 @@ agent_critic_1_optimizer
 agent_critic_2
 agent_critic_2_optimizer
 agent_total_it
+agent_*
 smac*
 logs*
 SGD_data/*
 *.pdf
+*.hydra
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -150,7 +152,6 @@ celerybeat.pid
 # Environments
 .env
 .venv
-env/
 venv/
 ENV/
 env.bak/

@@ -13,8 +13,7 @@ from src.experiment_data import (
     SGDExperimentData,
     ToySGDExperimentData,
 )
-from src.utils.general import (
-    OutOfTimeError,
+from src.utils import (
     get_environment,
     get_teacher,
     set_seeds,
@@ -113,75 +112,72 @@ class DataGenerator:
 
         save_checkpoints = checkpointing_freq != 0
 
-        try:
-            for run in range(self.start_run, num_runs):
-                state, meta_info = self.env.reset()
-                if self.environment_type == ("ToySGD"):
-                    self.starting_points.append(meta_info["start"])
-                self.agent.reset()
+        for run in range(self.start_run, num_runs):
+            state, meta_info = self.env.reset()
+            if self.environment_type == ("ToySGD"):
+                self.starting_points.append(meta_info["start"])
+            self.agent.reset()
 
-                self.exp_data.init_data(run, state, self.env)
+            self.exp_data.init_data(run, state, self.env)
 
-                start = time()
-                for batch in range(1, num_batches + 1):
-                    if self.verbose:
-                        print(
-                            f"Starting {self._phase} {batch}/{num_batches} of run {run}. \
-                            Total {batch + run * num_batches}/{num_runs * num_batches}",
-                        )
-
-                    if self.agent_type in ("csa", "cmaes_constant"):
-                        action = self.agent.act(self.env)
-                    else:
-                        action = self.agent.act(state)
-                    next_state, reward, done, _, _ = self.env.step(action)
-                    self.replay_buffer.add_transition(
-                        state,
-                        action,
-                        next_state,
-                        reward,
-                        done,
+            start = time()
+            for batch in range(1, num_batches + 1):
+                if self.verbose:
+                    print(
+                        f"Starting {self._phase} {batch}/{num_batches} of run {run}. \
+                        Total {batch + run * num_batches}/{num_runs * num_batches}",
                     )
-                    self.exp_data.add(
+
+                if self.agent_type in ("csa", "cmaes_constant"):
+                    action = self.agent.act(self.env)
+                else:
+                    action = self.agent.act(state)
+                next_state, reward, done, _, _ = self.env.step(action)
+                self.replay_buffer.add_transition(
+                    state,
+                    action,
+                    next_state,
+                    reward,
+                    done,
+                )
+                self.exp_data.add(
+                    {
+                        "state": state.numpy(),
+                        "action": action,
+                        "reward": reward.numpy(),
+                        "batch_idx": batch,
+                        "run_idx": run,
+                        "env": self.env,
+                    },
+                )
+
+                state = next_state
+                if done:
+                    break
+
+            end = time()
+            print(f"Run {run} took {end - start} sec.")
+
+            if save_checkpoints and (run + 1) % checkpointing_freq == 0:
+                checkpoint_dir = self.result_dir / "checkpoints" / str(run)
+                if not checkpoint_dir.exists():
+                    checkpoint_dir.mkdir(parents=True)
+
+                if self.environment_type in ["ToySGD", "CMAES"]:
+                    raise UserWarning(
+                        f"Are you sure you want to checkpoint {self.environment_type}?",
+                    )
+                if self.environment_type == "SGD":
+                    self.run_info.update(
                         {
-                            "state": state.numpy(),
-                            "action": action,
-                            "reward": reward.numpy(),
-                            "batch_idx": batch,
-                            "run_idx": run,
-                            "env": self.env,
+                            "checkpoint_info": {
+                                "run": run,
+                                "rng": self.env.rng.bit_generator.state,
+                                "instance_index": self.env.instance_index,
+                            },
                         },
                     )
-
-                    state = next_state
-                    if done:
-                        break
-
-                end = time()
-                print(f"Run {run} took {end - start} sec.")
-
-                if save_checkpoints and (run + 1) % checkpointing_freq == 0:
-                    checkpoint_dir = self.result_dir / "checkpoints" / str(run)
-                    if not checkpoint_dir.exists():
-                        checkpoint_dir.mkdir(parents=True)
-
-                    if self.environment_type in ["ToySGD", "CMAES"]:
-                        raise UserWarning(
-                            f"Are you sure you want to checkpoint {self.environment_type}?",
-                        )
-                    if self.environment_type == "SGD":
-                        self.run_info.update(
-                            {
-                                "checkpoint_info": {
-                                    "run": run,
-                                    "rng": self.env.rng.bit_generator.state,
-                                    "instance_index": self.env.instance_index,
-                                },
-                            },
-                        )
-                    self.save_data(save_checkpoints)
-        except OutOfTimeError:
-            print("Run was about to end. Let's quickly save the progress.")
+                self.save_data(save_checkpoints)
 
         print(f"Saved data and ReplayBuf to {self.result_dir}")
 
