@@ -257,9 +257,7 @@ class DataGenerator:
         self._num_batches: int
         self._phase = "batch"
         batches_per_epoch = 1
-        if (
-            self.environment_type in ("SGD", "LayerwiseSGD")
-        ):
+        if self.environment_type in ("SGD", "LayerwiseSGD"):
             print(f"Generating data for {self.env_config['dataset_name']}")
             if env.epoch_mode is False:
                 num_epochs = self.env_config["num_epochs"]
