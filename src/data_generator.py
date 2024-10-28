@@ -163,13 +163,13 @@ class DataGenerator:
             else:
                 self.exp_data.init_data(run, [state], self.env)
 
-        start = time()
-        for batch in range(1, num_batches + 1):
-            if self.verbose:
-                print(
-                    f"Starting {self._phase} {batch}/{num_batches} of run {run}. \
-                    Total {batch + run * num_batches}/{num_runs * num_batches}",
-                )
+            start = time()
+            for batch in range(1, num_batches + 1):
+                if self.verbose:
+                    print(
+                        f"Starting {self._phase} {batch}/{num_batches} of run {run}. \
+                        Total {batch + run * num_batches}/{num_runs * num_batches}",
+                    )
 
                 if self.environment_type == "LayerwiseSGD":
                     state, done = self._interact_with_environment(
@@ -188,29 +188,29 @@ class DataGenerator:
                 if done:
                     break
 
-        end = time()
-        print(f"Run {run} took {end - start} sec.")
+            end = time()
+            print(f"Run {run} took {end - start} sec.")
 
-        if save_checkpoints and (run + 1) % checkpointing_freq == 0:
-            checkpoint_dir = self.result_dir / "checkpoints" / str(run)
-            if not checkpoint_dir.exists():
-                checkpoint_dir.mkdir(parents=True)
+            if save_checkpoints and (run + 1) % checkpointing_freq == 0:
+                checkpoint_dir = self.result_dir / "checkpoints" / str(run)
+                if not checkpoint_dir.exists():
+                    checkpoint_dir.mkdir(parents=True)
 
-            if self.environment_type in ["ToySGD", "CMAES"]:
-                raise UserWarning(
-                    f"Are you sure you want to checkpoint {self.environment_type}?",
-                )
-            if self.environment_type == "SGD":
-                self.run_info.update(
-                    {
-                        "checkpoint_info": {
-                            "run": run,
-                            "rng": self.env.rng.bit_generator.state,
-                            "instance_index": self.env.instance_index,
+                if self.environment_type in ["ToySGD", "CMAES"]:
+                    raise UserWarning(
+                        f"Are you sure you want to checkpoint {self.environment_type}?",
+                    )
+                if self.environment_type == "SGD":
+                    self.run_info.update(
+                        {
+                            "checkpoint_info": {
+                                "run": run,
+                                "rng": self.env.rng.bit_generator.state,
+                                "instance_index": self.env.instance_index,
+                            },
                         },
-                    },
-                )
-            self.save_data(save_checkpoints)
+                    )
+                self.save_data(save_checkpoints)
 
         print(f"Saved data and ReplayBuf to {self.result_dir}")
 
