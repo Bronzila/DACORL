@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 
 def generate_data(cfg: HydraConfig, env_config: dict, seed: int):
-    n_runs = cfg.n_runs
+    n_runs = env_config["n_runs"]
 
     if cfg.combination == "single":
         agent_name = "default" if cfg.id == 0 else str(cfg.id)
@@ -107,7 +107,7 @@ def train_model(cfg: HydraConfig, env_config: dict, seed: int):
     if env_config["type"] == "ToySGD":
         data_dir = data_dir / env_config["function"]
 
-    evaluator = Evaluator(data_dir, cfg.eval_protocol, cfg.n_runs, cfg.eval_seed)
+        evaluator = Evaluator(data_dir, cfg.eval_protocol, env_config["n_runs"], cfg.eval_seed)
 
     trainer = Trainer(
         data_dir=data_dir,
@@ -130,7 +130,7 @@ def eval_agent(cfg: HydraConfig, env_config: dict, seed: int) -> None:
 
     agent_path = data_dir / "results" / cfg.agent_type / str(seed) / str(cfg.n_train_iter)
     actor = load_agent(cfg.agent_type, agent_path).actor
-    evaluator = Evaluator(data_dir, cfg.eval_protocol, cfg.n_runs, cfg.eval_seed)
+    evaluator = Evaluator(data_dir, cfg.eval_protocol, env_config["n_runs"], cfg.eval_seed)
 
     eval_data = evaluator.evaluate(actor)
 
@@ -155,6 +155,7 @@ def main(cfg: HydraConfig):
 
     # Get environment config
     env_config = cfg._to_content(cfg, resolve=True, throw_on_missing=False)["env"]
+    print(env_config)
 
     if env_config["type"] == "SGD" and cfg.instance_mode:
         env_config["instance_mode"] = cfg.instance_mode
