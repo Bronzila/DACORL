@@ -13,8 +13,8 @@ from benchmarking import (
     save_combined_data,
 )
 
-from src.data_generator import DataGenerator
-from src.evaluator import Evaluator
+from src.data_generator import DataGenerator, LayerwiseDataGenerator
+from src.evaluator import Evaluator, LayerwiseEvaluator
 from src.trainer import Trainer
 from src.utils import combine_runs, get_homogeneous_agent_paths, get_safe_original_cwd, load_agent
 
@@ -25,13 +25,15 @@ if TYPE_CHECKING:
 def generate_data(cfg: HydraConfig, env_config: dict, seed: int):
     n_runs = env_config["n_runs"]
 
+    GeneratorClass = LayerwiseDataGenerator if cfg.env.type == "LayerwiseSGD" else DataGenerator
+
     if cfg.combination == "single":
         agent_name = "default" if cfg.id == 0 else str(cfg.id)
         teacher_config = read_teacher(cfg.teacher, cfg.env.type, agent_name)
         environment_agent_adjustments(env_config, teacher_config)
 
         # Generate data for seed
-        gen = DataGenerator(
+        gen = GeneratorClass(
             teacher_config=teacher_config,
             env_config=env_config,
             result_dir=cfg.results_dir / str(seed),
@@ -48,7 +50,7 @@ def generate_data(cfg: HydraConfig, env_config: dict, seed: int):
         for teacher_id in ["default", "1", "2", "3", "4"]:
             teacher_config = read_teacher(cfg.teacher, cfg.env.type, teacher_id)
             environment_agent_adjustments(env_config, teacher_config)
-            gen = DataGenerator(
+            gen = GeneratorClass(
                 teacher_config=teacher_config,
                 env_config=env_config,
                 result_dir=cfg.results_dir / str(seed),
@@ -76,7 +78,7 @@ def generate_data(cfg: HydraConfig, env_config: dict, seed: int):
         for teacher_type in teachers_to_combine:
             teacher_config = read_teacher(teacher_type, cfg.env.type, agent_name)
             environment_agent_adjustments(env_config, teacher_config)
-            gen = DataGenerator(
+            gen = GeneratorClass(
                 teacher_config=teacher_config,
                 env_config=env_config,
                 result_dir=cfg.results_dir / str(seed),
@@ -103,11 +105,15 @@ def train_model(cfg: HydraConfig, env_config: dict, seed: int):
         data_dir = cfg.results_dir / str(seed) / env_config["type"] / cfg.teacher / str(cfg.id)
     else:
         data_dir = cfg.results_dir / str(seed) / env_config["type"] / cfg.teacher
+        if cfg.combination == "homogeneous":
+            data_dir = data_dir / "combined"
 
     if env_config["type"] == "ToySGD":
         data_dir = data_dir / env_config["function"]
 
-    evaluator = Evaluator(data_dir, cfg.eval_protocol, env_config["n_runs"], cfg.eval_seed)
+    EvaluatorClass = LayerwiseEvaluator if cfg.env.type == "LayerwiseSGD" else Evaluator
+
+    evaluator = EvaluatorClass(data_dir, cfg.eval_protocol, env_config["n_runs"], cfg.eval_seed)
 
     trainer = Trainer(
         data_dir=data_dir,
@@ -124,13 +130,18 @@ def eval_agent(cfg: HydraConfig, env_config: dict, seed: int) -> None:
         data_dir = cfg.results_dir / str(seed) / env_config["type"] / cfg.teacher / str(cfg.id)
     else:
         data_dir = cfg.results_dir / str(seed) / env_config["type"] / cfg.teacher
+        if cfg.combination == "homogeneous":
+            data_dir = data_dir / "combined"
+
 
     if env_config["type"] == "ToySGD":
         data_dir = data_dir / env_config["function"]
 
     agent_path = data_dir / "results" / cfg.agent_type / str(seed) / str(cfg.n_train_iter)
     actor = load_agent(cfg.agent_type, agent_path).actor
-    evaluator = Evaluator(data_dir, cfg.eval_protocol, env_config["n_runs"], cfg.eval_seed)
+
+    EvaluatorClass = LayerwiseEvaluator if cfg.env.type == "LayerwiseSGD" else Evaluator
+    evaluator = EvaluatorClass(data_dir, cfg.eval_protocol, env_config["n_runs"], cfg.eval_seed)
 
     eval_data = evaluator.evaluate(actor)
 

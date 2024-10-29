@@ -10,6 +10,7 @@ import pandas as pd
 from src.experiment_data import (
     CMAESExperimentData,
     ExperimentData,
+    LayerwiseSGDExperimentData,
     SGDExperimentData,
     ToySGDExperimentData,
 )
@@ -22,6 +23,7 @@ from src.utils.replay_buffer import ReplayBuffer
 
 if TYPE_CHECKING:
     import numpy as np
+    import torch
 
 
 class DataGenerator:
@@ -43,7 +45,7 @@ class DataGenerator:
         self.env_config = env_config
 
         self.environment_type = env_config["type"]
-        self.agent_type = teacher_config["type"]
+        self.teacher_type = teacher_config["type"]
 
         self.seed = seed
         self.verbose = verbose
@@ -56,7 +58,6 @@ class DataGenerator:
         self.env.seed(
             self.seed,
         )  # Reseed environment here to allow for proper starting point generation
-        state_dim = state.shape[0]
 
         self.exp_data: ExperimentData
         if self.environment_type == "ToySGD":
@@ -65,15 +66,22 @@ class DataGenerator:
             self.exp_data = SGDExperimentData()
         elif self.environment_type == "CMAES":
             self.exp_data = CMAESExperimentData()
+        elif self.environment_type == "LayerwiseSGD":
+            self.exp_data = LayerwiseSGDExperimentData()
+            state = state[
+                0
+            ]  # Use first state in order to get state dimensionality in next step
         else:
             raise NotImplementedError(
                 f"No experiment data class for experiment {self.environment_type}",
             )
 
+        self._state_dim = state.shape[0]
+
         self.result_dir: Path = (
             result_dir
             / self.environment_type
-            / self.agent_type
+            / self.teacher_type
             / str(teacher_config["id"])
         )
 
@@ -85,16 +93,16 @@ class DataGenerator:
 
         buffer_size = num_runs * self._num_batches
         self.replay_buffer = ReplayBuffer(
-            state_dim=state_dim,
+            state_dim=self._state_dim,
             action_dim=1,
             buffer_size=buffer_size,
-            seed=seed,
+            seed=self.seed,
         )
 
         self.run_info = {
             "agent": teacher_config,
             "environment": env_config,
-            "seed": seed,
+            "seed": self.seed,
             "num_runs": num_runs,
             "num_batches": self._num_batches,
         }
@@ -104,6 +112,38 @@ class DataGenerator:
 
         if checkpoint != 0:
             self._handle_checkpoint(result_dir, checkpoint)
+
+    def _interact_with_environment(
+        self,
+        run_idx: int,
+        batch_idx: int,
+        state: list[torch.Tensor],
+    ) -> tuple[torch.Tensor, bool]:
+        if self.teacher_type in ("csa", "cmaes_constant"):
+            action = self.teacher.act(self.env)
+        else:
+            action = self.teacher.act(state[0])
+        next_state, reward, done, _, _ = self.env.step(action)
+
+        self.replay_buffer.add_transition(
+            state[0].cpu().numpy(),
+            action,
+            next_state,
+            reward,
+            done,
+        )
+        self.exp_data.add(
+            {
+                "state": state[0].cpu().numpy(),
+                "action": action,
+                "reward": reward.cpu().numpy(),
+                "batch_idx": batch_idx,
+                "run_idx": run_idx,
+                "env": self.env,
+            },
+        )
+
+        return next_state, done
 
     def generate_data(self, checkpointing_freq: int = 0) -> None:
         """Generate data and checkpoints if required."""
@@ -116,9 +156,12 @@ class DataGenerator:
             state, meta_info = self.env.reset()
             if self.environment_type == ("ToySGD"):
                 self.starting_points.append(meta_info["start"])
-            self.agent.reset()
+            self.teacher.reset()
 
-            self.exp_data.init_data(run, state, self.env)
+            if self.environment_type == "LayerwiseSGD":
+                self.exp_data.init_data(run, state, self.env)
+            else:
+                self.exp_data.init_data(run, [state], self.env)
 
             start = time()
             for batch in range(1, num_batches + 1):
@@ -128,30 +171,20 @@ class DataGenerator:
                         Total {batch + run * num_batches}/{num_runs * num_batches}",
                     )
 
-                if self.agent_type in ("csa", "cmaes_constant"):
-                    action = self.agent.act(self.env)
+                if self.environment_type == "LayerwiseSGD":
+                    state, done = self._interact_with_environment(
+                        run,
+                        batch,
+                        state,
+                    )
                 else:
-                    action = self.agent.act(state)
-                next_state, reward, done, _, _ = self.env.step(action)
-                self.replay_buffer.add_transition(
-                    state,
-                    action,
-                    next_state,
-                    reward,
-                    done,
-                )
-                self.exp_data.add(
-                    {
-                        "state": state.numpy(),
-                        "action": action,
-                        "reward": reward.numpy(),
-                        "batch_idx": batch,
-                        "run_idx": run,
-                        "env": self.env,
-                    },
-                )
+                    # Ugly workaround due to Layerwise Env/Liskov principle
+                    state, done = self._interact_with_environment(
+                        run,
+                        batch,
+                        [state],
+                    )
 
-                state = next_state
                 if done:
                     break
 
@@ -224,7 +257,7 @@ class DataGenerator:
         self._num_batches: int
         self._phase = "batch"
         batches_per_epoch = 1
-        if self.environment_type == "SGD":
+        if self.environment_type in ("SGD", "LayerwiseSGD"):
             print(f"Generating data for {self.env_config['dataset_name']}")
             if env.epoch_mode is False:
                 num_epochs = self.env_config["num_epochs"]
@@ -243,7 +276,7 @@ class DataGenerator:
     def _init_teacher(self, teacher_config: dict) -> None:
         """Builds the teacher agent based on the teacher_config field."""
         print(f"Teacher: {teacher_config}")
-        self.agent = get_teacher(teacher_config)
+        self.teacher = get_teacher(teacher_config)
 
     def _handle_checkpoint(self, result_dir: Path, checkpoint: int) -> None:
         """Loads the given checkpoint data and ."""
@@ -289,3 +322,72 @@ class DataGenerator:
             run_info = json.load(f)
 
         return checkpoint_run_data, rb, run_info
+
+
+class LayerwiseDataGenerator(DataGenerator):
+    def __init__(
+        self,
+        teacher_config: dict,
+        env_config: dict,
+        result_dir: Path,
+        check_if_exists: bool,
+        num_runs: int,
+        checkpoint: int,
+        seed: int,
+        verbose: bool,
+    ) -> None:
+        super().__init__(
+            teacher_config,
+            env_config,
+            result_dir,
+            check_if_exists,
+            num_runs,
+            checkpoint,
+            seed,
+            verbose,
+        )
+
+        self._n_layers = len(self.env.layer_types)
+        # Reinitialize ReplayBuffer with proper size
+        buffer_size = num_runs * self._num_batches * self._n_layers
+        self.replay_buffer = ReplayBuffer(
+            state_dim=self._state_dim,
+            action_dim=1,
+            buffer_size=buffer_size,
+            seed=self.seed,
+        )
+
+    def _interact_with_environment(
+        self,
+        run_idx: int,
+        batch_idx: int,
+        states: list[torch.Tensor],
+    ) -> tuple[torch.Tensor, bool]:
+        # Teachers use same learning rate for all layers, so simply use first state
+        action = self.teacher.act(states[0])
+        actions = [action] * self._n_layers
+        next_states, reward, done, _, _ = self.env.step(actions)
+
+        for layer_idx, (state, next_state) in enumerate(
+            zip(states, next_states, strict=True),
+        ):
+            self.replay_buffer.add_transition(
+                state.cpu().numpy(),
+                action,
+                next_state,
+                reward,
+                done,
+            )
+            self.exp_data.add(
+                {
+                    "state": state.cpu().numpy(),
+                    "action": action,
+                    "reward": reward.cpu().numpy(),
+                    "layer_idx": layer_idx,
+                    "batch_idx": batch_idx,
+                    "run_idx": run_idx,
+                    "env": self.env,
+                },
+            )
+
+        return next_states, done
