@@ -9,7 +9,7 @@ import pandas as pd
 import torch
 
 if TYPE_CHECKING:
-    from dacbench import AbstractEnv
+    from DACBench.dacbench import AbstractEnv
     from torch import Tensor
 
 
