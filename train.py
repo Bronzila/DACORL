@@ -5,7 +5,7 @@ from pathlib import Path
 
 from src.evaluator import Evaluator, LayerwiseEvaluator
 from src.trainer import Trainer
-from src.utils.general import get_config_space, get_environment
+from src.utils.general import get_config_space
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train any offline agent ")
@@ -104,11 +104,11 @@ if __name__ == "__main__":
         run_info = json.load(f)
 
     if run_info["environment"]["type"] == "LayerwiseSGD":
-        evaluator_class = LayerwiseEvaluator
+        EvaluatorClass = LayerwiseEvaluator
     else:
-        evaluator_class = Evaluator
+        EvaluatorClass = Evaluator
 
-    evaluator = evaluator_class(
+    evaluator = EvaluatorClass(
         data_dir=args.data_dir,
         eval_protocol=args.eval_protocol,
         n_runs=args.num_eval_runs,
