@@ -36,6 +36,28 @@ It is also required to specify the `result_dir` when running any job. You can ov
 python main.py result_dir=data/test_experiment
 ```
 
+### Multi-Teacher Experiments
+
+> **_NOTE:_**  Multi-Teacher experiments only differ in the way of generating data by generating data for multiple teachers and then combining the generated datasets.
+
+Conducting multi-teacher experiments is also easily possible by using the `main.py` script. Here we differntiate between two teacher combination strategies: `homogeneous` and `heterogeneous`, which can be parameterized using the `combination` configuration field. In the following we will quickly introduce the two different combination strategies and how to use them:
+
+#### Homogeneous
+
+In homogeneous combinations, teachers of the same type (e.g., step decay) but with different configurations (e.g., decay rate of 0.9 over 9 steps) are combined. To run homogeneous combination experiments, please set `combination=homogeneous`. The current implementation generates data using five teachers and then concatenates the datasets.
+
+#### Heterogeneous
+
+In heterogeneous combinations, teachers of varying type and configuration are combined. To run heterogeneous experiments, please set `combination=heterogeneous`. To define which (default) teachers you want to combine, please use the `teacher` field. Here we use the following notation:
+Teacher types are abbreviated:
+
+- E = Exponential decay
+- ST = Step decay
+- SG = SGDR
+- C = Constant
+
+Using these abbreviations you can combine teachers by separating them using a "-". To combine the exponential decay, step decay and constant teacher for example, use `teacher=E-ST-C`.
+
 ## Development
 
 ### Contributing
