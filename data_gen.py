@@ -21,7 +21,6 @@ if __name__ == "__main__":
         id: str = "0"
         checkpointing_freq: int = 0  # How frequent we want to checkpoint. Default 0 means no checkpoints
         checkpoint: int = 0  # Specify which checkpoint you want to load. Default 0 means no loading
-        check_if_exists: bool = False
         verbose: bool = False
         """Generate Data using a teacher in a specified environment."""
 
@@ -75,7 +74,6 @@ if __name__ == "__main__":
         teacher_config,
         env_config,
         args.result_dir,
-        args.check_if_exists,
         args.num_runs,
         args.checkpoint,
         args.seed,

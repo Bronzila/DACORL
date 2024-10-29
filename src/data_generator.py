@@ -32,16 +32,11 @@ class DataGenerator:
         teacher_config: dict,
         env_config: dict,
         result_dir: Path,
-        check_if_exists: bool,
         num_runs: int,
         checkpoint: int,
         seed: int,
         verbose: bool,
     ) -> None:
-        if check_if_exists and (result_dir.exists() and checkpoint == 0):
-            print(f"Data already exists: {result_dir}")
-            return
-
         self.env_config = env_config
 
         self.environment_type = env_config["type"]
@@ -122,7 +117,7 @@ class DataGenerator:
         if self.teacher_type in ("csa", "cmaes_constant"):
             action = self.teacher.act(self.env)
         else:
-            action = self.teacher.act(state[0])
+            action = self.teacher.act(state[0])  # type: ignore
         next_state, reward, done, _, _ = self.env.step(action)
 
         self.replay_buffer.add_transition(
@@ -330,7 +325,6 @@ class LayerwiseDataGenerator(DataGenerator):
         teacher_config: dict,
         env_config: dict,
         result_dir: Path,
-        check_if_exists: bool,
         num_runs: int,
         checkpoint: int,
         seed: int,
@@ -340,7 +334,6 @@ class LayerwiseDataGenerator(DataGenerator):
             teacher_config,
             env_config,
             result_dir,
-            check_if_exists,
             num_runs,
             checkpoint,
             seed,
@@ -364,7 +357,7 @@ class LayerwiseDataGenerator(DataGenerator):
         states: list[torch.Tensor],
     ) -> tuple[torch.Tensor, bool]:
         # Teachers use same learning rate for all layers, so simply use first state
-        action = self.teacher.act(states[0])
+        action = self.teacher.act(states[0])  # type: ignore
         actions = [action] * self._n_layers
         next_states, reward, done, _, _ = self.env.step(actions)
 

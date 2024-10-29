@@ -6,9 +6,7 @@ This repository contains work on applying multi-teacher offline reinforcement le
 
 1. [Installation](#installation)
 2. [Usage](#usage)
-3. [Development](#development)
-3.1 [Contributing](#contributing)
-3.2 [Pre-commit](#pre-commit)
+3. [Development and Contributing](#development)
 
 ## Installation
 
@@ -40,7 +38,9 @@ python main.py result_dir=data/test_experiment
 
 > **_NOTE:_**  Multi-Teacher experiments only differ in the way of generating data by generating data for multiple teachers and then combining the generated datasets.
 
-Conducting multi-teacher experiments is also easily possible by using the `main.py` script. Here we differntiate between two teacher combination strategies: `homogeneous` and `heterogeneous`, which can be parameterized using the `combination` configuration field. In the following we will quickly introduce the two different combination strategies and how to use them:
+Conducting multi-teacher experiments is also easily possible by using the `main.py` script. Here we differentiate between two teacher combination strategies: `homogeneous` and `heterogeneous`, which can be parameterized using the `combination` configuration field. In the following we will quickly introduce the two different combination strategies and how to use them.
+
+> **_NOTE:_**  If you have already generated data by multiple teachers and do not want to re-generate it, but use the present data, pass `data_exists=true` to `main.py`. This way the script will automatically use the present teachers in the respective folder (e.g., `step_decay`) for the homogeneous case and all default teachers defined by the `teacher` field for the heterogeneous case.
 
 #### Homogeneous
 
