@@ -14,9 +14,7 @@ class Config(DictConfig):
 
     # Optional fields with default values
     env: dict = MISSING
-    n_seeds: int = 1
-    n_train_iter: int = 30000
-    n_runs: int = 1000
+    num_train_iter: int = 30000
     seed: int = 0
     eval_seed: int = 0
     eval_protocol: str = "train"
@@ -37,3 +35,4 @@ class Config(DictConfig):
     tanh_scaling: bool = False
     combination: Literal["homogeneous", "heterogeneous", "single"] = "single"
     mode: Literal["data_generation", "training", "both"] = "both"
+    data_exists: bool = False
