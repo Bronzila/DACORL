@@ -6,9 +6,7 @@ This repository contains work on applying multi-teacher offline reinforcement le
 
 1. [Installation](#installation)
 2. [Usage](#usage)
-3. [Development](#development)
-3.1 [Contributing](#contributing)
-3.2 [Pre-commit](#pre-commit)
+3. [Development and Contributing](#development)
 
 ## Installation
 
