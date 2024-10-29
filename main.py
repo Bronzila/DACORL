@@ -105,6 +105,8 @@ def train_model(cfg: HydraConfig, env_config: dict, seed: int):
         data_dir = cfg.results_dir / str(seed) / env_config["type"] / cfg.teacher / str(cfg.id)
     else:
         data_dir = cfg.results_dir / str(seed) / env_config["type"] / cfg.teacher
+        if cfg.combination == "homogeneous":
+            data_dir = data_dir / "combined"
 
     if env_config["type"] == "ToySGD":
         data_dir = data_dir / env_config["function"]
@@ -128,6 +130,9 @@ def eval_agent(cfg: HydraConfig, env_config: dict, seed: int) -> None:
         data_dir = cfg.results_dir / str(seed) / env_config["type"] / cfg.teacher / str(cfg.id)
     else:
         data_dir = cfg.results_dir / str(seed) / env_config["type"] / cfg.teacher
+        if cfg.combination == "homogeneous":
+            data_dir = data_dir / "combined"
+
 
     if env_config["type"] == "ToySGD":
         data_dir = data_dir / env_config["function"]
