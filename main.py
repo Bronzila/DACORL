@@ -36,7 +36,7 @@ def generate_data(cfg: HydraConfig, env_config: dict, seed: int):
         gen = GeneratorClass(
             teacher_config=teacher_config,
             env_config=env_config,
-            result_dir=cfg.results_dir / str(seed),
+            result_dir=cfg.results_dir,
             num_runs=num_runs,
             checkpoint=0,
             seed=seed,
@@ -53,7 +53,7 @@ def generate_data(cfg: HydraConfig, env_config: dict, seed: int):
                 gen = GeneratorClass(
                     teacher_config=teacher_config,
                     env_config=env_config,
-                    result_dir=cfg.results_dir / str(seed),
+                    result_dir=cfg.results_dir,
                     num_runs=num_runs,
                     checkpoint=0,
                     seed=seed,
@@ -62,7 +62,7 @@ def generate_data(cfg: HydraConfig, env_config: dict, seed: int):
                 gen.generate_data()
                 gen.save_data()
 
-        data_dir = cfg.results_dir / str(seed) / env_config["type"] / cfg.teacher
+        data_dir = cfg.results_dir / env_config["type"] / cfg.teacher
         paths = get_homogeneous_agent_paths(data_dir, env_config.get("function", ""))
         combined_buffer, combined_run_info, combined_run_data = combine_runs(
             paths, "concat", 3000,
@@ -71,17 +71,17 @@ def generate_data(cfg: HydraConfig, env_config: dict, seed: int):
         save_combined_data(path, combined_buffer, combined_run_info, combined_run_data)
 
     elif cfg.combination == "heterogeneous":
-        agent_name = "default"
+        teacher_name = "default"
         teachers_to_combine = parse_heterogeneous_teacher_name(cfg.teacher)
         data_dirs = []
         for teacher_type in teachers_to_combine:
             if not cfg.data_exists:
-                teacher_config = read_teacher(teacher_type, cfg.env.type, agent_name)
+                teacher_config = read_teacher(teacher_type, cfg.env.type, teacher_name)
                 environment_agent_adjustments(env_config, teacher_config)
                 gen = GeneratorClass(
                     teacher_config=teacher_config,
                     env_config=env_config,
-                    result_dir=cfg.results_dir / str(seed),
+                    result_dir=cfg.results_dir,
                     check_if_exists=False,
                     num_runs=num_runs,
                     checkpoint=0,
@@ -91,20 +91,20 @@ def generate_data(cfg: HydraConfig, env_config: dict, seed: int):
                 gen.generate_data()
                 gen.save_data()
 
-            data_dirs.append(cfg.results_dir / str(seed) / env_config["type"] / teacher_type / "0" / env_config.get("function", ""))
+            data_dirs.append(cfg.results_dir / env_config["type"] / teacher_type / "0" / env_config.get("function", ""))
 
         final_buffer_size = (len(data_dirs) + 1) * 500
         combined_buffer, combined_run_info, combined_run_data = combine_runs(
             data_dirs, "concat", final_buffer_size,
         )
-        path = cfg.results_dir / str(seed) / env_config["type"] / cfg.teacher
+        path = cfg.results_dir / env_config["type"] / cfg.teacher
         save_combined_data(path, combined_buffer, combined_run_info, combined_run_data)
 
 def train_model(cfg: HydraConfig, env_config: dict, seed: int):
     if cfg.combination == "single":
-        data_dir = cfg.results_dir / str(seed) / env_config["type"] / cfg.teacher / str(cfg.id)
+        data_dir = cfg.results_dir / env_config["type"] / cfg.teacher / str(cfg.id)
     else:
-        data_dir = cfg.results_dir / str(seed) / env_config["type"] / cfg.teacher
+        data_dir = cfg.results_dir / env_config["type"] / cfg.teacher
         if cfg.combination == "homogeneous":
             data_dir = data_dir / "combined"
 
@@ -127,9 +127,9 @@ def train_model(cfg: HydraConfig, env_config: dict, seed: int):
 
 def eval_agent(cfg: HydraConfig, env_config: dict, seed: int) -> None:
     if cfg.combination == "single":
-        data_dir = cfg.results_dir / str(seed) / env_config["type"] / cfg.teacher / str(cfg.id)
+        data_dir = cfg.results_dir / env_config["type"] / cfg.teacher / str(cfg.id)
     else:
-        data_dir = cfg.results_dir / str(seed) / env_config["type"] / cfg.teacher
+        data_dir = cfg.results_dir / env_config["type"] / cfg.teacher
         if cfg.combination == "homogeneous":
             data_dir = data_dir / "combined"
 
@@ -171,7 +171,7 @@ def main(cfg: HydraConfig):
     if env_config["type"] == "SGD" and cfg.instance_mode:
         env_config["instance_mode"] = cfg.instance_mode
 
-    # Generate run seeds
+    # Generate run seed
     rng = np.random.default_rng(cfg.seed)
     random_seed = int(rng.integers(0, 2**32 - 1))
 
