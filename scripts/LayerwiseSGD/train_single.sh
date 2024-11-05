@@ -33,22 +33,22 @@ if [ 1 -eq $SLURM_ARRAY_TASK_ID ]
 then
     echo "Seed: $SEED";
     echo "Teacher: exponential_decay";
-    python main.py env=LayerwiseSGD/MNIST teacher=exponential_decay id=$ID results_dir=$RESULTS_DIR seed=$SEED mode=train agent_type=$AGENT num_train_iter=$NUM_TRAIN_ITER
+    python main.py env=LayerwiseSGD/MNIST teacher=exponential_decay id=$ID results_dir=$RESULTS_DIR seed=$SEED mode=train agent_type=$AGENT num_train_iter=$NUM_TRAIN_ITER wandb_group="single"
 elif [ 2 -eq $SLURM_ARRAY_TASK_ID ]
 then
     echo "Seed: $SEED";
     echo "Teacher: step_decay";
-    python main.py env=LayerwiseSGD/MNIST teacher=step_decay id=$ID results_dir=$RESULTS_DIR seed=$SEED mode=train agent_type=$AGENT num_train_iter=$NUM_TRAIN_ITER
+    python main.py env=LayerwiseSGD/MNIST teacher=step_decay id=$ID results_dir=$RESULTS_DIR seed=$SEED mode=train agent_type=$AGENT num_train_iter=$NUM_TRAIN_ITER wandb_group="single"
 elif [ 3 -eq $SLURM_ARRAY_TASK_ID ]
 then
     echo "Seed: $SEED";
     echo "Teacher: sgdr";
-    python main.py env=LayerwiseSGD/MNIST teacher=sgdr id=$ID results_dir=$RESULTS_DIR seed=$SEED mode=train agent_type=$AGENT num_train_iter=$NUM_TRAIN_ITER
+    python main.py env=LayerwiseSGD/MNIST teacher=sgdr id=$ID results_dir=$RESULTS_DIR seed=$SEED mode=train agent_type=$AGENT num_train_iter=$NUM_TRAIN_ITER wandb_group="single"
 elif [ 4 -eq $SLURM_ARRAY_TASK_ID ]
 then
     echo "Seed: $SEED";
     echo "Teacher: constant";
-    python main.py env=LayerwiseSGD/MNIST teacher=constant id=$ID results_dir=$RESULTS_DIR seed=$SEED mode=train agent_type=$AGENT num_train_iter=$NUM_TRAIN_ITER
+    python main.py env=LayerwiseSGD/MNIST teacher=constant id=$ID results_dir=$RESULTS_DIR seed=$SEED mode=train agent_type=$AGENT num_train_iter=$NUM_TRAIN_ITER wandb_group="single"
 fi
 
 # Print some Information about the end-time to STDOUT
