@@ -196,7 +196,7 @@ if __name__ == "__main__":
 
         table_name = "tables_interpolation" if args.interpolation else "tables"
         table_dir = base_path / table_name / args.agent
-        table_dir.mkdir(exist_ok=True)
+        table_dir.mkdir(exist_ok=True, parents=True)
         if args.mean:
             table_result_path = table_dir / f"mean_{agent_id}.tex"
             table = rows_mean
