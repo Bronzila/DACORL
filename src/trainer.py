@@ -52,7 +52,7 @@ class Trainer:
         self.device = device
         self.wandb_group = wandb_group
         self.use_wandb = wandb_group != ""
-        self.inc_value = np.inf
+        self.inc_value = np.nan
         self.rng = np.random.default_rng(self.seed)
         set_seeds(self.seed)
 
@@ -128,10 +128,10 @@ class Trainer:
             print(f"Mean at iteration {t+1}: {fbest_mean}")
             self.inc_value = (
                 fbest_mean
-                if self.inc_value is None
+                if np.isnan(self.inc_value)
                 else np.min([self.inc_value, fbest_mean])
             )
-        elif self.run_info["environment"]["type"] == "SGD":
+        elif self.run_info["environment"]["type"] in ["SGD", "LayerwiseSGD"]:
             # Statistics for train set
             train_loss_mean, train_loss_std = calc_mean_and_std_dev(
                 eval_data,
@@ -182,7 +182,7 @@ class Trainer:
 
             self.inc_value = (
                 test_acc_mean
-                if self.inc_value is None
+                if np.isnan(self.inc_value)
                 else np.max([self.inc_value, test_acc_mean])
             )
         elif self.env_type == "CMAES":
