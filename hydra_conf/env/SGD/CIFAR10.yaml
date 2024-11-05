@@ -3,6 +3,7 @@ defaults:
   - /env/SGD@_here_
 
 dataset_name: CIFAR10
+num_epochs: 50
 layer_specification:
   - ["CONV2D", {"in_channels": 3, "out_channels": 32, "kernel_size": 3}]
   - ["RELU", {}]
