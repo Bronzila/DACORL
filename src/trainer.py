@@ -70,7 +70,6 @@ class Trainer:
             self._setup_agent(state_dim)
 
         if self.use_wandb:
-            fct = self.run_info["environment"]["function"]
             teacher = self.run_info["agent"]["type"]
             state_version = self.run_info["environment"]["state_version"]
             wandb.init(  # type: ignore
@@ -78,8 +77,8 @@ class Trainer:
                 entity="study_project",
                 group=wandb_group,
                 config=agent_config,
-                name=f"{agent_type}-{teacher}-{fct}-{state_version}",
-                tags=["agent_test", f"{agent_type}", f"{teacher}", f"{fct}"],
+                name=f"{agent_type}-{teacher}-{state_version}",
+                tags=["agent_test", f"{agent_type}", f"{teacher}"],
             )
 
     def _setup_agent(self, state_dim: int) -> None:
