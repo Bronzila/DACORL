@@ -20,7 +20,7 @@ SEED=${1:-0}
 AGENT=${2:-td3_bc}
 
 ID=0
-NUM_TRAIN_ITER=60000
+NUM_TRAIN_ITER=30000
 RESULTS_DIR="LayerwiseSGD_data/wandb"
 
 # Print some information about the job to STDOUT
