@@ -168,6 +168,8 @@ if __name__ == "__main__":
                 results_path = base_path / agent / "results"
                 if args.teacher_base_path:
                     teacher_path = Path(args.teacher_base_path) / agent / "aggregated_run_data.csv"
+                else:
+                    teacher_path = base_path / agent / "aggregated_run_data.csv"
 
             # Calculate agent performance
             a_mean, a_std, a_lowest, a_iqm, a_iqm_std, a_min_path, a_auc, a_auc_std = calculate_statistics(path=results_path, results=True, verbose=args.verbose, multi_seed=True, num_runs=args.num_runs, interpolation=args.interpolation, metric="test_accuracy")
