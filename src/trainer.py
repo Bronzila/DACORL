@@ -245,7 +245,7 @@ class Trainer:
                     logs[k].append(v)
 
             if self.use_wandb:
-                wandb.log(log_dict, self.agent.total_it)  # type: ignore
+                wandb.log(log_dict, t)  # type: ignore
 
             if val_freq != 0 and (t + 1) % val_freq == 0:
                 eval_data = self._eval_agent()
