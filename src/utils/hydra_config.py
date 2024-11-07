@@ -19,6 +19,7 @@ class Config(DictConfig):
     eval_seed: int = 0
     eval_protocol: str = "train"
     teacher: str = "step_decay"
+    wandb_group: str = "DACORL"
     instance_mode: str | None = None  # None if not provided
     id: int = 0
     agent_type: Literal[

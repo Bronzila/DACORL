@@ -52,7 +52,7 @@ class Trainer:
         self.device = device
         self.wandb_group = wandb_group
         self.use_wandb = wandb_group != ""
-        self.inc_value = np.inf
+        self.inc_value = np.nan
         self.rng = np.random.default_rng(self.seed)
         set_seeds(self.seed)
 
@@ -70,7 +70,6 @@ class Trainer:
             self._setup_agent(state_dim)
 
         if self.use_wandb:
-            fct = self.run_info["environment"]["function"]
             teacher = self.run_info["agent"]["type"]
             state_version = self.run_info["environment"]["state_version"]
             wandb.init(  # type: ignore
@@ -78,8 +77,8 @@ class Trainer:
                 entity="study_project",
                 group=wandb_group,
                 config=agent_config,
-                name=f"{agent_type}-{teacher}-{fct}-{state_version}",
-                tags=["agent_test", f"{agent_type}", f"{teacher}", f"{fct}"],
+                name=f"{agent_type}-{teacher}-{state_version}",
+                tags=["agent_test", f"{agent_type}", f"{teacher}"],
             )
 
     def _setup_agent(self, state_dim: int) -> None:
@@ -129,10 +128,10 @@ class Trainer:
             print(f"Mean at iteration {t+1}: {fbest_mean}")
             self.inc_value = (
                 fbest_mean
-                if self.inc_value is None
+                if np.isnan(self.inc_value)
                 else np.min([self.inc_value, fbest_mean])
             )
-        elif self.run_info["environment"]["type"] == "SGD":
+        elif self.run_info["environment"]["type"] in ["SGD", "LayerwiseSGD"]:
             # Statistics for train set
             train_loss_mean, train_loss_std = calc_mean_and_std_dev(
                 eval_data,
@@ -183,7 +182,7 @@ class Trainer:
 
             self.inc_value = (
                 test_acc_mean
-                if self.inc_value is None
+                if np.isnan(self.inc_value)
                 else np.max([self.inc_value, test_acc_mean])
             )
         elif self.env_type == "CMAES":
@@ -246,7 +245,7 @@ class Trainer:
                     logs[k].append(v)
 
             if self.use_wandb:
-                wandb.log(log_dict, self.agent.total_it)  # type: ignore
+                wandb.log(log_dict, t)  # type: ignore
 
             if val_freq != 0 and (t + 1) % val_freq == 0:
                 eval_data = self._eval_agent()

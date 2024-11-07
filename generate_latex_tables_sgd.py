@@ -20,17 +20,17 @@ single_name_mapping = {
 }
 heterogeneous_name_mapping = {
     "teacher": {
-        "combined": "All",
-        "combined_e_c": "Exp + Const",
-        "combined_e_sg": "Exp + SGDR",
-        "combined_e_sg_c": "Exp + SGDR + Const",
-        "combined_e_st": "Exp + Step",
-        "combined_e_st_c": "Exp + Step + Const",
-        "combined_e_st_sg": "Exp + Step + SGDR",
-        "combined_sg_c": "SGDR + Const",
-        "combined_st_c": "Step + Const",
-        "combined_st_sg": "Step + SGDR",
-        "combined_st_sg_c": "Step + SGDR + Const"
+        "E-ST-SG-C": "All",
+        "E-C": "Exp + Const",
+        "E-SG": "Exp + SGDR",
+        "E-SG-C": "Exp + SGDR + Const",
+        "E-ST": "Exp + Step",
+        "E-ST-C": "Exp + Step + Const",
+        "E-ST-SG": "Exp + Step + SGDR",
+        "SG-C": "SGDR + Const",
+        "ST-C": "Step + Const",
+        "ST-SG": "Step + SGDR",
+        "ST-SG-C": "Step + SGDR + Const"
     },
     "agent": {
         "combined": "TD3+BC-All",
@@ -76,6 +76,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "--path", type=str, help="Base path",
         default="data/ToySGD"
+    )
+    parser.add_argument(
+        "--agent", type=str, help="Base path",
+        default="td3_bc"
     )
     parser.add_argument(
         "--teacher_base_path", type=str, help="Teacher base path"
@@ -154,7 +158,7 @@ if __name__ == "__main__":
             row_lowest = [name_mapping[agent]]
 
             
-            results_path = base_path / agent / str(agent_id) / "results"
+            results_path = base_path / agent / str(agent_id) / "results" / args.agent
             if args.teacher_base_path:
                 teacher_path = Path(args.teacher_base_path) / agent / str(agent_id) / "aggregated_run_data.csv"
             else:
@@ -164,12 +168,14 @@ if __name__ == "__main__":
                 results_path = base_path / agent / "results"
                 if args.teacher_base_path:
                     teacher_path = Path(args.teacher_base_path) / agent / "aggregated_run_data.csv"
+                else:
+                    teacher_path = base_path / agent / "aggregated_run_data.csv"
 
             # Calculate agent performance
-            a_mean, a_std, a_lowest, a_iqm, a_iqm_std, a_min_path, a_auc, a_auc_std = calculate_statistics(path=results_path, results=True, verbose=args.verbose, multi_seed=True, num_runs=args.num_runs, interpolation=args.interpolation, metric="test_acc")
+            a_mean, a_std, a_lowest, a_iqm, a_iqm_std, a_min_path, a_auc, a_auc_std = calculate_statistics(path=results_path, results=True, verbose=args.verbose, multi_seed=True, num_runs=args.num_runs, interpolation=args.interpolation, metric="test_accuracy")
 
             # Calculate teacher performance
-            t_mean, t_std, t_lowest, t_iqm, t_iqm_std, t_min_path, t_auc, t_auc_std = calculate_statistics(path=teacher_path, results=False, verbose=args.verbose, multi_seed=False, num_runs=args.num_runs, interpolation=args.interpolation, metric="test_acc")
+            t_mean, t_std, t_lowest, t_iqm, t_iqm_std, t_min_path, t_auc, t_auc_std = calculate_statistics(path=teacher_path, results=False, verbose=args.verbose, multi_seed=False, num_runs=args.num_runs, interpolation=args.interpolation, metric="test_accuracy")
             
             if args.mean:
                 row_mean.append(f"{format_percentage(t_mean)} $\pm$ {format_percentage(t_std)}")
@@ -191,8 +197,8 @@ if __name__ == "__main__":
                 rows_auc.append(row_auc)    
 
         table_name = "tables_interpolation" if args.interpolation else "tables"
-        table_dir = base_path / table_name
-        table_dir.mkdir(exist_ok=True)
+        table_dir = base_path / table_name / args.agent
+        table_dir.mkdir(exist_ok=True, parents=True)
         if args.mean:
             table_result_path = table_dir / f"mean_{agent_id}.tex"
             table = rows_mean

@@ -120,6 +120,7 @@ def train_model(cfg: HydraConfig, env_config: dict, seed: int):
         agent_config={"tanh_scaling": cfg.tanh_scaling, "batch_size": 256},
         agent_type=cfg.agent_type,
         evaluator=evaluator,
+        wandb_group=cfg.wandb_group,
         seed=seed,
     )
     _, inc_value = trainer.train(cfg.num_train_iter, cfg.num_train_iter)

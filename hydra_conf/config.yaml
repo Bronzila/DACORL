@@ -13,4 +13,5 @@ agent_type: "td3_bc"
 tanh_scaling: false
 combination: "single"
 mode: "all"  # Options: "data_gen", "train", "eval", "all"
-data_exists: true
+data_exists: false
+wandb_group: "DACORL"

@@ -147,6 +147,8 @@ def calculate_multi_seed_statistics(
     else:
         seed_dirs.add(path)
 
+    if len(seed_dirs) < 5:
+        print("Some runs failed")
     print(seed_dirs)
     best_iterations_paths = []
     # This is only used if there are multiple checkpoints in the seed directory --> choose the best one
@@ -275,8 +277,8 @@ def compute_auc(df: pd.DataFrame, metric: str) -> tuple[float, float]:
 
         return filled_group
 
-    # Metric has to be validation accuracy as test accuracy is only computed at end of epoch
-    metric = "valid_accuracy"
+    # Metric has to be validationation accuracy as test accuracy is only computed at end of epoch
+    metric = "validation_accuracy"
     required_fields_df = df[[metric, "run_idx", "batch_idx"]]
 
     # No need to fill values for SGD since we do not terminate early
