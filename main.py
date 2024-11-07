@@ -141,7 +141,7 @@ def eval_agent(cfg: HydraConfig, env_config: dict, seed: int) -> None:
     agent_path = data_dir / "results" / cfg.agent_type / str(seed) / str(cfg.num_train_iter)
     actor = load_agent(cfg.agent_type, agent_path).actor
 
-    EvaluatorClass = LayerwiseEvaluator if cfg.env.type == "LayerwiseSGD" else Evaluator
+    EvaluatorClass = LayerwiseEvaluator if cfg.env_type == "LayerwiseSGD" else Evaluator
     evaluator = EvaluatorClass(data_dir, cfg.eval_protocol, env_config["num_runs"], cfg.eval_seed)
 
     eval_data = evaluator.evaluate(actor)
