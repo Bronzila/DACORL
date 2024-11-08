@@ -47,6 +47,7 @@ class Evaluator:
                 f"Evaluation unsupported for environment: {type(self._env)}",
             )
 
+        self._env.seed(env_config["seed"])
         set_seeds(env_config["seed"])
 
     def _run_batches(self, actor: ActorType, run_idx: int) -> None:

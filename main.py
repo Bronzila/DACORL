@@ -23,8 +23,6 @@ if TYPE_CHECKING:
 
 
 def generate_data(cfg: HydraConfig, env_config: dict, seed: int):
-    num_runs = env_config["num_runs"]
-
     GeneratorClass = LayerwiseDataGenerator if cfg.env.type == "LayerwiseSGD" else DataGenerator
 
     if cfg.combination == "single":
@@ -37,7 +35,6 @@ def generate_data(cfg: HydraConfig, env_config: dict, seed: int):
             teacher_config=teacher_config,
             env_config=env_config,
             result_dir=cfg.results_dir,
-            num_runs=num_runs,
             checkpoint=0,
             seed=seed,
             verbose=False,
@@ -54,7 +51,6 @@ def generate_data(cfg: HydraConfig, env_config: dict, seed: int):
                     teacher_config=teacher_config,
                     env_config=env_config,
                     result_dir=cfg.results_dir,
-                    num_runs=num_runs,
                     checkpoint=0,
                     seed=seed,
                     verbose=False,
@@ -83,7 +79,6 @@ def generate_data(cfg: HydraConfig, env_config: dict, seed: int):
                     env_config=env_config,
                     result_dir=cfg.results_dir,
                     check_if_exists=False,
-                    num_runs=num_runs,
                     checkpoint=0,
                     seed=seed,
                     verbose=False,

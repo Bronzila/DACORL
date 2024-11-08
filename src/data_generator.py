@@ -32,7 +32,6 @@ class DataGenerator:
         teacher_config: dict,
         env_config: dict,
         result_dir: Path,
-        num_runs: int,
         checkpoint: int,
         seed: int,
         verbose: bool,
@@ -86,7 +85,7 @@ class DataGenerator:
             # Start with instance 0
             self.env.instance_index = -1
 
-        buffer_size = num_runs * self._num_batches
+        buffer_size = self.env_config["num_runs"] * self._num_batches
         self.replay_buffer = ReplayBuffer(
             state_dim=self._state_dim,
             action_dim=1,
@@ -97,9 +96,6 @@ class DataGenerator:
         self.run_info = {
             "agent": teacher_config,
             "environment": env_config,
-            "seed": self.seed,
-            "num_runs": num_runs,
-            "num_batches": self._num_batches,
         }
 
         self.start_run = 0
@@ -142,8 +138,8 @@ class DataGenerator:
 
     def generate_data(self, checkpointing_freq: int = 0) -> None:
         """Generate data and checkpoints if required."""
-        num_runs: int = self.run_info["num_runs"]  # type: ignore
-        num_batches: int = self.run_info["num_batches"]  # type: ignore
+        num_runs: int = self.run_info["environment"]["num_runs"]  # type: ignore
+        num_batches: int = self.run_info["environment"]["num_batches"]  # type: ignore
 
         save_checkpoints = checkpointing_freq != 0
 
@@ -219,7 +215,6 @@ class DataGenerator:
         if not self.result_dir.exists():
             self.result_dir.mkdir(parents=True)
 
-        self.run_info["starting_points"] = self.starting_points
         save_path = self.result_dir / "rep_buffer"
         if save_checkpoint:
             self.replay_buffer.checkpoint(save_path)
@@ -260,6 +255,7 @@ class DataGenerator:
                 batches_per_epoch = len(env.train_loader)
                 print(f"One epoch consists of {batches_per_epoch} batches.")
                 self._num_batches = num_epochs * batches_per_epoch
+                self.env_config["num_batches"] = self._num_batches
                 self.env_config["cutoff"] = self._num_batches
             else:
                 self._phase = "epoch"
@@ -325,7 +321,6 @@ class LayerwiseDataGenerator(DataGenerator):
         teacher_config: dict,
         env_config: dict,
         result_dir: Path,
-        num_runs: int,
         checkpoint: int,
         seed: int,
         verbose: bool,
@@ -334,7 +329,6 @@ class LayerwiseDataGenerator(DataGenerator):
             teacher_config,
             env_config,
             result_dir,
-            num_runs,
             checkpoint,
             seed,
             verbose,
@@ -342,7 +336,9 @@ class LayerwiseDataGenerator(DataGenerator):
 
         self._n_layers = len(self.env.layer_types)
         # Reinitialize ReplayBuffer with proper size
-        buffer_size = num_runs * self._num_batches * self._n_layers
+        buffer_size = (
+            env_config["num_runs"] * self._num_batches * self._n_layers
+        )
         self.replay_buffer = ReplayBuffer(
             state_dim=self._state_dim,
             action_dim=1,
