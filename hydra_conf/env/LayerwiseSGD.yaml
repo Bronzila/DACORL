@@ -5,5 +5,4 @@ state_version: basic
 num_epochs: 20
 num_runs: 20
 epoch_mode: false
-instance_mode: instance_set
-instance_set_path: "../instance_sets/sgd/sgd_mnist_train.csv"
+instance_mode: random_seed
