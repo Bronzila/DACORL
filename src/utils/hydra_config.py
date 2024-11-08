@@ -15,6 +15,7 @@ class Config(DictConfig):
     # Optional fields with default values
     env: dict = MISSING
     num_train_iter: int = 30000
+    val_freq: int = 30000
     seed: int = 0
     eval_seed: int = 0
     eval_protocol: str = "train"

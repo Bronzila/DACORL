@@ -122,7 +122,7 @@ def train_model(cfg: HydraConfig, env_config: dict, seed: int):
         wandb_group=cfg.wandb_group,
         seed=seed,
     )
-    _, inc_value = trainer.train(cfg.num_train_iter, cfg.num_train_iter)
+    _, inc_value = trainer.train(cfg.num_train_iter, cfg.val_freq)
     print(inc_value)
 
 def eval_agent(cfg: HydraConfig, env_config: dict, train_seed: int) -> None:

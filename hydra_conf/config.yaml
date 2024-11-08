@@ -3,6 +3,7 @@ defaults:
 
 results_dir: ???  # Mandatory, no default value
 num_train_iter: 30000
+val_freq: 30000
 seed: 0
 eval_seed: 0
 eval_protocol: "train"
