@@ -12,6 +12,7 @@ from benchmarking import (
     read_teacher,
     save_combined_data,
 )
+from hydra.utils import get_original_cwd
 
 from src.data_generator import DataGenerator, LayerwiseDataGenerator
 from src.evaluator import Evaluator, LayerwiseEvaluator
@@ -171,10 +172,9 @@ def main(cfg: HydraConfig):
 
     # Get environment config
     env_config = cfg._to_content(cfg, resolve=True, throw_on_missing=False)["env"]
-    print(env_config)
+    env_config["dataset_path"] = Path(get_original_cwd(), cfg.dataset_path)
 
-    if env_config["type"] == "SGD" and cfg.instance_mode:
-        env_config["instance_mode"] = cfg.instance_mode
+    print(env_config)
 
     # Generate run seed
     rng = np.random.default_rng(cfg.seed)

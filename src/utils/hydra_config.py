@@ -41,3 +41,4 @@ class Config(DictConfig):
     combination: Literal["homogeneous", "heterogeneous", "single"] = "single"
     mode: Literal["data_generation", "training", "both"] = "both"
     data_exists: bool = False
+    dataset_path: str = "./datasets"
