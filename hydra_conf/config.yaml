@@ -16,3 +16,4 @@ combination: "single"
 mode: "all"  # Options: "data_gen", "train", "eval", "all"
 data_exists: false
 wandb_group: "DACORL"
+dataset_path: "./datasets"
