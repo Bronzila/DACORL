@@ -23,8 +23,6 @@ if TYPE_CHECKING:
 
 
 def generate_data(cfg: HydraConfig, env_config: dict, seed: int):
-    num_runs = env_config["num_runs"]
-
     GeneratorClass = LayerwiseDataGenerator if cfg.env.type == "LayerwiseSGD" else DataGenerator
 
     if cfg.combination == "single":
@@ -37,7 +35,6 @@ def generate_data(cfg: HydraConfig, env_config: dict, seed: int):
             teacher_config=teacher_config,
             env_config=env_config,
             result_dir=cfg.results_dir,
-            num_runs=num_runs,
             checkpoint=0,
             seed=seed,
             verbose=False,
@@ -54,7 +51,6 @@ def generate_data(cfg: HydraConfig, env_config: dict, seed: int):
                     teacher_config=teacher_config,
                     env_config=env_config,
                     result_dir=cfg.results_dir,
-                    num_runs=num_runs,
                     checkpoint=0,
                     seed=seed,
                     verbose=False,
@@ -83,7 +79,6 @@ def generate_data(cfg: HydraConfig, env_config: dict, seed: int):
                     env_config=env_config,
                     result_dir=cfg.results_dir,
                     check_if_exists=False,
-                    num_runs=num_runs,
                     checkpoint=0,
                     seed=seed,
                     verbose=False,
@@ -111,9 +106,13 @@ def train_model(cfg: HydraConfig, env_config: dict, seed: int):
     if env_config["type"] == "ToySGD":
         data_dir = data_dir / env_config["function"]
 
+    # Generate eval seed
+    rng = np.random.default_rng(cfg.eval_seed)
+    random_eval_seed = int(rng.integers(0, 2**32 - 1))
+    env_config["seed"] = random_eval_seed
     EvaluatorClass = LayerwiseEvaluator if cfg.env.type == "LayerwiseSGD" else Evaluator
 
-    evaluator = EvaluatorClass(data_dir, cfg.eval_protocol, env_config["num_runs"], cfg.eval_seed)
+    evaluator = EvaluatorClass(env_config)
 
     trainer = Trainer(
         data_dir=data_dir,
@@ -123,10 +122,10 @@ def train_model(cfg: HydraConfig, env_config: dict, seed: int):
         wandb_group=cfg.wandb_group,
         seed=seed,
     )
-    _, inc_value = trainer.train(cfg.num_train_iter, cfg.num_train_iter)
+    _, inc_value = trainer.train(cfg.num_train_iter, cfg.val_freq)
     print(inc_value)
 
-def eval_agent(cfg: HydraConfig, env_config: dict, seed: int) -> None:
+def eval_agent(cfg: HydraConfig, env_config: dict, train_seed: int) -> None:
     if cfg.combination == "single":
         data_dir = cfg.results_dir / env_config["type"] / cfg.teacher / str(cfg.id)
     else:
@@ -138,11 +137,16 @@ def eval_agent(cfg: HydraConfig, env_config: dict, seed: int) -> None:
     if env_config["type"] == "ToySGD":
         data_dir = data_dir / env_config["function"]
 
-    agent_path = data_dir / "results" / cfg.agent_type / str(seed) / str(cfg.num_train_iter)
+    agent_path = data_dir / "results" / cfg.agent_type / str(train_seed) / str(cfg.num_train_iter)
     actor = load_agent(cfg.agent_type, agent_path).actor
 
+    # Generate eval seed, if cfg.eval_seed == cfg.seed we use the same seed in training and evaluation
+    rng = np.random.default_rng(cfg.eval_seed)
+    random_eval_seed = int(rng.integers(0, 2**32 - 1))
+    env_config["seed"] = random_eval_seed
+
     EvaluatorClass = LayerwiseEvaluator if cfg.env.type == "LayerwiseSGD" else Evaluator
-    evaluator = EvaluatorClass(data_dir, cfg.eval_protocol, env_config["num_runs"], cfg.eval_seed)
+    evaluator = EvaluatorClass(env_config)
 
     eval_data = evaluator.evaluate(actor)
 

@@ -1,0 +1,20 @@
+# Inherit common LayerwiseSGD settings and override specific fields
+defaults:
+  - /env/LayerwiseSGD@_here_
+
+dataset_name: MNIST
+instance_mode: instance_set
+instance_set_path: "../instance_sets/sgd/sgd_mnist_test.csv"
+layer_specification:
+  - ["CONV2D", {"in_channels": 1, "out_channels": 32, "kernel_size": 3}]
+  - ["RELU", {}]
+  - ["CONV2D", {"in_channels": 32, "out_channels": 64, "kernel_size": 3}]
+  - ["RELU", {}]
+  - ["MAXPOOL2D", {"kernel_size": 2}]
+  - ["DROPOUT", {"p": 0.25}]
+  - ["FLATTEN", {"start_dim": 1}]
+  - ["LINEAR", {"in_features": 9216, "out_features": 128}]
+  - ["RELU", {}]
+  - ["DROPOUT", {"p": 0.25}]
+  - ["LINEAR", {"in_features": 128, "out_features": 10}]
+  - ["LOGSOFTMAX", {"dim": 1}]
