@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -112,6 +113,11 @@ def train_model(cfg: HydraConfig, env_config: dict, seed: int):
     random_eval_seed = int(rng.integers(0, 2**32 - 1))
     env_config["seed"] = random_eval_seed
     EvaluatorClass = LayerwiseEvaluator if cfg.env.type == "LayerwiseSGD" else Evaluator
+
+    # Read cutoff from run info
+    with (data_dir / "run_info.json").open() as f:
+        run_info = json.load(f)
+        env_config["cutoff"] = run_info["environment"]["cutoff"]
 
     evaluator = EvaluatorClass(env_config)
 
