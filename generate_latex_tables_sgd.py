@@ -165,7 +165,7 @@ if __name__ == "__main__":
                 teacher_path = base_path / agent / str(agent_id) / "aggregated_run_data.csv"
 
             if args.heterogeneous:                    
-                results_path = base_path / agent / "results"
+                results_path = base_path / agent / "results" / args.agent
                 if args.teacher_base_path:
                     teacher_path = Path(args.teacher_base_path) / agent / "aggregated_run_data.csv"
                 else:
