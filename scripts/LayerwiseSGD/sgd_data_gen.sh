@@ -15,8 +15,9 @@ conda activate MTORL-DAC
 export CUBLAS_WORKSPACE_CONFIG=:4096:8
 
 ID=${1:-default}
-RESULTS_DIR="LayerwiseSGD_data/main"
+RESULTS_DIR="LayerwiseSGD_data/FMNIST"
 SEED=0
+DATASET=FashionMNIST
 # Print some information about the job to STDOUT
 echo "Workingdir: $(pwd)";
 echo "Started at $(date)";
@@ -25,19 +26,19 @@ echo "Running job $SLURM_JOB_NAME using $SLURM_JOB_CPUS_PER_NODE cpus per node w
 if [ 1 -eq $SLURM_ARRAY_TASK_ID ]
 then
     echo "Teacher: exponential_decay";
-    python main.py env=LayerwiseSGD/MNIST teacher=exponential_decay id=$ID results_dir=$RESULTS_DIR seed=$SEED mode=data_gen
+    python main.py env=LayerwiseSGD/$DATASET teacher=exponential_decay id=$ID results_dir=$RESULTS_DIR seed=$SEED mode=data_gen
 elif [ 2 -eq $SLURM_ARRAY_TASK_ID  ]
 then
     echo "Teacher: step_decay";
-    python main.py env=LayerwiseSGD/MNIST teacher=step_decay id=$ID results_dir=$RESULTS_DIR seed=$SEED mode=data_gen
+    python main.py env=LayerwiseSGD/$DATASET teacher=step_decay id=$ID results_dir=$RESULTS_DIR seed=$SEED mode=data_gen
 elif [ 3 -eq $SLURM_ARRAY_TASK_ID  ]
 then
     echo "Teacher: sgdr";
-    python main.py env=LayerwiseSGD/MNIST teacher=sgdr id=$ID results_dir=$RESULTS_DIR seed=$SEED mode=data_gen
+    python main.py env=LayerwiseSGD/$DATASET teacher=sgdr id=$ID results_dir=$RESULTS_DIR seed=$SEED mode=data_gen
 elif [ 4 -eq $SLURM_ARRAY_TASK_ID  ]
 then
     echo "Teacher: constant";
-    python main.py env=LayerwiseSGD/MNIST teacher=constant id=$ID results_dir=$RESULTS_DIR seed=$SEED mode=data_gen
+    python main.py env=LayerwiseSGD/$DATASET teacher=constant id=$ID results_dir=$RESULTS_DIR seed=$SEED mode=data_gen
 fi
 
 # Print some Information about the end-time to STDOUT

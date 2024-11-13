@@ -4,7 +4,7 @@
 #SBATCH -e logs/%A[%a].%N.err       # STDERR  (the folder log has to exist) %A will be replaced by the SLURM_ARRAY_JOB_ID value
 #SBATCH -J train_single              # sets the job name. 
 #SBATCH -a 1-4 # array size
-#SBATCH -t 0-34:00:00
+#SBATCH -t 0-50:00:00
 #SBATCH --mem 16GB
 
 cd /work/dlclarge1/fixj-thesis/MTORL-DAC
@@ -21,7 +21,7 @@ AGENT=${2:-td3_bc}
 
 ID=0
 NUM_TRAIN_ITER=30000
-RESULTS_DIR="LayerwiseSGD_data/wandb"
+RESULTS_DIR="LayerwiseSGD_data/main"
 DATASET="MNIST"
 
 # Print some information about the job to STDOUT
@@ -34,22 +34,22 @@ if [ 1 -eq $SLURM_ARRAY_TASK_ID ]
 then
     echo "Seed: $SEED";
     echo "Teacher: exponential_decay";
-    python main.py env=LayerwiseSGD/$DATASET teacher=exponential_decay id=$ID results_dir=$RESULTS_DIR seed=$SEED mode=train agent_type=$AGENT num_train_iter=$NUM_TRAIN_ITER val_freq=$NUM_TRAIN_ITER wandb_group="single"
+    python main.py env=LayerwiseSGD/$DATASET\_gen teacher=exponential_decay id=$ID results_dir=$RESULTS_DIR seed=$SEED mode=eval agent_type=$AGENT num_train_iter=$NUM_TRAIN_ITER val_freq=$NUM_TRAIN_ITER wandb_group="single" eval_protocol="generalization"
 elif [ 2 -eq $SLURM_ARRAY_TASK_ID ]
 then
     echo "Seed: $SEED";
     echo "Teacher: step_decay";
-    python main.py env=LayerwiseSGD/$DATASET teacher=step_decay id=$ID results_dir=$RESULTS_DIR seed=$SEED mode=train agent_type=$AGENT num_train_iter=$NUM_TRAIN_ITER val_freq=$NUM_TRAIN_ITER wandb_group="single"
+    python main.py env=LayerwiseSGD/$DATASET\_gen teacher=step_decay id=$ID results_dir=$RESULTS_DIR seed=$SEED mode=eval agent_type=$AGENT num_train_iter=$NUM_TRAIN_ITER val_freq=$NUM_TRAIN_ITER wandb_group="single" eval_protocol="generalization"
 elif [ 3 -eq $SLURM_ARRAY_TASK_ID ]
 then
     echo "Seed: $SEED";
     echo "Teacher: sgdr";
-    python main.py env=LayerwiseSGD/$DATASET teacher=sgdr id=$ID results_dir=$RESULTS_DIR seed=$SEED mode=train agent_type=$AGENT num_train_iter=$NUM_TRAIN_ITER val_freq=$NUM_TRAIN_ITER wandb_group="single"
+    python main.py env=LayerwiseSGD/$DATASET\_gen teacher=sgdr id=$ID results_dir=$RESULTS_DIR seed=$SEED mode=eval agent_type=$AGENT num_train_iter=$NUM_TRAIN_ITER val_freq=$NUM_TRAIN_ITER wandb_group="single" eval_protocol="generalization"
 elif [ 4 -eq $SLURM_ARRAY_TASK_ID ]
 then
     echo "Seed: $SEED";
     echo "Teacher: constant";
-    python main.py env=LayerwiseSGD/$DATASET teacher=constant id=$ID results_dir=$RESULTS_DIR seed=$SEED mode=train agent_type=$AGENT num_train_iter=$NUM_TRAIN_ITER val_freq=$NUM_TRAIN_ITER wandb_group="single"
+    python main.py env=LayerwiseSGD/$DATASET\_gen teacher=constant id=$ID results_dir=$RESULTS_DIR seed=$SEED mode=eval agent_type=$AGENT num_train_iter=$NUM_TRAIN_ITER val_freq=$NUM_TRAIN_ITER wandb_group="single" eval_protocol="generalization"
 fi
 
 # Print some Information about the end-time to STDOUT
