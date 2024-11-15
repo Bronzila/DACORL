@@ -183,7 +183,7 @@ def main(cfg: HydraConfig):
 
     # Get environment config
     env_config = cfg._to_content(cfg, resolve=True, throw_on_missing=False)["env"]
-    env_config["dataset_path"] = Path(get_original_cwd(), cfg.dataset_path)
+    env_config["dataset_path"] = str(Path(get_original_cwd(), cfg.dataset_path))
 
     print(env_config)
 
