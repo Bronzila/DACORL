@@ -1,0 +1,1 @@
+{"index": 12464, "accuracy": 94.18, "flops": 149.34081, "params": 1.045466, "config": {"name": "infer.tiny", "C": 16, "N": 5, "arch_str": "|skip_connect~0|+|nor_conv_3x3~0|nor_conv_3x3~1|+|skip_connect~0|nor_conv_3x3~1|nor_conv_3x3~2|", "num_classes": 10}}
