@@ -360,7 +360,7 @@ class Trainer:
                         logs[k].append(v)
 
                 if self.use_wandb:
-                    wandb.log(log_dict, self.agent.total_it)  # type: ignore
+                    wandb.log(log_dict, t)  # type: ignore
 
             # if we run out of bounds or reached max optimization iters
             if done:
