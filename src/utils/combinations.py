@@ -45,17 +45,13 @@ def concat_runs(agent_paths: list[str]) -> tuple:
             starting_points = run_info.get("starting_points", None)
             combined_run_info = {
                 "environment": run_info["environment"],
-                "starting_points": starting_points,
-                "seed": run_info["seed"],
-                "num_runs": run_info["num_runs"],
-                "num_batches": run_info["num_batches"],
                 "agent": {"type": run_info["agent"]["type"]},
             }
         else:
             combined_buffer.merge(temp_buffer)
 
         df = pd.read_csv(run_data_path)
-        df["run_idx"] += idx * run_info["num_runs"]
+        df["run_idx"] += idx * run_info["environment"]["num_runs"]
         combined_run_data.append(df)
     return (
         combined_buffer,
