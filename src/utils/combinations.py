@@ -42,7 +42,7 @@ def concat_runs(agent_paths: list[str]) -> tuple:
 
         if combined_buffer is None and combined_run_info is None:
             combined_buffer = temp_buffer
-            starting_points = run_info.get("starting_points", None)
+            run_info.get("starting_points", None)
             combined_run_info = {
                 "environment": run_info["environment"],
                 "agent": {"type": run_info["agent"]["type"]},
@@ -103,7 +103,7 @@ def get_run_ids_by_agent_path(
 
         # Always use same rng
         rng = np.random.default_rng(seed=0)
-        zipped_paths_and_weights = zip(paths, sampling_weights)
+        zipped_paths_and_weights = zip(paths, sampling_weights, strict=True)
         # Sort by performance in order to pass overflow samples
         sorted_paths_and_weights = sorted(
             zipped_paths_and_weights,
