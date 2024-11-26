@@ -1,16 +1,12 @@
 import argparse
 import json
 from pathlib import Path
-import json
-from pathlib import Path
 
 from src.utils.generate_plots import (
     plot_actions,
     plot_actions_sgd,
     plot_comparison,
-    plot_optimization_trace,
     plot_teacher_actions,
-    plot_type,
 )
 
 if __name__ == "__main__":
@@ -49,18 +45,6 @@ if __name__ == "__main__":
         action=argparse.BooleanOptionalAction,
     )
     parser.add_argument(
-        "--plot_type",
-        help="Generate plots for teacher-agent comparison for a specified type",
-        default=None,
-        type=str,
-    )
-    parser.add_argument(
-        "--plot_type",
-        help="Generate plots for teacher-agent comparison for a specified type",
-        default=None,
-        type=str,
-    )
-    parser.add_argument(
         "--trajectory",
         help="Generate plots for optimization trajectory (function values)",
         default=False,
@@ -75,9 +59,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--num_runs",
         help="Specifies how many individual runs should be plotted.",
-        help="Specifies how many individual runs should be plotted.",
         type=int,
-        default=0,
         default=0,
     )
     parser.add_argument(
@@ -171,15 +153,6 @@ if __name__ == "__main__":
                 args.agent_labels,
                 args.title,
                 args.heterogeneous,
-            )
-        if args.plot_type:
-            plot_type(
-                args.plot_type,
-                args.data_dir,
-                args.fidelity,
-                args.seed,
-                args.show,
-                args.teacher,
             )
         if args.action_teacher:
             plot_teacher_actions(
