@@ -5,10 +5,8 @@ from pathlib import Path
 from typing import Any
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import seaborn as sns
-import torch
 from dacbench.envs.env_utils.function_definitions import (
     Ackley,
     Rastrigin,
@@ -122,7 +120,9 @@ def plot_actions(
                 teacher_drawstyle = "steps-post"
 
     drawstyle = "default"
-    aggregated_df = load_data(run_data_path, run_info["environment"]["num_runs"])
+    aggregated_df = load_data(
+        run_data_path, run_info["environment"]["num_runs"]
+    )
     agent_layers = aggregated_df["layer_idx"].unique().sort()
 
     if num_runs > 0:
@@ -148,7 +148,9 @@ def plot_actions(
             if teacher:
                 for layer_idx in teacher_layers:
                     sns.lineplot(
-                        data=run_data_teacher[run_data_teacher["layer_idx"] == layer_idx],
+                        data=run_data_teacher[
+                            run_data_teacher["layer_idx"] == layer_idx
+                        ],
                         x="batch_idx",
                         y="action",
                         drawstyle=teacher_drawstyle,
@@ -160,7 +162,9 @@ def plot_actions(
         if teacher:
             for layer_idx in teacher_layers:
                 ax = sns.lineplot(
-                    data=run_data_teacher[run_data_teacher["layer_idx"] == layer_idx],
+                    data=run_data_teacher[
+                        run_data_teacher["layer_idx"] == layer_idx
+                    ],
                     x="batch_idx",
                     y="action",
                     drawstyle=teacher_drawstyle,
@@ -233,7 +237,7 @@ def plot_comparison(
     heterogeneous: bool = False,
     metric: str = "f_cur",
 ) -> None:
-    for path, agent_label in zip(dir_paths, agent_labels):
+    for path, agent_label in zip(dir_paths, agent_labels, strict=True):
         dir_path = Path(path)
         run_info_path = Path(dir_path, "run_info.json")
         with Path.open(run_info_path) as file:
@@ -456,7 +460,9 @@ def plot_actions_sgd(
             if teacher:
                 for layer_idx in teacher_layers:
                     sns.lineplot(
-                        data=run_data_teacher[run_data_teacher["layer_idx"] == layer_idx],
+                        data=run_data_teacher[
+                            run_data_teacher["layer_idx"] == layer_idx
+                        ],
                         x="batch_idx",
                         y="action",
                         drawstyle=teacher_drawstyle,
@@ -470,7 +476,9 @@ def plot_actions_sgd(
             print(teacher_layers)
             for layer_idx in teacher_layers:
                 ax = sns.lineplot(
-                    data=run_data_teacher[run_data_teacher["layer_idx"] == layer_idx],
+                    data=run_data_teacher[
+                        run_data_teacher["layer_idx"] == layer_idx
+                    ],
                     x="batch_idx",
                     y="action",
                     drawstyle=teacher_drawstyle,
@@ -595,7 +603,7 @@ def plot_teacher_actions(
         dfs.append(df)
         run_infos.append(run_info)
 
-    for run_info, df in zip(run_infos, dfs):
+    for run_info, df in zip(run_infos, dfs, strict=True):
         print(run_info["agent"]["id"])
         ax = sns.lineplot(
             data=df,
