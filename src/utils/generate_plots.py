@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import torch
 from dacbench.envs.env_utils.function_definitions import (
     Ackley,
     Rastrigin,
@@ -62,218 +61,13 @@ def load_data(paths: list, num_runs: int = 1000):
         df = pd.read_csv(path)
         length += len(df.index)
 
-        df["run"] += idx * num_runs
+        df["run_idx"] += idx * num_runs
 
         df["action"] = df["action"].map(lambda x: 10**x)
 
         aggregated_df = pd.concat([aggregated_df, df], ignore_index=True)
     assert length == len(aggregated_df.index)
     return aggregated_df
-
-
-def plot_optimization_trace(
-    dir_path,
-    agent_path=None,
-    show=False,
-    num_runs=1,
-) -> None:
-    # Get paths
-    if not agent_path:
-        run_data_path = Path(dir_path, "aggregated_run_data.csv")
-    else:
-        run_data_path = Path(dir_path, agent_path, "eval_data.csv")
-    run_info_path = Path(dir_path, "run_info.json")
-
-    # Get run info from file
-    with Path.open(run_info_path) as file:
-        run_info = json.load(file)
-        env_info = run_info["environment"]
-    function_name = env_info["function"]
-    lower_bound = env_info["low"]
-    upper_bound = env_info["high"]
-
-    # Define problem
-    problem = get_problem_from_name(function_name)
-    objective_function = problem.objective_function
-
-    # Read run data
-    df = pd.read_csv(run_data_path)
-
-    # Create a meshgrid for plotting the Rastrigin function
-    x_range = np.linspace(lower_bound, upper_bound, 100)
-    y_range = np.linspace(lower_bound, upper_bound, 100)
-    X, Y = np.meshgrid(x_range, y_range)
-    Z = objective_function([torch.Tensor(X), torch.Tensor(Y)]).numpy()
-
-    # Use logarithmically spaced contour levels for varying detail
-    contour_levels = (
-        np.logspace(-3, 3.6, 30) if function_name == "Rosenbrock" else 10
-    )
-
-    # Group data by runs
-    grouped_df = df.groupby("run")
-
-    for idx, data in list(grouped_df)[:num_runs]:
-        plt.clf()
-        # Plot the function
-        contour_plot = plt.contourf(
-            X,
-            Y,
-            Z,
-            levels=contour_levels,
-            cmap="viridis",
-            zorder=5,
-        )
-
-        # Extract x and y values from the DataFrame
-        x_values = data["x_cur"].apply(lambda coord: eval(coord)[0])
-        y_values = data["x_cur"].apply(lambda coord: eval(coord)[1])
-
-        # Plot the points from the DataFrame
-        colors = np.arange(len(x_values))
-        sns.scatterplot(
-            x=x_values,
-            y=y_values,
-            c=colors,
-            cmap="spring",
-            label="Trace",
-            zorder=10,
-        )
-
-        # Add minimum
-        min_point = problem.x_min.tolist()
-        sns.scatterplot(
-            x=[min_point[0]],
-            y=[min_point[1]],
-            color="green",
-            s=100,
-            marker="*",
-            label=f"Minimum Point {min_point}",
-            zorder=10,
-        )
-
-        # Add labels and a legend
-        plt.xlabel("X")
-        plt.ylabel("Y")
-        plt.title(f"{function_name} Function with Optimization Trace")
-        plt.legend()
-
-        # Add a colorbar to indicate function values
-        colorbar = plt.colorbar(contour_plot)
-        colorbar.set_label("Objective Function Value")
-
-        # Show or save the plot
-        if show:
-            plt.show()
-        else:
-            save_path = Path(
-                dir_path,
-                "figures",
-                "point_traj",
-            )
-
-        if not save_path.exists():
-            save_path.mkdir(parents=True)
-
-        plt.savefig(save_path / f"point_traj_{idx}.svg", bbox_inches="tight")
-
-
-def plot_type(
-    plot_type: str,
-    dir_path: str,
-    fidelity: int,
-    seed: int | None,
-    show: bool = False,
-    teacher: bool = True,
-) -> None:
-    plt.clf()
-
-    dir_path = Path(dir_path)
-
-    run_data_path = []
-    agent_names = []
-    if type(seed) is int:
-        for path in (dir_path / "results").rglob(
-            f"{seed}/{fidelity}/eval_data.csv",
-        ):
-            run_data_path.append(path)
-        filename = f"{plot_type}_{fidelity}_{seed}"
-    elif seed is None:
-        for agent in (Path(dir_path) / "results").glob("*"):
-            agent_runs = []
-            agent_names.append(agent.name)
-            for path in agent.rglob("*/eval_data.csv"):
-                agent_runs.append(path)
-            run_data_path.append(agent_runs)
-        filename = f"{plot_type}_{fidelity}"
-
-    run_info_path = Path(dir_path, "run_info.json")
-
-    if teacher:
-        run_data_teacher_path = Path(dir_path, "aggregated_run_data.csv")
-        run_data_teacher = pd.read_csv(run_data_teacher_path)
-        completed_runs_ids = run_data_teacher[run_data_teacher["batch"] == 99][
-            "run"
-        ].unique()
-        completed_runs = run_data_teacher[
-            run_data_teacher["run"].isin(completed_runs_ids)
-        ]
-        single_teacher_run = completed_runs[
-            completed_runs["run"] == completed_runs_ids[0]
-        ]
-        single_teacher_run["action"] = 10 ** single_teacher_run["action"]
-
-        # Get run info from file
-        with Path.open(run_info_path) as file:
-            run_info = json.load(file)
-            teacher_drawstyle = "default"
-            if run_info["agent"]["type"] == "step_decay":
-                teacher_drawstyle = "steps-post"
-
-    if teacher:
-        ax = sns.lineplot(
-            data=single_teacher_run,
-            x="batch",
-            y=plot_type,
-            drawstyle=teacher_drawstyle,
-            label=dir_path.parents[1].name,
-        )
-    for agent_name, agent_paths in zip(agent_names, run_data_path):
-        aggregated_df = load_data(agent_paths, run_info["num_runs"])
-
-        print(f"Max {agent_name}: {aggregated_df['action'].max()}")
-        print(f"Is inf: {any(np.isinf(aggregated_df['action']))}")
-        print(f"Is nan: {any(np.isnan(aggregated_df['action']))}")
-
-        sns.lineplot(
-            data=aggregated_df,
-            x="batch",
-            y=plot_type,
-            ax=ax,
-            label=agent_name.upper(),
-        )
-
-    if plot_type == "action":
-        ax.set_ylim(0, 1.0)
-    ax.set_title(f"{plot_type} on {dir_path.name}")
-    # Show or save the plot
-    if show:
-        plt.show()
-    else:
-        save_path = Path(
-            dir_path.parents[2],  # PROJECT/ToySGD/
-            "figures",
-            dir_path.name,  # FUNCTION/
-            dir_path.parents[1].name,  # TEACHER/
-        )
-
-        if not save_path.exists():
-            save_path.mkdir(parents=True)
-        print(f"Saving figure to {save_path / f'{filename}_aggregate.svg'}")
-        plt.savefig(
-            save_path / f"{filename}_aggregate.svg",
-            bbox_inches="tight",
-        )
 
 
 def plot_actions(
@@ -316,19 +110,8 @@ def plot_actions(
     if teacher:
         run_data_teacher_path = Path(dir_path, "aggregated_run_data.csv")
         run_data_teacher = pd.read_csv(run_data_teacher_path)
-        completed_runs_ids = run_data_teacher[run_data_teacher["batch"] == 99][
-            "run"
-        ].unique()
-        completed_runs = run_data_teacher[
-            run_data_teacher["run"].isin(completed_runs_ids)
-        ]
-        single_teacher_run = completed_runs[
-            completed_runs["run"] == completed_runs_ids[0]
-        ]
-        single_teacher_run["action"] = 10 ** single_teacher_run["action"]
 
-        #     "run"
-        # ].unique()
+        teacher_layers = np.sort(run_data_teacher["layer_idx"].unique())
 
         # Get run info from file
         with Path.open(run_info_path) as file:
@@ -336,74 +119,75 @@ def plot_actions(
             teacher_drawstyle = "default"
             if run_info["agent"]["type"] == "step_decay":
                 teacher_drawstyle = "steps-post"
-                # Only use single step_decay teacher for plotting, otherwise it adds weird
-                # Semi transparent line
-                if len(run_data_teacher) <= 101000:  # single teacher case
-                    completed_runs_ids = run_data_teacher[
-                        run_data_teacher["batch"] == 100
-                    ]["run"].unique()
-                    completed_runs = run_data_teacher[
-                        run_data_teacher["run"].isin(completed_runs_ids)
-                    ]
-                    single_teacher_run = completed_runs[
-                        completed_runs["run"] == completed_runs_ids[0]
-                    ]
-                    run_data_teacher = single_teacher_run
+
     drawstyle = "default"
-    aggregated_df = load_data(run_data_path, run_info["num_runs"])
+    aggregated_df = load_data(
+        run_data_path,
+        run_info["environment"]["num_runs"],
+    )
+    agent_layers = np.sort(aggregated_df["layer_idx"].unique())
 
     if num_runs > 0:
-        for data in list(aggregated_df.groupby("run")):
-            ax = sns.lineplot(
-                data=data,
-                x="batch",
-                y="action",
-                drawstyle=drawstyle,
-                label=agent_type.upper(),
-            )
+        for data in list(aggregated_df.groupby("run_idx")):
+            for layer_idx in agent_layers:
+                ax = sns.lineplot(
+                    data=data[data["layer_idx"] == layer_idx],
+                    x="batch_idx",
+                    y="action",
+                    drawstyle=drawstyle,
+                    label=agent_type.upper(),
+                )
             if reward:
                 ax2 = ax.twinx()
                 sns.lineplot(
                     data=data,
-                    x="batch",
+                    x="batch_idx",
                     y="reward",
                     drawstyle=drawstyle,
                     label="Reward",
                     ax=ax2,
                 )
             if teacher:
-                sns.lineplot(
-                    data=run_data_teacher,
-                    x="batch",
-                    y="action",
-                    drawstyle=teacher_drawstyle,
-                    label="Teacher",
-                )
+                for layer_idx in teacher_layers:
+                    sns.lineplot(
+                        data=run_data_teacher[
+                            run_data_teacher["layer_idx"] == layer_idx
+                        ],
+                        x="batch_idx",
+                        y="action",
+                        drawstyle=teacher_drawstyle,
+                        label="Teacher",
+                    )
 
     if aggregate:
         plt.clf()
         if teacher:
+            for layer_idx in teacher_layers:
+                ax = sns.lineplot(
+                    data=run_data_teacher[
+                        run_data_teacher["layer_idx"] == layer_idx
+                    ],
+                    x="batch_idx",
+                    y="action",
+                    drawstyle=teacher_drawstyle,
+                    label=labels[0],
+                    errorbar=("pi", 80),
+                )
+
+        for layer_idx in agent_layers:
             ax = sns.lineplot(
-                data=run_data_teacher,
-                x="batch",
+                data=aggregated_df[aggregated_df["layer_idx"] == layer_idx],
+                x="batch_idx",
                 y="action",
-                drawstyle=teacher_drawstyle,
-                label=labels[0],
+                drawstyle=drawstyle,
+                label=labels[1],
                 errorbar=("pi", 80),
             )
-        ax = sns.lineplot(
-            data=aggregated_df,
-            x="batch",
-            y="action",
-            drawstyle=drawstyle,
-            label=labels[1],
-            errorbar=("pi", 80),
-        )
         if reward:
             ax2 = ax.twinx()
             sns.lineplot(
                 data=aggregated_df,
-                x="batch",
+                x="batch_idx",
                 y="reward",
                 color="g",
                 label="Reward",
@@ -455,7 +239,7 @@ def plot_comparison(
     heterogeneous: bool = False,
     metric: str = "f_cur",
 ) -> None:
-    for path, agent_label in zip(dir_paths, agent_labels):
+    for path, agent_label in zip(dir_paths, agent_labels, strict=True):
         dir_path = Path(path)
         run_info_path = Path(dir_path, "run_info.json")
         with Path.open(run_info_path) as file:
@@ -487,30 +271,30 @@ def plot_comparison(
                 last_value = group[metric].iloc[-1]
 
                 # Create full run
-                all_steps = pd.DataFrame({"batch": range(101)})
+                all_steps = pd.DataFrame({"batch_idx": range(101)})
 
                 # Merge group with full run
                 filled_group = all_steps.merge(
                     group,
-                    on="batch",
+                    on="batch_idx",
                     how="left",
                 )
 
-                filled_group["run"] = group["run"].iloc[0]
+                filled_group["run_idx"] = group["run_idx"].iloc[0]
                 filled_group[metric] = filled_group[metric].fillna(last_value)
 
                 return filled_group
 
-            agent_required_df = agent_data[[metric, "run", "batch"]]
-            teacher_required_df = teacher_data[[metric, "run", "batch"]]
+            agent_required_df = agent_data[[metric, "run_idx", "batch_idx"]]
+            teacher_required_df = teacher_data[[metric, "run_idx", "batch_idx"]]
 
             agent_df_filled = (
-                agent_required_df.groupby("run")
+                agent_required_df.groupby("run_idx")
                 .apply(fill_missing_values, metric)
                 .reset_index(drop=True)
             )
             teacher_df_filled = (
-                teacher_required_df.groupby("run")
+                teacher_required_df.groupby("run_idx")
                 .apply(fill_missing_values, metric)
                 .reset_index(drop=True)
             )
@@ -521,7 +305,7 @@ def plot_comparison(
         if teacher_data is not None:
             ax = sns.lineplot(
                 teacher_df_filled,
-                x="batch",
+                x="batch_idx",
                 y=metric,
                 label=teacher_label,
                 errorbar=("ci", 99),
@@ -529,7 +313,7 @@ def plot_comparison(
         if agent_data is not None:
             ax = sns.lineplot(
                 agent_df_filled,
-                x="batch",
+                x="batch_idx",
                 y=metric,
                 label=agent_label,
                 errorbar=("ci", 99),
@@ -599,10 +383,9 @@ def plot_comparison(
 
 
 def plot_actions_sgd(
-    dir_path: str,
+    dir_path: Path,
     agent_type: str,
     fidelity: int,
-    seed: int | None,
     show: bool = False,
     num_runs: int = 1,
     aggregate: bool = True,
@@ -614,32 +397,22 @@ def plot_actions_sgd(
 ) -> None:
     plt.clf()
     run_data_path = []
-    if seed:
-        run_data_path.append(
-            Path(dir_path)
-            / "results"
-            / agent_type
-            / seed
-            / fidelity
-            / "eval_data.csv",
-        )
-        filename = f"action_{agent_type}_{seed}_{fidelity}"
-    elif seed is None:
-        dir_path = Path(dir_path)
-        teacher_name = (
-            dir_path.parents[0].name if not heterogeneous else dir_path.name
-        )
-        filename = f"action_{teacher_name}_aggregate_{fidelity}"
-        for path in (Path(dir_path) / "results" / agent_type).rglob(
-            "*/eval_data.csv",
-        ):
+
+    teacher_name = (
+        dir_path.parents[0].name if not heterogeneous else dir_path.name
+    )
+    teacher_id = dir_path.name if not heterogeneous else 0
+    filename = f"action_{teacher_name}_{teacher_id}_aggregate"
+    for path in (dir_path / "results" / agent_type).rglob(
+        "*/eval_data.csv",
+    ):
+        if path.parent.name == str(fidelity):
             run_data_path.append(path)
 
-    run_info_path = Path(dir_path, "run_info.json")
+    run_info_path = dir_path / "run_info.json"
 
-    # Get exemplatory teacher run for plotting
     if teacher:
-        run_data_teacher_path = Path(dir_path, "aggregated_run_data.csv")
+        run_data_teacher_path = dir_path / "aggregated_run_data.csv"
         run_data_teacher = pd.read_csv(run_data_teacher_path)
         run_data_teacher["action"] = 10 ** run_data_teacher["action"]
 
@@ -649,37 +422,26 @@ def plot_actions_sgd(
             teacher_drawstyle = "default"
             if run_info["agent"]["type"] == "step_decay" and not heterogeneous:
                 teacher_drawstyle = "steps-post"
-                # Only use single step_decay teacher for plotting, otherwise it adds weird
-                # Semi transparent line
-                if len(run_data_teacher) <= 200000:  # single teacher case
-                    completed_runs_ids = run_data_teacher[
-                        run_data_teacher["batch"] == 9000
-                    ]["run"].unique()
-                    completed_runs = run_data_teacher[
-                        run_data_teacher["run"].isin(completed_runs_ids)
-                    ]
-                    single_teacher_run = completed_runs[
-                        completed_runs["run"] == completed_runs_ids[0]
-                    ]
-                    run_data_teacher = single_teacher_run
 
     drawstyle = "default"
     aggregated_df = load_data(run_data_path, run_info["num_runs"])
+    agent_layers = np.sort(aggregated_df["layer_idx"].unique())
 
     if num_runs > 0:
-        for data in list(aggregated_df.groupby("run")):
-            ax = sns.lineplot(
-                data=data,
-                x="batch",
-                y="action",
-                drawstyle=drawstyle,
-                label=agent_type.upper(),
-            )
+        for data in list(aggregated_df.groupby("run_idx")):
+            for layer_idx in agent_layers:
+                ax = sns.lineplot(
+                    data=data[data["layer_idx"] == layer_idx],
+                    x="batch_idx",
+                    y="action",
+                    drawstyle=drawstyle,
+                    label=agent_type.upper(),
+                )
             if reward:
                 ax2 = ax.twinx()
                 sns.lineplot(
                     data=data,
-                    x="batch",
+                    x="batch_idx",
                     y="reward",
                     drawstyle=drawstyle,
                     label="Reward",
@@ -687,8 +449,8 @@ def plot_actions_sgd(
                 )
             if teacher:
                 sns.lineplot(
-                    data=run_data_teacher,
-                    x="batch",
+                    data=run_data_teacher[run_data_teacher["layer_idx"] == 0],
+                    x="batch_idx",
                     y="action",
                     drawstyle=teacher_drawstyle,
                     label="Teacher",
@@ -697,27 +459,29 @@ def plot_actions_sgd(
     if aggregate:
         plt.clf()
         if teacher:
+            # Teacher does not differ for different layers
             ax = sns.lineplot(
-                data=run_data_teacher,
-                x="batch",
+                data=run_data_teacher[run_data_teacher["layer_idx"] == 0],
+                x="batch_idx",
                 y="action",
                 drawstyle=teacher_drawstyle,
                 label=labels[0],
-                errorbar=("ci", 99),
+                errorbar=("pi", 80),
             )
-        ax = sns.lineplot(
-            data=aggregated_df,
-            x="batch",
-            y="action",
-            drawstyle=drawstyle,
-            label=labels[1],
-            errorbar=("ci", 99),
-        )
+        for layer_idx in agent_layers:
+            ax = sns.lineplot(
+                data=aggregated_df[aggregated_df["layer_idx"] == layer_idx],
+                x="batch_idx",
+                y="action",
+                drawstyle=drawstyle,
+                label=labels[1] + f"-{layer_idx}",
+                errorbar=("pi", 80),
+            )
         if reward:
             ax2 = ax.twinx()
             sns.lineplot(
                 data=aggregated_df,
-                x="batch",
+                x="batch_idx",
                 y="reward",
                 color="g",
                 label="Reward",
@@ -732,7 +496,6 @@ def plot_actions_sgd(
         if show:
             plt.show()
         else:
-            dir_path = Path(dir_path)
             if not heterogeneous:
                 save_path = Path(
                     dir_path.parents[1],  # PROJECT/ToySGD/
@@ -822,11 +585,11 @@ def plot_teacher_actions(
         dfs.append(df)
         run_infos.append(run_info)
 
-    for run_info, df in zip(run_infos, dfs):
+    for run_info, df in zip(run_infos, dfs, strict=True):
         print(run_info["agent"]["id"])
         ax = sns.lineplot(
             data=df,
-            x="batch",
+            x="batch_idx",
             y="action",
             drawstyle=run_info["draw_style"],
             label=run_info["agent"]["id"],
@@ -836,7 +599,7 @@ def plot_teacher_actions(
             ax2 = ax.twinx()
             sns.lineplot(
                 data=df,
-                x="batch",
+                x="batch_idx",
                 y="reward",
                 color="g",
                 label="Reward",
