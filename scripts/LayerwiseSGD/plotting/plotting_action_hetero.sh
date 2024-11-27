@@ -15,6 +15,7 @@ RESULTS_DIR=${1:-data}
 FUNCTIONS="Ackley Rastrigin Rosenbrock Sphere"
 TEACHERS="E-ST-SG-C E-C E-SG E-SG-C E-ST E-ST-C E-ST-SG SG-C ST-C ST-SG ST-SG-C"
 NUM_RUNS=0
+FIDELITY=60000
 
 for teacher in $TEACHERS
 do
@@ -59,5 +60,5 @@ do
     # TITLE="Comparing Teacher and Agent Behavior on $function"
     TITLE=""
 
-    python -W ignore plotting.py --data_dir $RESULTS_DIR/LayerwiseSGD/$teacher/ --agent $AGENT --action --num_runs $NUM_RUNS --teacher --agent_labels "$LABEL" "TD3+BC" --title "$TITLE" --heterogeneous --metric "valid_acc"
+    python -W ignore plotting.py --data_dir $RESULTS_DIR/LayerwiseSGD/$teacher/ --agent $AGENT --action --fidelity $FIDELITY --num_runs $NUM_RUNS --teacher --agent_labels "$LABEL" "TD3+BC" --title "$TITLE" --heterogeneous --metric "valid_acc"
 done

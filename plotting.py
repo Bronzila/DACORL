@@ -3,7 +3,6 @@ import json
 from pathlib import Path
 
 from src.utils.generate_plots import (
-    plot_actions,
     plot_actions_sgd,
     plot_comparison,
     plot_teacher_actions,
@@ -31,12 +30,6 @@ if __name__ == "__main__":
         "--seed",
         default=None,
         help="specifies a seed to get the plots from. If None, it aggregates over all seeds",
-    )
-    parser.add_argument(
-        "--optim_trace",
-        help="Generate plots for optimization trace",
-        action=argparse.BooleanOptionalAction,
-        default=False,
     )
     parser.add_argument(
         "--action",
@@ -127,33 +120,11 @@ if __name__ == "__main__":
         default=False,
     )
     parser.add_argument(
-        "--metric", type=str, help="Metric to use.", default="f_cur"
+        "--metric", type=str, help="Metric to use.", default="validation_accuracy",
     )
     args = parser.parse_args()
 
     if args.metric == "f_cur":
-        if args.optim_trace:
-            plot_optimization_trace(
-                args.data_dir,
-                args.agent_path,
-                args.show,
-                args.num_runs,
-            )
-        if args.action:
-            plot_actions(
-                args.data_dir,
-                args.agent,
-                args.fidelity,
-                args.seed,
-                args.show,
-                args.num_runs,
-                args.aggregate,
-                args.teacher,
-                args.reward,
-                args.agent_labels,
-                args.title,
-                args.heterogeneous,
-            )
         if args.action_teacher:
             plot_teacher_actions(
                 args.data_dir,
@@ -184,10 +155,9 @@ if __name__ == "__main__":
     else: # SGD case here
         if args.action:
             plot_actions_sgd(
-                args.data_dir,
+                Path(args.data_dir),
                 args.agent,
                 args.fidelity,
-                args.seed,
                 args.show,
                 args.num_runs,
                 args.aggregate,

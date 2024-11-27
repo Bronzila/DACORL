@@ -15,6 +15,7 @@ RESULTS_DIR=${1:-data}
 ID=${2:-0}
 TEACHERS="exponential_decay step_decay sgdr constant"
 NUM_RUNS=0
+FIDELITY=30000
 
 for teacher in $TEACHERS
 do
@@ -39,5 +40,5 @@ do
     # TITLE="Comparing Teacher and Agent Behavior on $function"
     TITLE=""
 
-    python -W ignore plotting.py --data_dir $RESULTS_DIR/LayerwiseSGD/$teacher/$ID/ --agent $AGENT --action --num_runs $NUM_RUNS --teacher --agent_labels "$LABEL" "TD3+BC" --title "$TITLE" --metric "validation_accuracy"
+    python -W ignore plotting.py --data_dir $RESULTS_DIR/LayerwiseSGD/$teacher/$ID/ --agent $AGENT --action --fidelity $FIDELITY --num_runs $NUM_RUNS --teacher --agent_labels "$LABEL" "TD3+BC" --title "$TITLE" --metric "validation_accuracy"
 done

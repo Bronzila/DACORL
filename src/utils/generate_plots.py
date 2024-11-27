@@ -322,7 +322,7 @@ def plot_comparison(
         ax.set_yscale("log")
     else:
         plt.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
-    x_label = "Step" if metric == "f_cur" else "batch_idx"
+    x_label = "Step" if metric == "f_cur" else "Batch"
     y_label = "$f(\\theta_i)$" if metric == "f_cur" else "Validation Acc."
     ax.set_xlabel(f"{x_label} $i$")
     ax.set_ylabel(y_label)
@@ -383,8 +383,9 @@ def plot_comparison(
 
 
 def plot_actions_sgd(
-    dir_path: str,
+    dir_path: Path,
     agent_type: str,
+    fidelity: int,
     show: bool = False,
     num_runs: int = 1,
     aggregate: bool = True,
@@ -397,25 +398,23 @@ def plot_actions_sgd(
     plt.clf()
     run_data_path = []
 
-    dir_path = Path(dir_path)
     teacher_name = (
         dir_path.parents[0].name if not heterogeneous else dir_path.name
     )
     teacher_id = dir_path.name if not heterogeneous else 0
     filename = f"action_{teacher_name}_{teacher_id}_aggregate"
-    for path in (Path(dir_path) / "results" / agent_type).rglob(
+    for path in (dir_path / "results" / agent_type).rglob(
         "*/eval_data.csv",
     ):
-        run_data_path.append(path)
+        if path.parent.name == str(fidelity):
+            run_data_path.append(path)
 
-    run_info_path = Path(dir_path, "run_info.json")
+    run_info_path = dir_path / "run_info.json"
 
     if teacher:
-        run_data_teacher_path = Path(dir_path, "aggregated_run_data.csv")
+        run_data_teacher_path = dir_path / "aggregated_run_data.csv"
         run_data_teacher = pd.read_csv(run_data_teacher_path)
         run_data_teacher["action"] = 10 ** run_data_teacher["action"]
-
-        np.sort(run_data_teacher["layer_idx"].unique())
 
         # Get run info from file
         with Path.open(run_info_path) as file:
@@ -497,7 +496,6 @@ def plot_actions_sgd(
         if show:
             plt.show()
         else:
-            dir_path = Path(dir_path)
             if not heterogeneous:
                 save_path = Path(
                     dir_path.parents[1],  # PROJECT/ToySGD/
