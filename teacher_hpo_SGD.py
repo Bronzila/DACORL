@@ -44,9 +44,9 @@ class Optimizee:
         # batches_per_epoch
         bpe: int
         if self.env_config["dataset_name"] == "MNIST":
-            bpe = 12
+            bpe = 187
         elif self.env_config["dataset_name"] == "FashionMNIST":
-            bpe = 1200
+            bpe = 187
         elif self.env_config["dataset_name"] == "CIFAR10":
             bpe = 97
 
