@@ -12,9 +12,9 @@ if TYPE_CHECKING:
 class Constant(Teacher):
     def __init__(
         self,
-        learning_rate: float,
+        initial_learning_rate: float,
     ) -> None:
-        self.learning_rate = learning_rate
+        self.learning_rate = initial_learning_rate
 
     def act(self, _: Tensor) -> float:
         return math.log10(self.learning_rate)
