@@ -1,21 +1,21 @@
 #!/bin/bash
-#SBATCH -p bosch_cpu-cascadelake # mlhiwidlc_gpu-rtx2080 # metaadm_cpu-test gki_cpu-caskadelake     # partition (queue)
+#SBATCH -p mlhiwidlc_gpu-rtx2080 # metaadm_cpu-test gki_cpu-caskadelake     # partition (queue)
 #SBATCH -o logs/%A[%a].%N.out       # STDOUT  (the folder log has to exist) %A will be replaced by the SLURM_ARRAY_JOB_ID value
 #SBATCH -e logs/%A[%a].%N.err       # STDERR  (the folder log has to exist) %A will be replaced by the SLURM_ARRAY_JOB_ID value
 #SBATCH -J SGD_data              # sets the job name. 
 #SBATCH -a 1-4 # array size
-#SBATCH -t 0-48:00:00
-#SBATCH --mem 16GB
+#SBATCH -t 0-24:00:00
+#SBATCH --mem 32GB
 
-cd /work/dlclarge1/gieringl-DACORL/DACORL
+cd /work/dlclarge1/gieringl-DACORL_normal/DACORL
 source ~/.bashrc
-conda activate DACORL
+conda activate DACORL_normal
 
 # For reproducibility
 export CUBLAS_WORKSPACE_CONFIG=:4096:8
 
 ID=${1:-default}
-DATASET=CIFAR19
+DATASET=CIFAR10
 RESULTS_DIR=LayerwiseSGD_data/$DATASET
 SEED=0
 # Print some information about the job to STDOUT

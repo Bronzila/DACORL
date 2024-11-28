@@ -85,8 +85,8 @@ class Optimizee:
                 ],
             )
         elif self.hydra_config.teacher == "sgdr":
-            T_i = Integer("T_i", (1, 4), default=1)
-            T_mult = Integer("T_mult", (1, 3), default=2)
+            T_i = Integer("t_i", (1, 4), default=1)
+            T_mult = Integer("t_mult", (1, 3), default=2)
             batches_per_epoch = Constant("batches_per_epoch", bpe)
             # Add the parameters to configuration space
             cs.add_hyperparameters(
