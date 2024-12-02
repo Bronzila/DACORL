@@ -151,7 +151,7 @@ class Optimizee:
                 result_dir=self.hydra_config.results_dir,
                 checkpoint=0,
                 seed=_seed,
-                verbose=True,
+                verbose=False,
             )
             gen.generate_data()
             agg_run_data = gen.exp_data.concatenate_data()
@@ -170,8 +170,8 @@ class Optimizee:
             print(f"Valid Acc: {valid_acc.mean()}")
             print(f"Test Acc: {test_acc.mean()}")
 
-            results.append(valid_loss.mean())
-        print(f"Average on config {np.mean(results)} ({config})")
+            results.append(valid_acc.mean())
+        print(f"Average on config ({config}): {np.mean(results)} (budget: {int(budget)})")
         return np.mean(results)
 
 
@@ -206,7 +206,7 @@ def main(cfg: HydraConfig):
         max_budget=env_config["num_epochs"],
         n_workers=1,
         deterministic=False,
-        seed=cfg.seed,  #
+        seed=cfg.seed,
     )
 
     # Incumbent is selected only based on the highest budget
