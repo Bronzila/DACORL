@@ -1,4 +1,6 @@
 # Ours
+*.pth
+*.tar.gz
 teach_*
 .nfs*
 smac/
