@@ -106,13 +106,12 @@ class Optimizee:
         self, config: Configuration, seed: int = 0, budget: int = 1
     ) -> float:
         rng = np.random.default_rng(seed)
-        run_seeds = rng.integers(0, 2**32 - 1, 2)
+        run_seeds = rng.integers(low=0, high=2**32 - 1, size=self.num_seeds)
 
         initial_learning_rate = config["initial_learning_rate"]
 
         results = []
         for _seed in run_seeds:
-            print("###########################1")
             GeneratorClass = (
                 LayerwiseDataGenerator
                 if self.hydra_config.env.type == "LayerwiseSGD"
@@ -202,7 +201,7 @@ def main(cfg: HydraConfig):
     scenario = Scenario(
         optimizee.configspace,
         output_directory=cfg.results_dir,
-        n_trials=200,
+        n_trials=100,
         min_budget=1,
         max_budget=env_config["num_epochs"],
         n_workers=1,
