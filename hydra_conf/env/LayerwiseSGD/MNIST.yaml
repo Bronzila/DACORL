@@ -3,6 +3,9 @@ defaults:
   - /env/LayerwiseSGD@_here_
 
 dataset_name: MNIST
+num_epochs: 20
+train_validation_ratio: 0.8
+fraction_of_dataset: 1.0
 layer_specification:
   - ["CONV2D", {"in_channels": 1, "out_channels": 32, "kernel_size": 3}]
   - ["RELU", {}]

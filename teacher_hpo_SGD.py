@@ -21,7 +21,6 @@ from smac.intensifier import Hyperband
 
 from src.data_generator import DataGenerator, LayerwiseDataGenerator
 from src.utils import HydraConfig, get_safe_original_cwd
-from src.utils.general import set_seeds
 
 from hydra.utils import get_original_cwd
 
@@ -44,9 +43,9 @@ class Optimizee:
         # batches_per_epoch
         bpe: int
         if self.env_config["dataset_name"] == "MNIST":
-            bpe = 187
+            bpe = 750
         elif self.env_config["dataset_name"] == "FashionMNIST":
-            bpe = 187
+            bpe = 750
         elif self.env_config["dataset_name"] == "CIFAR10":
             bpe = 97
 
@@ -200,7 +199,7 @@ def main(cfg: HydraConfig):
 
     scenario = Scenario(
         optimizee.configspace,
-        output_directory=cfg.results_dir,
+        output_directory="smac",
         n_trials=100,
         min_budget=1,
         max_budget=env_config["num_epochs"],
