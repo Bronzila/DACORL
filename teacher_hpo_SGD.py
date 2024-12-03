@@ -171,7 +171,7 @@ class Optimizee:
 
             results.append(valid_acc.mean())
         print(f"Average on config ({config}): {np.mean(results)} (budget: {int(budget)})")
-        return np.mean(results)
+        return - np.mean(results)
 
 
 @hydra.main(config_path="hydra_conf", config_name="config", version_base="1.1")
