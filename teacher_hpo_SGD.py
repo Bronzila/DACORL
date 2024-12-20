@@ -111,6 +111,7 @@ class Optimizee:
 
         results = []
         for _seed in run_seeds:
+            _seed = int(_seed)
             GeneratorClass = (
                 LayerwiseDataGenerator
                 if self.hydra_config.env.type == "LayerwiseSGD"
