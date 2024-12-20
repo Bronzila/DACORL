@@ -1,4 +1,5 @@
 # Ours
+*data*
 *.pth
 *.tar.gz
 teach_*

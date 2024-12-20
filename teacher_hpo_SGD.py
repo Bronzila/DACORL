@@ -43,9 +43,9 @@ class Optimizee:
         # batches_per_epoch
         bpe: int
         if self.env_config["dataset_name"] == "MNIST":
-            bpe = 750
+            bpe = 187
         elif self.env_config["dataset_name"] == "FashionMNIST":
-            bpe = 750
+            bpe = 187
         elif self.env_config["dataset_name"] == "CIFAR10":
             bpe = 97
 
@@ -141,7 +141,7 @@ class Optimizee:
             teacher_config = {
                 "type": self.hydra_config.teacher,
                 "id": teacher_name,
-                "params": config,
+                "params": dict(config),
             }
 
             # Generate data for seed
@@ -153,7 +153,7 @@ class Optimizee:
                 seed=_seed,
                 verbose=False,
             )
-            gen.generate_data()
+            gen.generate_data(budget)
             agg_run_data = gen.exp_data.concatenate_data()
 
             final_evaluations = agg_run_data.groupby("run_idx").last()
@@ -196,11 +196,12 @@ def main(cfg: HydraConfig):
 
     print(env_config)
 
-    optimizee = Optimizee(cfg)
+    num_seeds = 3 if not env_config["dataset_name"] == "CIFAR10" else 2 
+    optimizee = Optimizee(cfg, num_seeds)
 
     scenario = Scenario(
         optimizee.configspace,
-        output_directory="smac",
+        output_directory=cfg.results_dir / cfg.teacher / "smac",
         n_trials=100,
         min_budget=1,
         max_budget=env_config["num_epochs"],
@@ -209,9 +210,11 @@ def main(cfg: HydraConfig):
         seed=cfg.seed,
     )
 
+    eta = 3 if not env_config["dataset_name"] == "CIFAR10" else 5
+
     # Incumbent is selected only based on the highest budget
     intensifier = Hyperband(
-        scenario, n_seeds=1, incumbent_selection="highest budget"
+        scenario, eta=eta, n_seeds=1, incumbent_selection="highest budget"
     )
 
     smac = MFFacade(

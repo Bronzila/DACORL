@@ -203,6 +203,7 @@ class DataGenerator:
                     )
                 self.save_data(save_checkpoints)
 
+        self.save_data()
         print(f"Saved data and ReplayBuf to {self.result_dir}")
 
     def save_data(
