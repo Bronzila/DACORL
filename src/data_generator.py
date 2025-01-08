@@ -5,6 +5,7 @@ from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING
 
+import numpy as np
 import pandas as pd
 
 from src.experiment_data import (
@@ -22,7 +23,6 @@ from src.utils import (
 from src.utils.replay_buffer import ReplayBuffer
 
 if TYPE_CHECKING:
-    import numpy as np
     import torch
 
 
@@ -222,6 +222,28 @@ class DataGenerator:
         else:
             self.replay_buffer.save(save_path)
 
+        def fix_int64_keys(d, parent_key=""):
+            """Recursively find the keys in a dictionary where the value is of type int64 and transforms it to a regular integer.
+
+
+            Args:
+                d (dict): The dictionary to search.
+                parent_key (str): The accumulated key path for nested dictionaries.
+
+
+            Returns:
+                list: A list of full key paths where the value is of type int64.
+            """
+            for key, value in d.items():
+                full_key = f"{parent_key}.{key}" if parent_key else key
+                if isinstance(value, dict):
+                    # Recursively search nested dictionaries
+                    fix_int64_keys(value, full_key)
+                elif isinstance(value, np.int64):
+                    # Found an int64 field, transform type
+                    d[key] = int(d[key])
+
+        fix_int64_keys(self.run_info)
         with (self.result_dir / "run_info.json").open(mode="w") as f:
             json.dump(self.run_info, f, indent=4)
 
