@@ -202,7 +202,7 @@ def main(cfg: HydraConfig):
     scenario = Scenario(
         optimizee.configspace,
         output_directory=cfg.results_dir / cfg.teacher / "smac",
-        n_trials=100,
+        n_trials=40,
         min_budget=1,
         max_budget=env_config["num_epochs"],
         n_workers=1,
@@ -230,17 +230,17 @@ def main(cfg: HydraConfig):
     print(incumbent)
     print(f"Final score: {smac.validate(incumbent)}")
 
-    with (cfg.results_dir / "inc.json").open("w") as f:
+    with (cfg.results_dir / cfg.teacher / "inc.json").open("w") as f:
         json.dump(dict(incumbent), f)
 
     lowest_val_confs = smac.runhistory.get_configs(sort_by="cost")[:15]
-    lowest_val_path = cfg.results_dir / "lowest"
+    lowest_val_path = cfg.results_dir / cfg.teacher / "lowest"
     lowest_val_path.mkdir(exist_ok=True)
     for id, config in enumerate(lowest_val_confs):
         with (lowest_val_path / f"{id}.json").open("w") as f:
             json.dump(dict(config), f)
 
-    rejected_path = cfg.results_dir / "rejected_incs"
+    rejected_path = cfg.results_dir / cfg.teacher / "rejected_incs"
     rejected_path.mkdir(exist_ok=True)
     for id, config in enumerate(smac.intensifier.get_rejected_configs()):
         with (rejected_path / f"{id + 1}.json").open("w") as f:
