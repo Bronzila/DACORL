@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from DACBench.dacbench.envs import LayerwiseSGDEnv, SGDEnv, ToySGD2DEnv
+from DACBench.dacbench.envs import (
+    LayerwiseNanoGPTEnv,
+    LayerwiseSGDEnv,
+    SGDEnv,
+    ToySGD2DEnv,
+)
 
 from src.experiment_data import (
     ExperimentData,
@@ -35,7 +40,7 @@ class Evaluator:
             self._num_batches = env_config["num_epochs"] * len(
                 self._env.train_loader,
             )
-        elif isinstance(self._env, LayerwiseSGDEnv):
+        elif isinstance(self._env, LayerwiseSGDEnv | LayerwiseNanoGPTEnv):
             self._exp_data = LayerwiseSGDExperimentData()
             self._env.reset()
             self._num_runs = env_config["num_runs"]
