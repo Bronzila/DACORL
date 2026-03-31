@@ -64,6 +64,7 @@ class Trainer:
 
         if self.agent_type != "td3":
             self.replay_buffer = ReplayBuffer.load(Path(data_dir, "rep_buffer"))
+            self.replay_buffer.to(device)  # Move buffer to the correct device
             self.replay_buffer.seed(seed)
             state, _, _, _, _ = self.replay_buffer.sample(1)
             state_dim = state.shape[1]
@@ -73,8 +74,8 @@ class Trainer:
             teacher = self.run_info["agent"]["type"]
             state_version = self.run_info["environment"]["state_version"]
             wandb.init(  # type: ignore
-                project="DAC4DL",
-                entity="study_project",
+                project="DACORL",
+                entity="somenomus",
                 group=wandb_group,
                 config=agent_config,
                 name=f"{agent_type}-{teacher}-{state_version}",
@@ -267,6 +268,8 @@ class Trainer:
                     print(dict(self.agent_config))
 
         save_agent(self.agent.state_dict(), self.results_dir, t)
+        with (self.results_dir / f"{t + 1}" / "config.json").open("w") as f:
+            json.dump(dict(self.agent_config), f, indent=2)
 
         if self.use_wandb:
             wandb.finish()  # type: ignore
@@ -384,6 +387,8 @@ class Trainer:
                 self._update_inc_and_log_performance(eval_data, t)
 
         save_agent(self.agent.state_dict(), self.results_dir, t)
+        with (self.results_dir / f"{t + 1}" / "config.json").open("w") as f:
+            json.dump(dict(self.agent_config), f, indent=2)
 
         if self.use_wandb:
             wandb.finish()  # type: ignore

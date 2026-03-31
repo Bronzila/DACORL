@@ -4,9 +4,12 @@ import json
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING
+import os
+os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
 
 import hydra
 import numpy as np
+import torch
 from benchmarking import (
     environment_agent_adjustments,
     parse_heterogeneous_teacher_name,
@@ -25,7 +28,7 @@ if TYPE_CHECKING:
 
 
 def generate_data(cfg: HydraConfig, env_config: dict, seed: int):
-    GeneratorClass = LayerwiseDataGenerator if cfg.env.type == "LayerwiseSGD" else DataGenerator
+    GeneratorClass = LayerwiseDataGenerator if cfg.env.type in ("LayerwiseSGD", "LayerwiseNanoGPT") else DataGenerator
 
     if cfg.combination == "single":
         agent_name = "default" if cfg.id == 0 else str(cfg.id)
@@ -63,7 +66,7 @@ def generate_data(cfg: HydraConfig, env_config: dict, seed: int):
         data_dir = cfg.results_dir / env_config["type"] / cfg.teacher
         paths = get_homogeneous_agent_paths(data_dir, env_config.get("function", ""))
         combined_buffer, combined_run_info, combined_run_data = combine_runs(
-            paths, "concat", 3000,
+            paths, "concat", 3000, "cpu"  # Use CPU for data generation to save memory
         )
         path = data_dir / "combined"
         save_combined_data(path, combined_buffer, combined_run_info, combined_run_data)
@@ -80,7 +83,6 @@ def generate_data(cfg: HydraConfig, env_config: dict, seed: int):
                     teacher_config=teacher_config,
                     env_config=env_config,
                     result_dir=cfg.results_dir,
-                    check_if_exists=False,
                     checkpoint=0,
                     seed=seed,
                     verbose=False,
@@ -92,7 +94,7 @@ def generate_data(cfg: HydraConfig, env_config: dict, seed: int):
 
         final_buffer_size = (len(data_dirs) + 1) * 500
         combined_buffer, combined_run_info, combined_run_data = combine_runs(
-            data_dirs, "concat", final_buffer_size,
+            data_dirs, "concat", final_buffer_size, "cpu"  # Use CPU for data generation to save memory
         )
         path = cfg.results_dir / env_config["type"] / cfg.teacher
         save_combined_data(path, combined_buffer, combined_run_info, combined_run_data)
@@ -121,6 +123,12 @@ def train_model(cfg: HydraConfig, env_config: dict, seed: int):
 
     evaluator = EvaluatorClass(env_config)
 
+    # Auto-detect device if not specified or set to auto
+    device = getattr(cfg, 'device', 'auto')
+    if device == 'auto':
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    print(f"Using device: {device}")
+
     trainer = Trainer(
         data_dir=data_dir,
         agent_config={"tanh_scaling": cfg.tanh_scaling, "batch_size": 256},
@@ -128,6 +136,7 @@ def train_model(cfg: HydraConfig, env_config: dict, seed: int):
         evaluator=evaluator,
         wandb_group=cfg.wandb_group,
         seed=seed,
+        device=device,
     )
     _, inc_value = trainer.train(cfg.num_train_iter, cfg.val_freq)
     print(inc_value)
@@ -144,8 +153,32 @@ def eval_agent(cfg: HydraConfig, env_config: dict, train_seed: int) -> None:
     if env_config["type"] == "ToySGD":
         data_dir = data_dir / env_config["function"]
 
-    agent_path = data_dir / "results" / cfg.agent_type / str(train_seed) / str(cfg.num_train_iter)
-    actor = load_agent(cfg.agent_type, agent_path).actor
+    # Find the model directory (seed directory is auto-generated during training)
+    results_base = data_dir / "results" / cfg.agent_type
+    if not results_base.exists():
+        raise FileNotFoundError(f"No results found at {results_base}")
+    
+    # Find the seed directory (should be only one)
+    seed_dirs = list(results_base.glob('*'))
+    if not seed_dirs:
+        raise FileNotFoundError(f"No seed directories found in {results_base}")
+    
+    seed_dir = seed_dirs[0]  # Use the first (should be only) seed directory
+    agent_path = seed_dir / str(cfg.num_train_iter)
+    
+    if not agent_path.exists():
+        raise FileNotFoundError(f"Model not found at {agent_path}")
+    
+    print(f"Loading agent from: {agent_path}")
+    
+    # Auto-detect device if not specified or set to auto
+    device = getattr(cfg, 'device', 'auto')
+    if device == 'auto':
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    print(f"Using device for evaluation: {device}")
+    
+    agent = load_agent(cfg.agent_type, agent_path)
+    actor = agent.actor.to(device)  # Move actor to correct device
 
     # Generate eval seed, if cfg.eval_seed == cfg.seed we use the same seed in training and evaluation
     rng = np.random.default_rng(cfg.eval_seed)
@@ -157,7 +190,9 @@ def eval_agent(cfg: HydraConfig, env_config: dict, train_seed: int) -> None:
         run_info = json.load(f)
         env_config["cutoff"] = run_info["environment"]["cutoff"]
 
-    EvaluatorClass = LayerwiseEvaluator if cfg.env.type == "LayerwiseSGD" else Evaluator
+    # Use LayerwiseEvaluator for both LayerwiseSGD and LayerwiseNanoGPT
+    is_layerwise = cfg.env.type in ["LayerwiseSGD", "LayerwiseNanoGPT"]
+    EvaluatorClass = LayerwiseEvaluator if is_layerwise else Evaluator
     evaluator = EvaluatorClass(env_config)
 
     eval_data = evaluator.evaluate(actor)

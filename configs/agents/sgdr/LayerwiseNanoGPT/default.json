@@ -1,0 +1,10 @@
+{
+  "type": "sgdr",
+  "id": 0,
+  "params": {
+    "initial_learning_rate": 0.001653693718282443,
+    "t_i": 2,
+    "t_mult": 3,
+    "batches_per_epoch": 10
+  }
+}

@@ -60,7 +60,7 @@ class DataGenerator:
             self.exp_data = SGDExperimentData()
         elif self.environment_type == "CMAES":
             self.exp_data = CMAESExperimentData()
-        elif self.environment_type == "LayerwiseSGD":
+        elif self.environment_type in ("LayerwiseSGD", "LayerwiseNanoGPT"):
             self.exp_data = LayerwiseSGDExperimentData()
             state = state[
                 0
@@ -119,7 +119,7 @@ class DataGenerator:
         self.replay_buffer.add_transition(
             state[0].cpu().numpy(),
             action,
-            next_state,
+            next_state[0].cpu().numpy(),
             reward,
             done,
         )
@@ -149,7 +149,7 @@ class DataGenerator:
                 self.starting_points.append(meta_info["start"])
             self.teacher.reset()
 
-            if self.environment_type == "LayerwiseSGD":
+            if self.environment_type in ("LayerwiseSGD", "LayerwiseNanoGPT"):
                 self.exp_data.init_data(run, state, self.env)
             else:
                 self.exp_data.init_data(run, [state], self.env)
@@ -162,7 +162,7 @@ class DataGenerator:
                         Total {batch + run * num_batches}/{num_runs * num_batches}",
                     )
 
-                if self.environment_type == "LayerwiseSGD":
+                if self.environment_type in ("LayerwiseSGD", "LayerwiseNanoGPT"):
                     state, done = self._interact_with_environment(
                         run,
                         batch,
@@ -270,13 +270,17 @@ class DataGenerator:
         self._num_batches: int
         self._phase = "batch"
         batches_per_epoch = 1
-        if self.environment_type in ("SGD", "LayerwiseSGD"):
+        if self.environment_type in ("SGD", "LayerwiseSGD", "LayerwiseNanoGPT"):
             print(f"Generating data for {self.env_config['dataset_name']}")
             if env.epoch_mode is False:
                 num_epochs = self.env_config["num_epochs"]
-                # if SGD env, translates num_batches to num_epochs
-                batches_per_epoch = len(env.train_loader)
-                print(f"One epoch consists of {batches_per_epoch} batches.")
+                # Use iters_per_epoch if available, otherwise use full dataset
+                if "iters_per_epoch" in self.env_config and self.env_config["iters_per_epoch"] is not None:
+                    batches_per_epoch = self.env_config["iters_per_epoch"]
+                    print(f"Using iters_per_epoch={batches_per_epoch} (limited iterations per epoch)")
+                else:
+                    batches_per_epoch = len(env.train_loader)
+                    print(f"Using full dataset: {batches_per_epoch} batches per epoch")
                 self._num_batches = num_epochs * batches_per_epoch
                 self.env_config["num_batches"] = self._num_batches
                 self.env_config["cutoff"] = self._num_batches
@@ -386,7 +390,7 @@ class LayerwiseDataGenerator(DataGenerator):
             self.replay_buffer.add_transition(
                 state.cpu().numpy(),
                 action,
-                next_state,
+                next_state.cpu().numpy(),
                 reward,
                 done,
             )

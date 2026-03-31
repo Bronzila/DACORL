@@ -1,0 +1,10 @@
+# nanoGPT configuration
+defaults:
+  - base_config
+  - _self_
+
+mode: data_gen
+teacher: step_decay
+results_dir: ./data/nanoGPT
+
+environment: LayerwiseNanoGPT

@@ -1,0 +1,7 @@
+name: DACORL
+channels:
+  - defaults
+dependencies:
+  - python=3.10
+  - jupyterlab
+  - libstdcxx-ng

@@ -636,6 +636,7 @@ def get_environment(env_config: dict) -> EnvType:
         CMAESBenchmark,
         FastDownwardBenchmark,
         LayerwiseSGDBenchmark,
+        LayerwiseNanoGPTBenchmark,
         SGDBenchmark,
         ToySGD2DBenchmark,
     )
@@ -657,6 +658,9 @@ def get_environment(env_config: dict) -> EnvType:
         return bench.get_environment()
     if env_config["type"] == "LayerwiseSGD":
         bench = LayerwiseSGDBenchmark(config=env_config)
+        return bench.get_environment()
+    if env_config["type"] == "LayerwiseNanoGPT":
+        bench = LayerwiseNanoGPTBenchmark(config=env_config)
         return bench.get_environment()
     if env_config["type"] == "CMAES":
         bench = CMAESBenchmark(config=env_config)

@@ -17,3 +17,4 @@ mode: "all"  # Options: "data_gen", "train", "eval", "all"
 data_exists: false
 wandb_group: "DACORL"
 dataset_path: "./datasets"
+device: "auto"  # Add device configuration - use "auto" to detect, "cuda" for GPU, "cpu" for CPU

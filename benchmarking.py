@@ -24,14 +24,17 @@ def read_teacher(teacher_type: str, benchmark: str, teacher_name: str) -> Any:
         return json.load(file)
 
 def environment_agent_adjustments(env_config: dict, agent_config: dict) -> None:
-    # Add initial learning rate to agent config for SGDR
-    if agent_config["type"] == "sgdr":
-        agent_config["params"]["initial_learning_rate"] = env_config["initial_learning_rate"]
-
-    if agent_config["type"] == "constant" and agent_config["id"] == 0:
-        agent_config["params"]["learning_rate"] = env_config["initial_learning_rate"]
+    # Propagate HPO-optimized initial_learning_rate from teacher config to env config.
+    # For constant/sgdr: initial_learning_rate lives in params (their __init__ accepts it).
+    # For exponential_decay/step_decay: initial_learning_rate lives at config top level
+    #   (their __init__ doesn't accept it; they read current LR from env state).
+    if agent_config["type"] in ("exponential_decay", "step_decay"):
+        if "initial_learning_rate" in agent_config:
+            env_config["initial_learning_rate"] = agent_config["initial_learning_rate"]
+    elif agent_config["type"] == "sgdr":
+        env_config["initial_learning_rate"] = agent_config["params"]["initial_learning_rate"]
     elif agent_config["type"] == "constant":
-        env_config["initial_learning_rate"] = agent_config["params"]["learning_rate"]
+        env_config["initial_learning_rate"] = agent_config["params"]["initial_learning_rate"]
 
 def parse_heterogeneous_teacher_name(teacher_name: str) -> list[str]:
     # Define a dictionary that maps the abbreviations to the actual schedules

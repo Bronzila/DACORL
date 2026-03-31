@@ -75,7 +75,10 @@ class Actor(nn.Module):
         return action
 
     @torch.no_grad()  # type: ignore
-    def act(self, state: np.ndarray, device: str = "cpu") -> np.ndarray:
+    def act(self, state: np.ndarray, device: str = None) -> np.ndarray:
+        # Auto-detect device from model parameters if not specified
+        if device is None:
+            device = next(self.parameters()).device
         state = torch.tensor(
             state.reshape(1, -1),
             device=device,
@@ -176,7 +179,7 @@ class TD3:
             # Compute the target Q value
             target_q1 = self.critic_1_target(next_state, next_action)
             target_q2 = self.critic_2_target(next_state, next_action)
-            target_Q = torch.min(target_q1, target_q2).cpu()
+            target_Q = torch.min(target_q1, target_q2)  # Removed .cpu() to keep on same device
             target_Q = reward + not_done * self.discount * target_Q
 
         # Get current Q estimates

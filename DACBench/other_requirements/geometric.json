@@ -1,0 +1,7 @@
+{
+  "geometric": [
+    "matplotlib",
+    "numpy",
+    "seaborn"
+  ]
+}

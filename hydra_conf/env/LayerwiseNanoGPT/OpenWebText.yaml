@@ -1,0 +1,8 @@
+# Inherit common LayerwiseNanoGPT settings
+defaults:
+  - /env/LayerwiseNanoGPT@_here_
+
+dataset_name: OpenWebText
+num_epochs: 10
+fraction_of_dataset: 1.0
+train_validation_ratio: 0.8

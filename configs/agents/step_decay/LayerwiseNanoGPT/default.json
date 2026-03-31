@@ -1,0 +1,9 @@
+{
+    "type": "step_decay",
+    "id": 0,
+    "initial_learning_rate": 0.0014618962793704966,
+    "params": {
+        "gamma": 0.9053410475608532,
+        "step_size": 5
+    }
+}

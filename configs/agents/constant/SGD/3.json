@@ -2,6 +2,6 @@
     "type": "constant",
     "id": 3,
     "params": {
-        "learning_rate": 0.001
+        "initial_learning_rate": 0.001
     }
 }

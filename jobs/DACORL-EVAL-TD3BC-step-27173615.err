@@ -1,0 +1,22 @@
+cpu-bind=MASK - dlc2gpu16, task  0  0 [385684]: mask 0x20000000000000002000000000 set
+/home/hasana/miniconda3/envs/DACORL/lib/python3.10/site-packages/gymnasium/envs/registration.py:642: UserWarning: [33mWARN: Overriding environment Luby-v0 already in registry.[0m
+  logger.warn(f"Overriding environment {new_spec.id} already in registry.")
+/home/hasana/miniconda3/envs/DACORL/lib/python3.10/site-packages/gymnasium/envs/registration.py:642: UserWarning: [33mWARN: Overriding environment Sigmoid-v0 already in registry.[0m
+  logger.warn(f"Overriding environment {new_spec.id} already in registry.")
+/home/hasana/miniconda3/envs/DACORL/lib/python3.10/site-packages/gymnasium/envs/registration.py:642: UserWarning: [33mWARN: Overriding environment ToySGD-v0 already in registry.[0m
+  logger.warn(f"Overriding environment {new_spec.id} already in registry.")
+/home/hasana/miniconda3/envs/DACORL/lib/python3.10/site-packages/gymnasium/envs/registration.py:642: UserWarning: [33mWARN: Overriding environment ToySGD2D-v0 already in registry.[0m
+  logger.warn(f"Overriding environment {new_spec.id} already in registry.")
+/home/hasana/miniconda3/envs/DACORL/lib/python3.10/site-packages/gymnasium/envs/registration.py:642: UserWarning: [33mWARN: Overriding environment Geometric-v0 already in registry.[0m
+  logger.warn(f"Overriding environment {new_spec.id} already in registry.")
+/home/hasana/miniconda3/envs/DACORL/lib/python3.10/site-packages/hydra/_internal/defaults_list.py:251: UserWarning: In 'config': Defaults list is missing `_self_`. See https://hydra.cc/docs/1.2/upgrades/1.0_to_1.1/default_composition_order for more information
+  warnings.warn(msg, UserWarning)
+/home/hasana/miniconda3/envs/DACORL/lib/python3.10/site-packages/hydra/_internal/hydra.py:119: UserWarning: Future Hydra versions will no longer change working directory at job runtime by default.
+See https://hydra.cc/docs/1.2/upgrades/1.1_to_1.2/changes_to_job_working_dir/ for more information.
+  ret = run_job(
+/home/hasana/miniconda3/envs/DACORL/lib/python3.10/site-packages/gymnasium/spaces/box.py:235: UserWarning: [33mWARN: Box low's precision lowered by casting to float32, current low.dtype=float64[0m
+  gym.logger.warn(
+/home/hasana/miniconda3/envs/DACORL/lib/python3.10/site-packages/gymnasium/spaces/box.py:305: UserWarning: [33mWARN: Box high's precision lowered by casting to float32, current high.dtype=float64[0m
+  gym.logger.warn(
+/home/hasana/cloud_dacorl/CORL/algorithms/offline/td3_bc.py:292: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  state = torch.tensor(_state.reshape(1, -1), device=device, dtype=torch.float32)

@@ -27,7 +27,7 @@ def get_homogeneous_agent_paths(root_dir: str, function: str) -> list[Path]:
     return paths
 
 
-def concat_runs(agent_paths: list[str]) -> tuple:
+def concat_runs(agent_paths: list[str], device: str = "cpu") -> tuple:
     combined_buffer = None
     combined_run_info = None
     combined_run_data = []
@@ -39,6 +39,7 @@ def concat_runs(agent_paths: list[str]) -> tuple:
         with run_info_path.open(mode="rb") as f:
             run_info = json.load(f)
         temp_buffer = ReplayBuffer.load(replay_path)
+        temp_buffer.to(device)  # Move loaded buffer to correct device
 
         if combined_buffer is None and combined_run_info is None:
             combined_buffer = temp_buffer
@@ -167,8 +168,8 @@ def get_run_ids_by_agent_path(
     raise NotImplementedError()
 
 
-def filter_buffer(data: dict) -> None:
-    device = torch.device("cpu")
+def filter_buffer(data: dict, device: str = "cpu") -> None:
+    device = torch.device(device)
     # Turn states etc. into pandas dataframe fo easier access
     states_np = data["buffer"]._states.cpu().numpy()
     actions_np = data["buffer"]._actions.cpu().numpy()
@@ -241,7 +242,7 @@ def filter_buffer(data: dict) -> None:
     )
 
 
-def create_buffer_from_ids(path_data_mapping: dict) -> tuple:
+def create_buffer_from_ids(path_data_mapping: dict, device: str = "cpu") -> tuple:
     # For each buffer
     # Group states etc. by run (use first state, optim budget as criterion when new run begins)
     # Remove all runs that are not in run_ids
@@ -252,7 +253,7 @@ def create_buffer_from_ids(path_data_mapping: dict) -> tuple:
     run_info = None
     for _path, data in path_data_mapping.items():
         # Filter buffer for run_ids
-        filter_buffer(data)
+        filter_buffer(data, device)
 
         # Filter run data
         data["run_data"] = data["run_data"][
@@ -278,9 +279,10 @@ def combine_runs(
     agent_paths: list[str],
     combination_strategy: str = "concat",
     total_size: int = 3000,
+    device: str = "cpu",
 ) -> tuple:
     if combination_strategy == "concat":
-        return concat_runs(agent_paths)
+        return concat_runs(agent_paths, device)
 
     path_data_mapping = {}
     for root_path in agent_paths:
@@ -305,4 +307,4 @@ def combine_runs(
         total_size,
     )
 
-    return create_buffer_from_ids(path_data_mapping)
+    return create_buffer_from_ids(path_data_mapping, device)

@@ -40,7 +40,7 @@ class Optimizee:
 
     @property
     def configspace(self) -> ConfigurationSpace:
-        # batches_per_epoch
+        # batches_per_epoch or iters_per_epoch
         bpe: int
         if self.env_config["dataset_name"] == "MNIST":
             bpe = 187
@@ -48,11 +48,26 @@ class Optimizee:
             bpe = 187
         elif self.env_config["dataset_name"] == "CIFAR10":
             bpe = 97
+        elif self.env_config["dataset_name"] == "OpenWebText":
+            # For nanoGPT, use iters_per_epoch instead of batches_per_epoch
+            bpe = self.env_config.get("iters_per_epoch", 10)
+        else:
+            # Default fallback
+            bpe = self.env_config.get("iters_per_epoch", 10)
 
         cs = ConfigurationSpace()
-        initial_learning_rate = Float(
-            "initial_learning_rate", (0.0001, 1.0), default=0.001, log=True
-        )
+        
+        # Adjust LR range based on dataset/model type
+        # NanoGPT uses much smaller learning rates than CNNs
+        if self.env_config["dataset_name"] == "OpenWebText":
+            initial_learning_rate = Float(
+                "initial_learning_rate", (1e-5, 1e-3), default=6e-4, log=True
+            )
+        else:
+            # CNN datasets (MNIST, CIFAR, etc.)
+            initial_learning_rate = Float(
+                "initial_learning_rate", (0.0001, 1.0), default=0.001, log=True
+            )
         if self.hydra_config.teacher == "exponential_decay":
             decay_steps = Categorical(
                 "decay_steps",
@@ -112,9 +127,10 @@ class Optimizee:
         results = []
         for _seed in run_seeds:
             _seed = int(_seed)
+            # Use LayerwiseDataGenerator for both LayerwiseSGD and LayerwiseNanoGPT
             GeneratorClass = (
                 LayerwiseDataGenerator
-                if self.hydra_config.env.type == "LayerwiseSGD"
+                if self.hydra_config.env.type in ["LayerwiseSGD", "LayerwiseNanoGPT"]
                 else DataGenerator
             )
 

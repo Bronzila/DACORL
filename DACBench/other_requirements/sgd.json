@@ -1,0 +1,8 @@
+{
+  "sgd": [
+    "scikit-learn",
+    "torchvision",
+    "torch",
+    "backpack-for-pytorch"
+  ]
+}

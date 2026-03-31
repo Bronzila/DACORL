@@ -1,0 +1,98 @@
+Workingdir: /home/hasana/cloud_dacorl/jobs
+Started at Tue Feb 17 11:42:48 PM CET 2026
+Running job DACORL-HPO-exponential with JID 27173678 on mldlc2_gpu-l40s
+Changed to project root: /home/hasana/cloud_dacorl
+Conda environment activated. Running DACORL Teacher HPO (Exponential Decay)...
+================================================================================
+COMPARING TD3+BC AGENTS vs ORIGINAL TEACHERS
+================================================================================
+
+📂 Loading teacher and agent data...
+
+Processing constant...
+✓ Loaded teacher constant: 49980 rows
+✓ Loaded agent constant: 49980 rows
+  Teacher: 20 runs, Agent: 20 runs
+
+Processing exponential_decay...
+✓ Loaded teacher exponential_decay: 49980 rows
+✓ Loaded agent exponential_decay: 49980 rows
+  Teacher: 20 runs, Agent: 20 runs
+
+Processing step_decay...
+✓ Loaded teacher step_decay: 49980 rows
+✓ Loaded agent step_decay: 49980 rows
+  Teacher: 20 runs, Agent: 20 runs
+
+Processing sgdr...
+✓ Loaded teacher sgdr: 49980 rows
+✓ Loaded agent sgdr: 49980 rows
+  Teacher: 20 runs, Agent: 20 runs
+
+========================================================================================================================
+DETAILED COMPARISON: TEACHERS vs TD3+BC AGENTS
+========================================================================================================================
+
+Teacher              Type       Test Loss       Val Loss        Train Loss      Std Dev      Runs    
+------------------------------------------------------------------------------------------------------------------------
+Constant             Teacher     8.5780 ± 0.0416  8.8035           8.7917           0.0416      20
+                     Agent       8.6479 ± 0.0266  8.8691           8.8759           0.0266      20
+                     → Δ        -0.0699 ( -0.82%) ✗
+
+Exponential Decay    Teacher     8.0295 ± 0.0377  8.3509           8.2710           0.0377      20
+                     Agent       8.1568 ± 0.0354  8.4538           8.4090           0.0354      20
+                     → Δ        -0.1273 ( -1.59%) ✗
+
+Step Decay           Teacher     8.2718 ± 0.0454  8.5374           8.5012           0.0454      20
+                     Agent       8.5036 ± 0.0246  8.7398           8.7359           0.0246      20
+                     → Δ        -0.2318 ( -2.80%) ✗
+
+Sgdr                 Teacher     8.1815 ± 0.0577  8.4665           8.4065           0.0577      20
+                     Agent       8.2206 ± 0.0949  8.5063           8.4706           0.0949      20
+                     → Δ        -0.0391 ( -0.48%) ✗
+
+========================================================================================================================
+
+SUMMARY:
+  • Agents outperformed teachers: 0/4 cases
+  • Average improvement: -1.42%
+  • Best agent improvement: sgdr (-0.48%)
+  • Worst agent performance: step_decay (-2.80%)
+
+🏆 Overall Best: EXPONENTIAL_DECAY Teacher (Test Loss: 8.0295)
+========================================================================================================================
+
+📊 Generating visualizations...
+✓ Saved: viz/01_test_loss_comparison.png
+✓ Saved: viz/02_improvement_percentage.png
+✓ Saved: viz/03_validation_loss_comparison.png
+✓ Saved: viz/04_train_loss_comparison.png
+✓ Loaded teacher constant: 49980 rows
+✓ Loaded agent constant: 49980 rows
+✓ Saved: viz/05_constant_learning_curve.png
+✓ Loaded teacher exponential_decay: 49980 rows
+✓ Loaded agent exponential_decay: 49980 rows
+✓ Saved: viz/05_exponential_decay_learning_curve.png
+✓ Loaded teacher step_decay: 49980 rows
+✓ Loaded agent step_decay: 49980 rows
+✓ Saved: viz/05_step_decay_learning_curve.png
+✓ Loaded teacher sgdr: 49980 rows
+✓ Loaded agent sgdr: 49980 rows
+✓ Saved: viz/05_sgdr_learning_curve.png
+✓ Loaded teacher constant: 49980 rows
+✓ Loaded agent constant: 49980 rows
+✓ Loaded teacher exponential_decay: 49980 rows
+✓ Loaded agent exponential_decay: 49980 rows
+✓ Loaded teacher step_decay: 49980 rows
+✓ Loaded agent step_decay: 49980 rows
+✓ Loaded teacher sgdr: 49980 rows
+✓ Loaded agent sgdr: 49980 rows
+✓ Saved: viz/06_all_learning_curves.png
+
+✓ Saved detailed comparison to viz/teacher_vs_agent_comparison.csv
+
+✅ Comparison complete! All visualizations saved to: /home/hasana/cloud_dacorl/viz/
+==========================================
+Job execution complete at Tue Feb 17 11:42:58 PM CET 2026
+Results saved in: data/nanoGPT/exponential_decay/
+==========================================

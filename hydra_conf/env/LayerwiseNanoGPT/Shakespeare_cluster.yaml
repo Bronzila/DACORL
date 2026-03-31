@@ -1,0 +1,22 @@
+# Cluster configuration for Shakespeare - High Quality Run
+# Inherit common LayerwiseNanoGPT settings
+defaults:
+  - /env/LayerwiseNanoGPT@_here_
+
+dataset_name: Shakespeare
+num_epochs: 20  # Higher quality for cluster
+fraction_of_dataset: 1.0
+train_validation_ratio: 0.9
+epoch_mode: false  # CRITICAL: Use iters_per_epoch
+
+# Full model size (can use more VRAM on cluster)
+n_layer: 12  # Full size
+n_head: 12   # Full size
+n_embd: 768  # Full size
+dropout: 0.2  
+training_batch_size: 8  # Larger batch on cluster
+grad_acc_steps: 60  # Adjusted for larger batch (8 * 60 = 480 effective)
+block_size: 1024  # Full context
+
+# Keep limited iterations for speed
+iters_per_epoch: 10  # Still limit to 10 iters/epoch for reasonable runtime

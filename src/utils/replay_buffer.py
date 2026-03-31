@@ -155,6 +155,16 @@ class ReplayBuffer:
         self._rewards = torch.cat([self._rewards, other._rewards])
         self._dones = torch.cat([self._dones, other._dones])
 
+    def to(self, device: str) -> ReplayBuffer:
+        """Move the replay buffer to the specified device."""
+        self._device = device
+        self._states = self._states.to(device)
+        self._actions = self._actions.to(device)
+        self._rewards = self._rewards.to(device)
+        self._next_states = self._next_states.to(device)
+        self._dones = self._dones.to(device)
+        return self
+
     @classmethod
     def load(cls, filename: Path) -> ReplayBuffer:
         with filename.open(mode="rb") as f:

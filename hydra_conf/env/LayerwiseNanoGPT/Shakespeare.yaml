@@ -1,0 +1,18 @@
+# Inherit common LayerwiseNanoGPT settings
+defaults:
+  - /env/LayerwiseNanoGPT@_here_
+
+dataset_name: Shakespeare
+num_epochs: 5  #( 20)
+fraction_of_dataset: 1.0
+train_validation_ratio: 0.9  # 90/10 split
+epoch_mode: False  #  FIX? iters_per_epoch instead of full epochs
+
+# Smaller model for checks
+n_layer: 6  #  12
+n_head: 6   # 12
+n_embd: 384 # 768
+dropout: 0.2  
+training_batch_size: 2 
+grad_acc_steps: 240
+block_size: 512  # from 1024
